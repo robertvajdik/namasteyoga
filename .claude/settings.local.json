@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(command -v php)",
+      "Read(//c/Program Files/**)",
+      "Bash(ls /c/php*)",
+      "Bash(awk NR==381 {print length\\($0\\); exit} *)",
+      "Bash(awk NR>=369 && NR<=384 {print NR\": \\(len=\"length\\($0\\)\"\\) \"substr\\($0,1,80\\)} *)",
+      "Bash(command -v node python python3)",
+      "Bash(python -V)",
+      "Bash(node _extract.mjs)",
+      "Bash(node _extract2.mjs)",
+      "WebFetch(domain:namasteyoga.cz)",
+      "Bash(php --version)",
+      "Bash(grep -oE 'password_hash|user_pass|\\\\$P\\\\$|\\\\$wp\\\\$|\\\\$H\\\\$|\\\\$2y\\\\$')",
+      "Bash(grep *)",
+      "Bash(git *)"
+    ]
+  }
+}
