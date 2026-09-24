@@ -229,6 +229,8 @@ function ny_render_footer(bool $bare = false): void {
             <a href="cenik.php">Ceník</a>
             <a href="rezervace.php">Rezervace</a>
             <a href="kontakt.php">Kontakt</a>
+            <a href="podminky.php">Provozní podmínky</a>
+            <a href="gdpr.php">Ochrana osobních údajů</a>
         </div>
         <div class="foot-col">
             <h4>Kontakt</h4>
