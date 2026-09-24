@@ -244,7 +244,7 @@ function ny_render_footer(bool $bare = false): void {
         </div>
     </div>
     <div class="foot-legal">
-        © <?= date('Y') ?> <?= e($siteName) ?> · Uherský Brod
+        Copyright © 2019 - <?= date('Y') ?> Klára Bigasová | Všechna práva vyhrazena
     </div>
 </footer>
 
