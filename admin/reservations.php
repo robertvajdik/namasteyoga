@@ -50,6 +50,33 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $rows = $stmt->fetchAll();
 
+// Grouped roster: per class occurrence, list attendee full names. Uses the
+// same filter/search as the flat list so admin sees a consistent view.
+$rosterGroups = [];
+foreach ($rows as $r) {
+    if ($r['status'] !== 'booked') continue;
+    $key = $r['class_date'] . '|' . $r['class_id'];
+    if (!isset($rosterGroups[$key])) {
+        $rosterGroups[$key] = [
+            'class_date' => $r['class_date'],
+            'start_time' => $r['start_time'],
+            'end_time'   => $r['end_time'],
+            'class_name' => $r['class_name'],
+            'teacher'    => $r['teacher'],
+            'attendees'  => [],
+        ];
+    }
+    $rosterGroups[$key]['attendees'][] = [
+        'name'  => (string)$r['display_name'],
+        'email' => (string)$r['email'],
+        'phone' => (string)$r['phone'],
+    ];
+}
+// Sort by date + start_time ASC so the next lekce is on top.
+uasort($rosterGroups, function ($a, $b) {
+    return strcmp($a['class_date'] . $a['start_time'], $b['class_date'] . $b['start_time']);
+});
+
 ny_admin_render_header('Rezervace', 'reservations');
 ?>
 <div class="admin-card">
@@ -65,6 +92,47 @@ ny_admin_render_header('Rezervace', 'reservations');
         <button class="btn btn-secondary" type="submit">Hledat</button>
     </form>
 </div>
+
+<?php if ($rosterGroups): ?>
+<div class="admin-card">
+    <div class="admin-header admin-card-head">
+        <h2>Docházka na lekce <span class="hint count-tag">(<?= count($rosterGroups) ?> lekcí)</span></h2>
+        <span class="hint">Kompletní jména účastníků podle lekce a data.</span>
+    </div>
+    <div class="roster-groups">
+    <?php foreach ($rosterGroups as $g):
+        $d = new DateTimeImmutable($g['class_date']);
+        $count = count($g['attendees']);
+    ?>
+        <details class="roster-group" open>
+            <summary>
+                <span class="roster-group-when">
+                    <strong><?= e($d->format('j. n. Y')) ?></strong>
+                    · <?= e(substr((string)$g['start_time'], 0, 5)) ?>–<?= e(substr((string)$g['end_time'], 0, 5)) ?>
+                </span>
+                <span class="roster-group-title"><?= e((string)$g['class_name']) ?></span>
+                <span class="roster-group-meta"><?= e((string)$g['teacher']) ?></span>
+                <span class="badge badge-success"><?= (int)$count ?> účastník<?= $count === 1 ? '' : ($count >= 5 ? 'ů' : 'ci') ?></span>
+            </summary>
+            <ol class="roster-attendees">
+                <?php foreach ($g['attendees'] as $a): ?>
+                    <li>
+                        <span class="roster-attendee-name"><?= e($a['name']) ?></span>
+                        <?php if ($a['email'] !== '' || $a['phone'] !== ''): ?>
+                            <span class="roster-attendee-contact">
+                                <?php if ($a['email'] !== ''): ?><?= e($a['email']) ?><?php endif; ?>
+                                <?php if ($a['email'] !== '' && $a['phone'] !== ''): ?> · <?php endif; ?>
+                                <?php if ($a['phone'] !== ''): ?><?= e($a['phone']) ?><?php endif; ?>
+                            </span>
+                        <?php endif; ?>
+                    </li>
+                <?php endforeach; ?>
+            </ol>
+        </details>
+    <?php endforeach; ?>
+    </div>
+</div>
+<?php endif; ?>
 
 <div class="admin-card">
     <h2>Rezervace <span class="hint count-tag">(<?= count($rows) ?> položek)</span></h2>

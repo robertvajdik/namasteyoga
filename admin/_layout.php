@@ -43,6 +43,7 @@ function ny_admin_render_header(string $title, string $active = ''): void {
             <a href="categories.php"   class="<?= $active === 'categories'   ? 'is-active' : '' ?>"><?= ny_icon('menu', 16) ?> Kategorie lekcí</a>
             <a href="gallery.php"      class="<?= $active === 'gallery'      ? 'is-active' : '' ?>"><?= ny_icon('image', 16) ?> Galerie</a>
             <a href="newsletter.php"   class="<?= $active === 'newsletter'   ? 'is-active' : '' ?>"><?= ny_icon('mail', 16) ?> Newsletter</a>
+            <a href="vouchers.php"     class="<?= $active === 'vouchers'     ? 'is-active' : '' ?>"><?= ny_icon('mail', 16) ?> Dárkové poukazy</a>
             <div class="sep">Web</div>
             <a href="settings.php"     class="<?= $active === 'settings'     ? 'is-active' : '' ?>"><?= ny_icon('settings', 16) ?> Nastavení webu</a>
             <div class="sep">Účet</div>

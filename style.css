@@ -2934,3 +2934,59 @@ img, iframe, video { max-width: 100%; }
     .poukaz-bank dt { padding-top: 0; }
 }
 
+/* -----------------------------------------------------------------
+   Admin – rezervace: per-class attendee roster
+------------------------------------------------------------------ */
+.roster-groups {
+    display: grid; gap: 12px;
+}
+.roster-group {
+    background: var(--surface-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+.roster-group > summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
+    padding: 12px 16px;
+    background: var(--surface-muted);
+    color: var(--text-strong);
+    font-size: 14px;
+}
+.roster-group > summary::-webkit-details-marker { display: none; }
+.roster-group > summary::before {
+    content: "▸";
+    display: inline-block;
+    color: var(--accent-ink);
+    transition: transform .18s ease;
+    margin-right: 2px;
+}
+.roster-group[open] > summary::before { transform: rotate(90deg); }
+.roster-group-when { color: var(--text-body); }
+.roster-group-title { font-weight: 700; }
+.roster-group-meta { color: var(--text-muted); font-size: 13px; }
+.roster-group > summary .badge { margin-left: auto; }
+.roster-attendees {
+    list-style: decimal inside;
+    margin: 0;
+    padding: 12px 20px 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 8px 20px;
+}
+.roster-attendees li {
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--border-subtle);
+    color: var(--text-strong);
+    font-size: 14px;
+}
+.roster-attendee-name { font-weight: 600; }
+.roster-attendee-contact {
+    display: block;
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-top: 2px;
+}
+

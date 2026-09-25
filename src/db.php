@@ -308,6 +308,47 @@ function ny_ensure_content_tables(): void {
     $done = true;
 }
 
+/**
+ * Generate a short human-readable voucher code (uppercase, hyphen-separated).
+ * Uniqueness is checked against ny_vouchers.
+ */
+function ny_voucher_generate_code(): string {
+    ny_ensure_content_tables();
+    $pdo = ny_db();
+    $stmt = $pdo->prepare('SELECT 1 FROM ny_vouchers WHERE code = ? LIMIT 1');
+    for ($i = 0; $i < 8; $i++) {
+        $code = 'NY-' . strtoupper(bin2hex(random_bytes(3)));
+        $stmt->execute([$code]);
+        if (!$stmt->fetch()) return $code;
+    }
+    // Extremely unlikely – fall back to timestamp-based code.
+    return 'NY-' . strtoupper(substr(bin2hex(random_bytes(6)), 0, 10));
+}
+
+function ny_voucher_create_from_order(array $data): int {
+    ny_ensure_content_tables();
+    $pdo    = ny_db();
+    $months = max(1, (int)ny_setting('voucher_validity_months', '2'));
+    $valid  = (new DateTimeImmutable('today'))->modify('+' . $months . ' months')->format('Y-m-d');
+    $stmt = $pdo->prepare(
+        'INSERT INTO ny_vouchers
+            (code, buyer_name, buyer_email, for_whom, amount_czk, amount_raw, message, status, valid_until)
+         VALUES (?, ?, ?, ?, ?, ?, ?, "pending", ?)'
+    );
+    $code = ny_voucher_generate_code();
+    $stmt->execute([
+        $code,
+        (string)($data['buyer_name']  ?? ''),
+        (string)($data['buyer_email'] ?? ''),
+        (string)($data['for_whom']    ?? ''),
+        (int)($data['amount_czk']     ?? 0),
+        (string)($data['amount_raw']  ?? ''),
+        (string)($data['message']     ?? '') ?: null,
+        $valid,
+    ]);
+    return (int)$pdo->lastInsertId();
+}
+
 function ny_teachers_active(): array {
     ny_ensure_content_tables();
     return ny_db()->query('SELECT * FROM ny_teachers WHERE active = 1 ORDER BY sort_order, name')->fetchAll();

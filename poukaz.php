@@ -51,10 +51,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($name === '' || !filter_var($from, FILTER_VALIDATE_EMAIL) || $amount === '') {
         ny_flash_set('err', 'Vyplňte prosím jméno, platný e-mail a hodnotu poukazu.');
     } else {
+        $amountCzk = (int)preg_replace('/[^0-9]/', '', $amount);
+        try {
+            $voucherId = ny_voucher_create_from_order([
+                'buyer_name'  => $name,
+                'buyer_email' => $from,
+                'for_whom'    => $forWhom,
+                'amount_czk'  => $amountCzk,
+                'amount_raw'  => $amount,
+                'message'     => $msg,
+            ]);
+        } catch (Throwable $e) {
+            $voucherId = 0;
+        }
         $subject = 'Dárkový poukaz – objednávka od ' . $name;
         $body    = "Objednatel: $name\r\nE-mail: $from\r\n"
                  . 'Hodnota poukazu: ' . $amount . "\r\n"
                  . ($forWhom !== '' ? "Poukaz pro: $forWhom\r\n" : '')
+                 . ($voucherId ? 'Interní ID: #' . $voucherId . "\r\n" : '')
                  . "\r\nZpráva:\r\n" . ($msg !== '' ? $msg : '(bez zprávy)') . "\r\n";
         ny_mail($email, $subject, $body, ['reply_to' => $from]);
         ny_flash_set('ok', 'Děkujeme! Objednávku jsme přijali a ozveme se vám na e-mail s platebními údaji.');
