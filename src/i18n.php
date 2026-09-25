@@ -4,8 +4,8 @@ declare(strict_types=1);
 /**
  * Lightweight i18n. Language is picked from ?lang=xx (persisted to a cookie),
  * or from the ny_lang cookie / session, falling back to Czech. Translations
- * are a flat map — keys are English-ish identifiers, Czech values match the
- * historic wording used on the site (so nothing regresses if a key is missing).
+ * live in Java-style .properties files under /lang/{code}.properties, so
+ * non-developers can edit them without touching PHP.
  */
 
 function ny_langs(): array {
@@ -41,13 +41,46 @@ function ny_lang_url(string $lang): string {
     return $path . '?' . http_build_query($qs);
 }
 
-function t(string $key, ...$args): string {
-    static $map = null;
-    if ($map === null) {
-        $map = require __DIR__ . '/i18n_strings.php';
+/**
+ * Parse a Java-style .properties file into a flat key => value map.
+ * Supports `#` and `!` comment lines, `key=value` and `key : value` pairs,
+ * and the escapes \n \t \r \\ \= \: in values.
+ */
+function ny_load_properties(string $path): array {
+    $out = [];
+    if (!is_file($path)) return $out;
+    $lines = file($path, FILE_IGNORE_NEW_LINES);
+    if ($lines === false) return $out;
+    foreach ($lines as $raw) {
+        $line = ltrim($raw);
+        if ($line === '' || $line[0] === '#' || $line[0] === '!') continue;
+        $sep = strcspn($line, '=:');
+        if ($sep === strlen($line)) continue;
+        $key = rtrim(substr($line, 0, $sep));
+        $val = ltrim(substr($line, $sep + 1));
+        $val = strtr($val, [
+            '\\n'  => "\n",
+            '\\t'  => "\t",
+            '\\r'  => "\r",
+            '\\='  => '=',
+            '\\:'  => ':',
+            '\\\\' => '\\',
+        ]);
+        if ($key !== '') $out[$key] = $val;
     }
+    return $out;
+}
+
+function t(string $key, ...$args): string {
+    static $cache = [];
     $lang = ny_lang();
-    $val  = $map[$lang][$key] ?? $map['cs'][$key] ?? $key;
+    if (!isset($cache[$lang])) {
+        $cache[$lang] = ny_load_properties(__DIR__ . '/../lang/' . $lang . '.properties');
+    }
+    if (!isset($cache['cs'])) {
+        $cache['cs'] = ny_load_properties(__DIR__ . '/../lang/cs.properties');
+    }
+    $val = $cache[$lang][$key] ?? $cache['cs'][$key] ?? $key;
     if ($args) {
         return vsprintf($val, $args);
     }

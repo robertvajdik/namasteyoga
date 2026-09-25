@@ -377,10 +377,14 @@ form input:focus { outline: none; border-color: var(--sage-400); box-shadow: var
 
 /* -- Booking rows on my.php ------------------------------------- */
 .booking-row {
-    display: grid; grid-template-columns: 90px 1fr auto auto; gap: 20px;
+    display: grid; grid-template-columns: 90px 1fr auto auto auto; gap: 20px;
     align-items: center; padding: 20px 22px;
     background: var(--surface-card); border: 1px solid var(--border-subtle);
     border-radius: var(--radius-lg); box-shadow: var(--shadow-soft);
+}
+.booking-row .gcal-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    white-space: nowrap;
 }
 .booking-row + .booking-row { margin-top: 12px; }
 .booking-row .date-block {
@@ -393,7 +397,7 @@ form input:focus { outline: none; border-color: var(--sage-400); box-shadow: var
 
 @media (max-width: 640px) {
     .booking-row { grid-template-columns: 80px 1fr; }
-    .booking-row .badge, .booking-row form { grid-column: 1 / -1; justify-self: start; }
+    .booking-row .badge, .booking-row form, .booking-row .gcal-btn { grid-column: 1 / -1; justify-self: start; }
 }
 
 /* -- Footer ------------------------------------------------------ */
@@ -509,8 +513,9 @@ form input:focus { outline: none; border-color: var(--sage-400); box-shadow: var
     .booking-row .date-block .num { font-size: 22px; }
     .booking-row .info { grid-area: info; min-width: 0; }
     .booking-row .info .name { font-size: 18px; }
-    .booking-row > .badge { grid-area: actions; justify-self: start; align-self: center; }
-    .booking-row > form    { grid-area: actions; justify-self: end;   align-self: center; }
+    .booking-row > .badge   { grid-area: actions; justify-self: start; align-self: center; }
+    .booking-row > .gcal-btn{ grid-area: actions; justify-self: center; align-self: center; }
+    .booking-row > form     { grid-area: actions; justify-self: end;   align-self: center; }
 
     /* Section headings tighter on mobile. */
     .section-h-gap { margin-top: 28px; }
@@ -992,7 +997,9 @@ form textarea:focus { outline: none; border-color: var(--sage-400); box-shadow: 
 .foot-legal {
     max-width: var(--container); margin: 24px auto 0; padding-top: 20px;
     border-top: 1px solid rgba(255,249,241,.12); font-size: 12px; color: rgba(255,249,241,.55);
+    display: flex; flex-wrap: wrap; gap: 4px 16px; justify-content: space-between; align-items: baseline;
 }
+.foot-legal .foot-ico { opacity: .8; letter-spacing: .02em; }
 
 /* -------- Mobile / tablet refinements for the marketing pages -------- */
 @media (max-width: 960px) {
@@ -1842,6 +1849,29 @@ img, iframe, video { max-width: 100%; }
     flex-wrap: wrap;
 }
 .bulk-bar .checkbox-inline { margin: 0; }
+.gal-sort-hint {
+    margin-left: 8px;
+    font-size: 12px;
+}
+.gal-grid--sortable .gal-card {
+    cursor: grab;
+    user-select: none;
+}
+.gal-grid--sortable .gal-card:active { cursor: grabbing; }
+.gal-grid--sortable .gal-card.is-dragging {
+    opacity: .35;
+    box-shadow: 0 10px 26px rgba(0,0,0,.18);
+    transform: scale(.98);
+}
+.gal-grid--sortable .gal-card.drop-before {
+    box-shadow: -3px 0 0 0 var(--accent, #b8894b);
+}
+.gal-grid--sortable .gal-card.drop-after {
+    box-shadow: 3px 0 0 0 var(--accent, #b8894b);
+}
+.gal-grid.is-saving { opacity: .7; pointer-events: none; }
+.gal-grid--sortable .gal-thumb,
+.gal-grid--sortable .gal-thumb img { -webkit-user-drag: none; user-drag: none; }
 @media (max-width: 600px) {
     .gal-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
     .gal-quick { opacity: 1; }

@@ -369,7 +369,8 @@ function ny_render_footer(bool $bare = false): void {
         </div>
     </div>
     <div class="foot-legal">
-        <?= e(t('footer.legal', date('Y'))) ?>
+        <div><?= e(t('footer.legal', date('Y'))) ?></div>
+        <div class="foot-ico"><?= e(t('footer.ico')) ?></div>
     </div>
 </footer>
 

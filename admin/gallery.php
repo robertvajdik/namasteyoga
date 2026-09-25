@@ -84,6 +84,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ny_redirect('gallery.php' . ($filterSection !== 'all' ? '?sec=' . $filterSection : ''));
     }
 
+    // Drag-and-drop reorder within a section (AJAX). Renumbers sort_order in
+    // steps of 10 following the order of the received ids.
+    if ($action === 'reorder') {
+        header('Content-Type: application/json; charset=utf-8');
+        $ids = array_map('intval', (array)($_POST['ids'] ?? []));
+        $ids = array_values(array_filter($ids, static fn ($v) => $v > 0));
+        $stmt = $pdo->prepare('UPDATE ny_gallery SET sort_order = ? WHERE id = ?');
+        $order = 10;
+        foreach ($ids as $id) {
+            $stmt->execute([$order, $id]);
+            $order += 10;
+        }
+        echo json_encode(['ok' => true, 'count' => count($ids)]);
+        exit;
+    }
+
     // Bulk upload (new items).
     if ($action === 'bulk_upload') {
         $section = (string)($_POST['section'] ?? 'studio');
@@ -278,8 +294,12 @@ ny_admin_render_header('Galerie', 'gallery');
 </div>
 
 <div class="admin-card">
+    <?php $sortable = $filterSection !== 'all'; ?>
     <div class="admin-header admin-card-head">
         <h2>Přehled fotografií <span class="hint count-tag">(<?= count($items) ?>)</span></h2>
+        <?php if ($sortable && $items): ?>
+            <span class="hint gal-sort-hint">Pořadí lze měnit přetažením fotografií.</span>
+        <?php endif; ?>
     </div>
     <?php if (!$items): ?>
         <p class="hint">V této sekci zatím nejsou žádné fotografie.</p>
@@ -291,16 +311,16 @@ ny_admin_render_header('Galerie', 'gallery');
                 <label class="checkbox-inline"><input type="checkbox" id="gal-check-all"> Vybrat vše</label>
                 <button class="btn btn-danger" type="submit" onclick="return confirm('Smazat všechny vybrané fotografie?');">Smazat vybrané</button>
             </div>
-            <div class="gal-grid">
+            <div class="gal-grid<?= $sortable ? ' gal-grid--sortable' : '' ?>" data-section="<?= e($filterSection) ?>">
                 <?php foreach ($items as $g):
                     $secLabel = $sections[$g['section']] ?? $g['section'];
                 ?>
-                    <article class="gal-card <?= (int)$g['active'] === 0 ? 'is-hidden' : '' ?>">
+                    <article class="gal-card <?= (int)$g['active'] === 0 ? 'is-hidden' : '' ?>" data-id="<?= (int)$g['id'] ?>"<?= $sortable ? ' draggable="true"' : '' ?>>
                         <label class="gal-check">
                             <input type="checkbox" name="ids[]" value="<?= (int)$g['id'] ?>">
                         </label>
-                        <a class="gal-thumb" href="../assets/gallery/<?= e(rawurlencode($g['file'])) ?>" target="_blank" rel="noopener">
-                            <img src="../assets/gallery/<?= e(rawurlencode($g['file'])) ?>" alt="<?= e((string)($g['alt'] ?: $g['title'])) ?>" loading="lazy">
+                        <a class="gal-thumb" href="../assets/gallery/<?= e(rawurlencode($g['file'])) ?>" target="_blank" rel="noopener" draggable="false">
+                            <img src="../assets/gallery/<?= e(rawurlencode($g['file'])) ?>" alt="<?= e((string)($g['alt'] ?: $g['title'])) ?>" loading="lazy" draggable="false">
                         </a>
                         <div class="gal-meta">
                             <div class="gal-title"><?= $g['title'] !== '' ? e($g['title']) : '<em class="hint">bez názvu</em>' ?></div>
@@ -351,6 +371,85 @@ ny_admin_render_header('Galerie', 'gallery');
                 f.elements['id'].value     = id;
                 f.submit();
             };
+
+            // Drag-and-drop reorder (only when the grid is marked sortable).
+            var grid = document.querySelector('.gal-grid.gal-grid--sortable');
+            if (!grid) return;
+            var actionForm = document.getElementById('gal-action-form');
+            var csrf = actionForm ? actionForm.elements['csrf'].value : '';
+            var dragged = null;
+
+            function clearMarkers() {
+                grid.querySelectorAll('.gal-card').forEach(function (c) {
+                    c.classList.remove('drop-before', 'drop-after');
+                });
+            }
+
+            function persistOrder() {
+                var ids = Array.prototype.map.call(
+                    grid.querySelectorAll('.gal-card'),
+                    function (c) { return c.getAttribute('data-id'); }
+                );
+                var body = new FormData();
+                body.append('csrf', csrf);
+                body.append('action', 'reorder');
+                body.append('section', grid.getAttribute('data-section') || '');
+                ids.forEach(function (id) { body.append('ids[]', id); });
+                grid.classList.add('is-saving');
+                fetch('gallery.php', {
+                    method: 'POST',
+                    body: body,
+                    credentials: 'same-origin',
+                    headers: { 'X-Requested-With': 'fetch' }
+                }).then(function (r) {
+                    return r.ok ? r.json() : null;
+                }).catch(function () {
+                    return null;
+                }).then(function () {
+                    grid.classList.remove('is-saving');
+                });
+            }
+
+            grid.querySelectorAll('.gal-card').forEach(function (card) {
+                card.addEventListener('dragstart', function (e) {
+                    dragged = card;
+                    card.classList.add('is-dragging');
+                    if (e.dataTransfer) {
+                        e.dataTransfer.effectAllowed = 'move';
+                        try { e.dataTransfer.setData('text/plain', card.getAttribute('data-id') || ''); } catch (err) {}
+                    }
+                });
+                card.addEventListener('dragend', function () {
+                    card.classList.remove('is-dragging');
+                    clearMarkers();
+                    dragged = null;
+                });
+                card.addEventListener('dragover', function (e) {
+                    if (!dragged || dragged === card) return;
+                    e.preventDefault();
+                    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+                    var rect = card.getBoundingClientRect();
+                    var before = (e.clientX - rect.left) < (rect.width / 2);
+                    card.classList.toggle('drop-before', before);
+                    card.classList.toggle('drop-after', !before);
+                });
+                card.addEventListener('dragleave', function () {
+                    card.classList.remove('drop-before', 'drop-after');
+                });
+                card.addEventListener('drop', function (e) {
+                    e.preventDefault();
+                    if (!dragged || dragged === card) { clearMarkers(); return; }
+                    var rect = card.getBoundingClientRect();
+                    var before = (e.clientX - rect.left) < (rect.width / 2);
+                    if (before) {
+                        grid.insertBefore(dragged, card);
+                    } else {
+                        grid.insertBefore(dragged, card.nextSibling);
+                    }
+                    clearMarkers();
+                    persistOrder();
+                });
+            });
         })();
         </script>
     <?php endif; ?>

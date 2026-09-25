@@ -10,5 +10,6 @@ Disallow: /unsubscribe.php
 Disallow: /logout.php
 Disallow: /forgot.php
 Disallow: /reset.php
+Disallow: /cron/
 
 Sitemap: /sitemap.xml

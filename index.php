@@ -69,7 +69,7 @@ $ldWebsite = [
     '@id'      => $origin . '/#website',
     'name'     => $siteName,
     'url'      => $origin . '/',
-    'inLanguage' => 'cs-CZ',
+    'inLanguage' => ny_lang() === 'en' ? 'en-GB' : 'cs-CZ',
     'publisher'  => ['@id' => $origin . '/#studio'],
 ];
 
@@ -122,20 +122,20 @@ $ldFaq = [
 $jsonLdBlocks = [$ldOrganization, $ldWebsite, $ldOffers, $ldFaq];
 $jsonFlags    = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
 
-ny_render_header('Úvod', 'home', ['bare' => true, 'overlay' => true]);
+ny_render_header(t('nav.home'), 'home', ['bare' => true, 'overlay' => true]);
 ?>
 <?php foreach ($jsonLdBlocks as $ld): ?>
 <script type="application/ld+json"><?= json_encode($ld, $jsonFlags) ?></script>
 <?php endforeach; ?>
 <section class="hero hero-home">
     <div class="hero-inner">
-        <div class="hero-eyebrow">Studio Namasté · Uherský Brod</div>
-        <h1>Vítejte v Namasté</h1>
-        <p class="kicker">Jóga · Pilates · Masáže · Individuální lekce · Akce</p>
-        <p class="kicker kicker--sub">Pro začátečníky i pokročilé v centru Uherského Brodu.</p>
+        <div class="hero-eyebrow"><?= e(t('home.hero.eyebrow')) ?></div>
+        <h1><?= e(t('home.hero.title')) ?></h1>
+        <p class="kicker"><?= e(ny_lang() === 'en' ? 'Yoga · Pilates · Massage · One-to-one · Events' : 'Jóga · Pilates · Masáže · Individuální lekce · Akce') ?></p>
+        <p class="kicker kicker--sub"><?= e(t('home.hero.lead')) ?></p>
         <div class="hero-cta">
-            <a class="btn btn-primary btn-lg" href="rezervace.php">Rezervovat lekci</a>
-            <a class="btn btn-secondary btn-lg" href="lekce.php">Prohlédnout rozvrh</a>
+            <a class="btn btn-primary btn-lg" href="rezervace.php"><?= e(t('home.hero.btn.book')) ?></a>
+            <a class="btn btn-secondary btn-lg" href="lekce.php"><?= e(t('home.hero.btn.classes')) ?></a>
         </div>
     </div>
 </section>

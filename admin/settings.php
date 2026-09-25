@@ -55,6 +55,22 @@ $fields = [
             'mail_admin' => ['label' => 'Adresa admina pro notifikace', 'type' => 'email', 'hint' => 'Kam chodí upozornění o nové registraci apod. Nechte prázdné pro použití e-mailu studia.'],
         ],
     ],
+    'reminders' => [
+        'title' => 'Připomínky lekcí',
+        'items' => [
+            'reminder_hours' => [
+                'label' => 'Odeslat připomínku (hodin před lekcí)',
+                'type'  => 'number',
+                'min'   => 0,
+                'hint'  => 'Např. 24 znamená den předem. Zadejte 0 pro vypnutí připomínek. Odesílá se pomocí cron úlohy volající cron/reminders.php.',
+            ],
+            'cron_key' => [
+                'label' => 'Klíč pro cron (URL parametr ?key=)',
+                'type'  => 'text',
+                'hint'  => 'Vygenerujte si dlouhý náhodný řetězec. Cron pak volejte např. https://…/cron/reminders.php?key=váš-klíč. Nechte prázdné pro spouštění pouze z CLI.',
+            ],
+        ],
+    ],
 ];
 
 $flat = [];
@@ -105,7 +121,7 @@ ny_admin_render_header('Nastavení webu', 'settings');
                             type="<?= e($meta['type']) ?>"
                             name="<?= e($key) ?>"
                             value="<?= e((string)($current[$key] ?? '')) ?>"
-                            <?= $meta['type'] === 'number' ? 'step="1" min="1"' : '' ?>>
+                            <?= $meta['type'] === 'number' ? 'step="' . e((string)($meta['step'] ?? '1')) . '" min="' . e((string)($meta['min'] ?? '1')) . '"' : '' ?>>
                         <?php if (!empty($meta['hint'])): ?>
                             <small class="hint hint-inline">
                                 <?= e($meta['hint']) ?>

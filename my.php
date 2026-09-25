@@ -168,9 +168,16 @@ ny_render_header('Moje rezervace', 'my');
         <a class="btn btn-primary" href="rezervace.php">Rezervovat lekci</a>
     </div>
 <?php else: ?>
-    <?php foreach ($upcoming as $r):
+    <?php
+    $studioAddr = ny_setting('address', '');
+    foreach ($upcoming as $r):
         $d = new DateTimeImmutable($r['class_date']);
         $dow = (int)$d->format('N');
+        $gcalTitle   = $r['name'] . ' · ' . ny_setting('site_name', 'Studio Namasté');
+        $gcalDetails = 'Lektor: ' . $r['teacher']
+                     . ($r['room'] ? "\nSál: " . $r['room'] : '')
+                     . "\n\nRezervaci můžete spravovat na " . ny_base_url() . '/my.php';
+        $gcalUrl = ny_gcal_url((string)$r['class_date'], (string)$r['start_time'], (string)$r['end_time'], $gcalTitle, $gcalDetails, $studioAddr);
     ?>
         <div class="booking-row">
             <div class="date-block">
@@ -185,6 +192,10 @@ ny_render_header('Moje rezervace', 'my');
                 </div>
             </div>
             <span class="badge badge-success"><span class="dot"></span>Potvrzeno</span>
+            <a class="btn btn-secondary btn-sm gcal-btn" href="<?= e($gcalUrl) ?>" target="_blank" rel="noopener" title="Přidat do Google Kalendáře">
+                <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/><line x1="12" y1="13" x2="12" y2="19" stroke="currentColor" stroke-width="2"/><line x1="9" y1="16" x2="15" y2="16" stroke="currentColor" stroke-width="2"/></svg>
+                Do kalendáře
+            </a>
             <form method="post" action="cancel.php" class="inline">
                 <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
                 <input type="hidden" name="class_id" value="<?= (int)$r['class_id'] ?>">

@@ -51,6 +51,8 @@ function ny_settings_defaults(): array {
         'recaptcha_secret' => '',
         'mail_from'        => '',
         'mail_admin'       => '',
+        'reminder_hours'   => '24',
+        'cron_key'         => '',
     ];
 }
 
@@ -142,6 +144,17 @@ function ny_ensure_content_tables(): void {
     )->fetchColumn();
     if ($hasAvatar === 0) {
         $pdo->exec('ALTER TABLE ny_users ADD COLUMN avatar VARCHAR(190) NOT NULL DEFAULT "" AFTER phone');
+    }
+    // reminded_at on reservations – populated by cron/reminders.php when the
+    // pre-class reminder e-mail has been sent so the cron doesn't send twice.
+    $hasReminded = (int)$pdo->query(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME   = 'ny_reservations'
+            AND COLUMN_NAME  = 'reminded_at'"
+    )->fetchColumn();
+    if ($hasReminded === 0) {
+        $pdo->exec('ALTER TABLE ny_reservations ADD COLUMN reminded_at DATETIME NULL AFTER created_at');
     }
     $pdo->exec(
         'CREATE TABLE IF NOT EXISTS ny_massages (
@@ -419,6 +432,99 @@ function ny_password_reset_consume(int $resetId, int $userId, string $newHash): 
         $pdo->rollBack();
         throw $e;
     }
+}
+
+/**
+ * Build a "add event to Google Calendar" URL. Times are emitted in local
+ * (studio) timezone and Europe/Prague is passed via ctz so imported events
+ * land at the correct local time regardless of the user's account timezone.
+ */
+function ny_gcal_url(string $date, string $startHms, string $endHms, string $title, string $details = '', string $location = ''): string {
+    $tz    = ny_config()['app']['timezone'] ?? 'Europe/Prague';
+    $start = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $date . ' ' . $startHms, new DateTimeZone($tz));
+    $end   = DateTimeImmutable::createFromFormat('Y-m-d H:i:s', $date . ' ' . $endHms,   new DateTimeZone($tz));
+    if (!$start || !$end) return '';
+    $fmt = 'Ymd\THis';
+    return 'https://calendar.google.com/calendar/render?' . http_build_query([
+        'action'   => 'TEMPLATE',
+        'text'     => $title,
+        'dates'    => $start->format($fmt) . '/' . $end->format($fmt),
+        'ctz'      => $tz,
+        'details'  => $details,
+        'location' => $location,
+    ], '', '&', PHP_QUERY_RFC3986);
+}
+
+/**
+ * Send pre-class reminder e-mails for every booked reservation whose class
+ * starts within the configured lead-time window. Idempotent: rows get
+ * `reminded_at` stamped so a second cron run won't resend. Returns the number
+ * of e-mails actually delivered.
+ */
+function ny_reminders_send_due(?int $overrideHours = null): int {
+    ny_ensure_content_tables();
+
+    $hours = $overrideHours ?? (int)ny_setting('reminder_hours', '24');
+    if ($hours <= 0) return 0;
+
+    $pdo = ny_db();
+    $tz  = new DateTimeZone(ny_config()['app']['timezone'] ?? 'Europe/Prague');
+    $now = new DateTimeImmutable('now', $tz);
+    $end = $now->modify('+' . $hours . ' hours');
+
+    $stmt = $pdo->prepare(
+        "SELECT r.id, r.class_date, c.name, c.teacher, c.room, c.start_time, c.end_time,
+                u.email, u.display_name, u.is_guest
+           FROM ny_reservations r
+           JOIN ny_classes c ON c.id = r.class_id
+           JOIN ny_users   u ON u.id = r.user_id
+          WHERE r.status = 'booked'
+            AND r.reminded_at IS NULL
+            AND CONCAT(r.class_date, ' ', c.start_time) BETWEEN ? AND ?"
+    );
+    $stmt->execute([$now->format('Y-m-d H:i:s'), $end->format('Y-m-d H:i:s')]);
+
+    $mark    = $pdo->prepare('UPDATE ny_reservations SET reminded_at = NOW() WHERE id = ?');
+    $site    = ny_setting('site_name', 'Studio Namasté');
+    $baseUrl = ny_base_url();
+    $sent    = 0;
+
+    while ($r = $stmt->fetch()) {
+        // Guests without an e-mail cannot receive anything — mark anyway so we
+        // don't keep re-selecting the row forever.
+        if ((int)($r['is_guest'] ?? 0) === 1 || empty($r['email'])
+            || !filter_var($r['email'], FILTER_VALIDATE_EMAIL)) {
+            $mark->execute([$r['id']]);
+            continue;
+        }
+
+        $classDt = DateTimeImmutable::createFromFormat(
+            'Y-m-d H:i:s',
+            $r['class_date'] . ' ' . $r['start_time'],
+            $tz
+        );
+        if (!$classDt || $classDt < $now) {
+            $mark->execute([$r['id']]);
+            continue;
+        }
+
+        $subject = 'Připomínka lekce: ' . $r['name'] . ' – ' . $classDt->format('j. n. Y H:i');
+        $body    = 'Dobrý den ' . $r['display_name'] . ",\n\n"
+                 . "připomínáme si Vaši rezervaci lekce:\n\n"
+                 . $r['name'] . "\n"
+                 . 'Datum: ' . $classDt->format('j. n. Y') . "\n"
+                 . 'Čas: ' . substr($r['start_time'], 0, 5) . ' – ' . substr($r['end_time'], 0, 5) . "\n"
+                 . 'Lektor: ' . $r['teacher'] . "\n"
+                 . ($r['room'] ? 'Sál: ' . $r['room'] . "\n" : '')
+                 . "\nRezervaci můžete spravovat na " . $baseUrl . "/my.php\n"
+                 . "\nTěšíme se na Vás!\n" . $site;
+
+        if (ny_mail($r['email'], $subject, $body)) {
+            $mark->execute([$r['id']]);
+            $sent++;
+        }
+    }
+    return $sent;
 }
 
 function ny_gallery_active_grouped(): array {

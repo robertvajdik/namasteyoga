@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS `ny_reservations` (
   `class_date` DATE NOT NULL,
   `status`     ENUM('booked','cancelled') NOT NULL DEFAULT 'booked',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `reminded_at` DATETIME NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_booking` (`user_id`, `class_id`, `class_date`),
   KEY `class_slot` (`class_id`, `class_date`),

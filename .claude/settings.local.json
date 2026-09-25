@@ -14,7 +14,8 @@
       "Bash(php --version)",
       "Bash(grep -oE 'password_hash|user_pass|\\\\$P\\\\$|\\\\$wp\\\\$|\\\\$H\\\\$|\\\\$2y\\\\$')",
       "Bash(grep *)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(php -r 'require '\\\\''src/i18n.php'\\\\''; $m = ny_load_properties\\('\\\\''lang/cs.properties'\\\\''\\); echo '\\\\''keys: '\\\\'', count\\($m\\), PHP_EOL; echo '\\\\''nav.home = '\\\\'', $m['\\\\''nav.home'\\\\''] ?? '\\\\''\\(missing\\)'\\\\'', PHP_EOL; echo '\\\\''footer.legal = '\\\\'', $m['\\\\''footer.legal'\\\\''] ?? '\\\\''\\(missing\\)'\\\\'', PHP_EOL; echo '\\\\''footer.ico = '\\\\'', $m['\\\\''footer.ico'\\\\''] ?? '\\\\''\\(missing\\)'\\\\'', PHP_EOL; echo '\\\\''home.hero.eyebrow = '\\\\'', $m['\\\\''home.hero.eyebrow'\\\\''] ?? '\\\\''\\(missing\\)'\\\\'', PHP_EOL;')"
     ]
   }
 }
