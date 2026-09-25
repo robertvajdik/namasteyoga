@@ -112,7 +112,12 @@ ny_render_header('Rezervace', 'schedule');
     $dateStr    = $date->format('Y-m-d');
     $isPast     = $date < $today;
     $isToday    = $date == $today;
-    $dayClasses = array_values(array_filter($classes, fn($c) => (int)$c['day_of_week'] === $d));
+    $dayClasses = array_values(array_filter($classes, function ($c) use ($d, $dateStr) {
+        if ((int)$c['day_of_week'] !== $d) return false;
+        if (!empty($c['starts_on']) && $dateStr < $c['starts_on']) return false;
+        if (!empty($c['ends_on'])   && $dateStr > $c['ends_on'])   return false;
+        return true;
+    }));
 ?>
     <section class="day <?= $isPast ? 'is-past' : '' ?> <?= $isToday ? 'is-today' : '' ?>">
         <header class="day-head">
@@ -188,6 +193,11 @@ ny_render_header('Rezervace', 'schedule');
     </section>
 <?php endfor; ?>
 </div>
+
+<section class="room-equipment">
+    <div class="room-equipment-eyebrow">Vybavení sálu</div>
+    <p>Pro cvičení jógy jsou zdarma k dispozici jógové podložky, deky, cihličky, jógové pásy a pohankové válce. Dále jsou součástí sálu a k dispozici speciální popruhy na zdi, vzdušné sítě, overbally, balanční podložky a wheel (kolečko na jógu). Sebou si stačí vzít pohodlné oblečení, ručník či jiné vlastní potřeby.</p>
+</section>
 
 <?php if ($user): ?>
 <div id="roster-modal" class="roster-modal" role="dialog" aria-modal="true" aria-labelledby="roster-title" hidden>

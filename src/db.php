@@ -156,6 +156,26 @@ function ny_ensure_content_tables(): void {
     if ($hasReminded === 0) {
         $pdo->exec('ALTER TABLE ny_reservations ADD COLUMN reminded_at DATETIME NULL AFTER created_at');
     }
+    // Period validity on classes – NULL = open-ended. Used by the schedule to
+    // hide a recurring class outside of its valid date window.
+    $hasStartsOn = (int)$pdo->query(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME   = 'ny_classes'
+            AND COLUMN_NAME  = 'starts_on'"
+    )->fetchColumn();
+    if ($hasStartsOn === 0) {
+        $pdo->exec('ALTER TABLE ny_classes ADD COLUMN starts_on DATE NULL AFTER active');
+    }
+    $hasEndsOn = (int)$pdo->query(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME   = 'ny_classes'
+            AND COLUMN_NAME  = 'ends_on'"
+    )->fetchColumn();
+    if ($hasEndsOn === 0) {
+        $pdo->exec('ALTER TABLE ny_classes ADD COLUMN ends_on DATE NULL AFTER starts_on');
+    }
     $pdo->exec(
         'CREATE TABLE IF NOT EXISTS ny_massages (
             id          INT UNSIGNED NOT NULL AUTO_INCREMENT,

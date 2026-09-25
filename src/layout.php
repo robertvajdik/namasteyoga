@@ -164,7 +164,7 @@ function ny_send_security_headers(): void {
         "font-src 'self' https://fonts.gstatic.com",
         "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://www.google.com https://www.gstatic.com https://cdn.jsdelivr.net",
         "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://www.google.com",
-        "frame-src 'self' https://www.openstreetmap.org https://www.google.com",
+        "frame-src 'self' https://www.openstreetmap.org https://www.google.com https://www.youtube-nocookie.com https://www.youtube.com",
         "object-src 'none'",
     ];
     header('Content-Security-Policy: ' . implode('; ', $csp));
@@ -378,6 +378,11 @@ function ny_render_footer(bool $bare = false): void {
             </div>
         </div>
     </div>
+    <a class="foot-newsletter-cta" href="newsletter.php">
+        <?= ny_icon('mail', 16) ?>
+        <span><?= e(t('footer.newsletter')) ?> — <?= e(t('footer.newsletter.desc')) ?></span>
+        <span class="foot-newsletter-cta-btn"><?= e(t('footer.newsletter.submit')) ?> →</span>
+    </a>
     <div class="foot-legal">
         <div><?= e(t('footer.legal', date('Y'))) ?></div>
         <div class="foot-ico"><?= e(t('footer.ico')) ?></div>

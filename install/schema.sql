@@ -30,6 +30,8 @@ CREATE TABLE IF NOT EXISTS `ny_classes` (
   `end_time`     TIME NOT NULL,
   `room`         VARCHAR(120) DEFAULT NULL,
   `active`       TINYINT(1) NOT NULL DEFAULT 1,
+  `starts_on`    DATE NULL,
+  `ends_on`      DATE NULL,
   PRIMARY KEY (`id`),
   KEY `day_of_week` (`day_of_week`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
