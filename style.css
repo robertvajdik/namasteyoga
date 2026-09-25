@@ -459,29 +459,33 @@ form input:focus { outline: none; border-color: var(--sage-400); box-shadow: var
 
     /* Header: compact topbar, logo, hamburger reveals a stacked drop-down nav. */
     .site-header .topbar {
-        flex-wrap: wrap; padding: 8px 16px 0;
-        font-size: 12px; gap: 8px 14px;
+        flex-wrap: wrap; padding: 6px 14px 0;
+        font-size: 12px; gap: 6px 12px;
     }
-    .site-header .band { padding: 6px 0 10px; }
-    .site-header .band .logo img { height: 56px; }
+    .site-header .band { padding: 4px 0 8px; }
+    .site-header .band .logo img { height: 48px; }
 
-    .nav-toggle { display: inline-flex; }
+    .nav-toggle {
+        display: inline-flex;
+        top: 8px; right: 12px;
+        width: 40px; height: 40px;
+    }
 
     .site-header nav {
         display: none;
         flex-direction: column; align-items: stretch; gap: 0;
-        margin: 6px 0 0; padding: 6px 12px 14px;
+        margin: 4px 0 0; padding: 4px 10px 10px;
         background: var(--sand-500);
         border-top: 1px solid rgba(255,255,255,.18);
     }
     .site-header nav a,
     .site-header nav .who {
-        padding: 12px 14px;
-        font-size: 16px; opacity: 1; text-align: left;
+        padding: 9px 12px;
+        font-size: 14.5px; opacity: 1; text-align: left;
         border-bottom: 1px solid rgba(255,255,255,.14);
     }
     .site-header nav a.is-active { background: rgba(255,255,255,.14); border-bottom-color: rgba(255,255,255,.14); }
-    .site-header nav .who { font-size: 13px; opacity: .85; }
+    .site-header nav .who { font-size: 12px; opacity: .85; padding: 8px 12px; }
     .nav-toggle-input:checked ~ nav { display: flex; }
 
     /* Hero – tune down the giant top padding and min-height. */
@@ -1442,16 +1446,145 @@ img.teacher-thumb { display: inline-block; }
     }
 }
 
-/* Users table on mobile: keep e-mail readable, keep long strings wrapping. */
+/* Users table on mobile: minimized single-glance card layout.
+   Uses grid to place avatar/name/type on row 1, contact info + meta as
+   dense inline text underneath, actions on a single compact row. */
 @media (max-width: 780px) {
-    .admin-tbl--users td[data-label="E-mail"],
-    .admin-tbl--users td[data-label="Telefon"] {
-        word-break: break-all;
+    .admin-tbl--users tbody tr {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-areas:
+            "name    type"
+            "email   email"
+            "phone   phone"
+            "meta    meta"
+            "actions actions";
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        gap: 2px 8px;
+        align-items: center;
     }
-    .admin-tbl--users td[data-label="E-mail"] { font-size: 13px; }
-    .admin-tbl--users td[data-label="Jméno"] strong { font-size: 15px; }
-    .admin-tbl--users td.actions .btn { padding: 9px 10px; font-size: 13px; }
+    .admin-tbl--users td {
+        display: block;
+        padding: 0;
+        border: 0;
+        font-size: 13px;
+        min-width: 0;
+        word-break: break-word;
+    }
+    .admin-tbl--users td::before { display: none !important; }
+
+    .admin-tbl--users td[data-label="Jméno"]       { grid-area: name; }
+    .admin-tbl--users td[data-label="Typ"]         { grid-area: type; justify-self: end; }
+    .admin-tbl--users td[data-label="E-mail"]      { grid-area: email; font-size: 12.5px; color: var(--text-muted); }
+    .admin-tbl--users td[data-label="Telefon"]     { grid-area: phone; font-size: 12.5px; color: var(--text-muted); }
+    .admin-tbl--users td[data-label="Registrace"]  { grid-area: meta; font-size: 11px; color: var(--text-muted); opacity: .85; }
+    .admin-tbl--users td[data-label="Rezervací"]   {
+        grid-area: meta; font-size: 11px; color: var(--text-muted); opacity: .85;
+        justify-self: end;
+    }
+    /* Prefix small meta labels so date/count are self-explanatory. */
+    .admin-tbl--users td[data-label="Registrace"]::before,
+    .admin-tbl--users td[data-label="Rezervací"]::before {
+        display: inline !important;
+        margin: 0;
+        font-size: 11px; text-transform: none; letter-spacing: 0;
+        color: var(--text-muted); opacity: .8; font-weight: 500;
+    }
+    .admin-tbl--users td[data-label="Registrace"]::before { content: "reg. "; }
+    .admin-tbl--users td[data-label="Rezervací"]::before  { content: "rez. "; }
+
+    .admin-tbl--users td[data-label="Jméno"] strong { font-size: 14.5px; line-height: 1.15; }
+    .admin-tbl--users .user-cell { gap: 8px; align-items: center; }
+    .admin-tbl--users .user-avatar--md {
+        width: 32px; height: 32px; font-size: 13px;
+    }
+    .admin-tbl--users td[data-label="Typ"] .badge {
+        font-size: 10px; padding: 2px 7px;
+    }
+
+    .admin-tbl--users td.actions {
+        grid-area: actions;
+        display: flex; flex-direction: row; flex-wrap: wrap;
+        gap: 6px; padding-top: 8px; margin-top: 4px;
+        border-top: 1px dashed var(--border-subtle);
+    }
+    .admin-tbl--users td.actions .btn,
+    .admin-tbl--users td.actions form {
+        flex: 0 1 auto; width: auto;
+    }
+    .admin-tbl--users td.actions .btn {
+        padding: 6px 10px; font-size: 12px; width: auto;
+    }
+    .admin-tbl--users td.actions form.inline { display: inline-flex; }
+
+    /* Mobile sort: single row, smaller. */
+    .mobile-sort { padding: 6px 10px; gap: 6px; margin-bottom: 10px; }
+    .mobile-sort-label { font-size: 10px; }
+    .mobile-sort select { padding: 6px 8px; font-size: 13px; }
 }
+
+@media (max-width: 480px) {
+    .admin-tbl--users tbody tr { padding: 8px 10px; gap: 2px 6px; }
+    .admin-tbl--users td[data-label="Jméno"] strong { font-size: 14px; }
+    .admin-tbl--users .user-avatar--md { width: 28px; height: 28px; font-size: 12px; }
+    .admin-tbl--users td.actions .btn { padding: 5px 8px; font-size: 11.5px; }
+}
+
+/* Newsletter landing CTA (index.php between schedule and footer). */
+.newsletter-cta { padding: 28px 32px; margin: 40px 0 8px; }
+@media (max-width: 720px) {
+    .newsletter-cta { grid-template-columns: 1fr; padding: 22px 20px; margin-top: 28px; }
+}
+
+/* Class-card "who's going?" link + roster modal. */
+.roster-link {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: none; border: 0; padding: 4px 6px;
+    color: var(--text-muted); font: 600 12px/1 var(--font-body);
+    letter-spacing: -.01em; cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: background var(--dur-fast) var(--ease-calm), color var(--dur-fast) var(--ease-calm);
+}
+.roster-link:hover, .roster-link:focus-visible {
+    background: var(--sand-100); color: var(--text-strong); outline: none;
+}
+
+.roster-modal {
+    padding: 0; border: 0; border-radius: var(--radius-lg);
+    background: var(--surface-card); color: var(--text-body);
+    box-shadow: 0 30px 80px rgba(90,58,34,.28);
+    max-width: 420px; width: calc(100% - 32px);
+}
+.roster-modal::backdrop { background: rgba(31,25,20,.45); backdrop-filter: blur(2px); }
+.roster-modal-inner { display: flex; flex-direction: column; padding: 18px 20px 20px; margin: 0; }
+.roster-modal-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 12px;
+}
+.roster-modal-title { margin: 0; font-size: 17px; font-weight: 800; letter-spacing: -.02em; }
+.roster-modal-close {
+    background: none; border: 0; font-size: 26px; line-height: 1;
+    color: var(--text-muted); cursor: pointer;
+    width: 32px; height: 32px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background var(--dur-fast) var(--ease-calm), color var(--dur-fast) var(--ease-calm);
+}
+.roster-modal-close:hover, .roster-modal-close:focus-visible {
+    background: var(--sand-100); color: var(--text-strong); outline: none;
+}
+.roster-list {
+    list-style: none; margin: 0; padding: 0;
+    display: flex; flex-wrap: wrap; gap: 6px;
+    max-height: 55vh; overflow-y: auto;
+}
+.roster-item {
+    display: inline-flex; align-items: center;
+    background: var(--surface-muted); border: 1px solid var(--border-subtle);
+    border-radius: 999px; padding: 6px 12px;
+    font-size: 13px; font-weight: 600; color: var(--text-strong);
+}
+.roster-empty { margin: 8px 0 0; }
 
 /* ============================================================
    Utility classes (extracted from inline styles)
@@ -1577,8 +1710,15 @@ img, iframe, video { max-width: 100%; }
 
 /* Header topbar: keep it a single tidy line on narrow phones. */
 @media (max-width: 480px) {
-    .site-header .topbar { padding: 8px 14px 0; gap: 6px 12px; font-size: 11.5px; }
-    .site-header .band .logo img { height: 50px; }
+    .site-header .topbar { padding: 6px 12px 0; gap: 4px 10px; font-size: 11.5px; }
+    .site-header .band { padding: 2px 0 6px; }
+    .site-header .band .logo img { height: 42px; }
+    .nav-toggle { top: 6px; right: 10px; width: 38px; height: 38px; }
+    .site-header nav a,
+    .site-header nav .who { padding: 8px 10px; font-size: 14px; }
+    /* Trim topbar chrome: hide social links and language separator to keep the row tidy. */
+    .site-header .topbar .lang-switch { margin-left: 0; padding-left: 6px; }
+    .site-header .header-user { padding-left: 6px; margin-left: 2px; }
 }
 
 /* Feature-card grid: nudge gap down on tablet, keep readable on phone. */

@@ -32,6 +32,28 @@ foreach ($countsStmt as $r) {
 
 $mine = [];
 $user = ny_current_user();
+
+// Rosters: first-name lists per class + date. Only exposed to signed-in
+// members so casual visitors / bots don't scrape attendee lists.
+$rosters = [];
+if ($user) {
+    $rosterStmt = $pdo->prepare(
+        "SELECT r.class_id, r.class_date, u.display_name
+           FROM ny_reservations r
+           JOIN ny_users u ON u.id = r.user_id
+          WHERE r.status = 'booked' AND r.class_date BETWEEN ? AND ?
+          ORDER BY u.display_name"
+    );
+    $rosterStmt->execute([$weekStart, $weekEnd]);
+    foreach ($rosterStmt as $r) {
+        $first = trim((string)$r['display_name']);
+        if ($first === '') continue;
+        // Keep only the first token (first name).
+        $first = preg_split('/\s+/u', $first, 2)[0] ?? '';
+        if ($first === '') continue;
+        $rosters[$r['class_id'] . '|' . $r['class_date']][] = $first;
+    }
+}
 if ($user) {
     $mineStmt = $pdo->prepare(
         "SELECT class_id, class_date FROM ny_reservations
@@ -108,6 +130,10 @@ ny_render_header('Rezervace', 'schedule');
             $booked   = isset($mine[$key]);
             $cat      = ny_category((string)$c['name']);
         ?>
+            <?php
+                $roster = $rosters[$key] ?? [];
+                $rosterTitle = $c['name'] . ' · ' . $date->format('j. n.') . ' · ' . substr($c['start_time'], 0, 5);
+            ?>
             <article class="class-card <?= $left === 0 ? 'is-full' : '' ?>" data-cat="<?= e($cat) ?>">
                 <div class="time"><?= e(substr($c['start_time'], 0, 5)) ?> – <?= e(substr($c['end_time'], 0, 5)) ?></div>
                 <div class="title"><?= e($c['name']) ?></div>
@@ -121,6 +147,13 @@ ny_render_header('Rezervace', 'schedule');
                         <span class="badge badge-danger">Obsazeno</span>
                     <?php else: ?>
                         <span class="badge">Volno: <?= $left ?> / <?= $capacity ?></span>
+                    <?php endif; ?>
+
+                    <?php if ($user && $taken > 0): ?>
+                        <button type="button" class="roster-link"
+                                data-roster='<?= e(json_encode($roster, JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT)) ?>'
+                                data-title="<?= e($rosterTitle) ?>"
+                                aria-haspopup="dialog">Kdo tam bude? (<?= $taken ?>)</button>
                     <?php endif; ?>
 
                     <?php if ($isPast): ?>
@@ -150,5 +183,62 @@ ny_render_header('Rezervace', 'schedule');
     </section>
 <?php endfor; ?>
 </div>
+
+<?php if ($user): ?>
+<dialog id="roster-modal" class="roster-modal" aria-labelledby="roster-title">
+    <form method="dialog" class="roster-modal-inner">
+        <header class="roster-modal-head">
+            <h3 id="roster-title" class="roster-modal-title">Účastníci lekce</h3>
+            <button type="submit" class="roster-modal-close" aria-label="Zavřít">×</button>
+        </header>
+        <ul id="roster-list" class="roster-list"></ul>
+        <p id="roster-empty" class="roster-empty hint" hidden>Zatím nikdo přihlášen.</p>
+    </form>
+</dialog>
+<script>
+(function () {
+    var modal   = document.getElementById('roster-modal');
+    var listEl  = document.getElementById('roster-list');
+    var titleEl = document.getElementById('roster-title');
+    var emptyEl = document.getElementById('roster-empty');
+    if (!modal || !listEl) return;
+
+    function open(title, names) {
+        titleEl.textContent = title || 'Účastníci lekce';
+        listEl.innerHTML = '';
+        if (!names || !names.length) {
+            emptyEl.hidden = false;
+        } else {
+            emptyEl.hidden = true;
+            names.forEach(function (n) {
+                var li = document.createElement('li');
+                li.className = 'roster-item';
+                li.textContent = n;
+                listEl.appendChild(li);
+            });
+        }
+        if (typeof modal.showModal === 'function') {
+            modal.showModal();
+        } else {
+            modal.setAttribute('open', '');
+        }
+    }
+
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.roster-link');
+        if (!btn) {
+            // Click on backdrop closes the dialog.
+            if (e.target === modal && typeof modal.close === 'function') modal.close();
+            return;
+        }
+        e.preventDefault();
+        var names = [];
+        try { names = JSON.parse(btn.getAttribute('data-roster') || '[]'); }
+        catch (err) { names = []; }
+        open(btn.getAttribute('data-title'), names);
+    });
+})();
+</script>
+<?php endif; ?>
 
 <?php ny_render_footer();

@@ -82,15 +82,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') ==
     if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
         ny_flash_set('err', 'Zadejte platnou e-mailovou adresu pro test.');
     } else {
+        $mailCfg  = ny_config()['mail'] ?? [];
         $siteName = ny_setting('site_name', 'Studio Namasté');
-        $body     = "Toto je testovací e-mail ze systému " . $siteName . ".\n\n"
-                  . "Pokud jste jej dostali, konfigurace odesílání funguje správně.\n\n"
-                  . 'Odesláno: ' . date('j. n. Y H:i') . "\n"
-                  . 'Odesílatel (From): ' . (ny_setting('mail_from') ?: ny_setting('email')) . "\n";
+        $from     = trim((string)($mailCfg['from'] ?? '')) ?: (ny_setting('mail_from') ?: ny_setting('email'));
+        $smtpHost = trim((string)($mailCfg['smtp_host'] ?? ''));
+        $transport = $smtpHost !== ''
+            ? 'SMTP (' . $smtpHost . ':' . (int)($mailCfg['smtp_port'] ?? 587) . ', ' . strtoupper((string)($mailCfg['smtp_secure'] ?? 'tls')) . ')'
+            : 'PHP mail()';
+
+        $body = "Toto je testovací e-mail ze systému " . $siteName . ".\n\n"
+              . "Pokud jste jej dostali, konfigurace odesílání funguje správně.\n\n"
+              . 'Odesláno:            ' . date('j. n. Y H:i') . "\n"
+              . 'Odesílatel (From):   ' . $from . "\n"
+              . 'Přenos:              ' . $transport . "\n"
+              . 'Server:              ' . ($_SERVER['SERVER_NAME'] ?? gethostname() ?: 'n/a') . "\n";
+
         if (ny_mail($to, 'Testovací e-mail – ' . $siteName, $body)) {
-            ny_flash_set('ok', 'Testovací e-mail byl odeslán na ' . $to . '.');
+            ny_flash_set('ok', 'Testovací e-mail byl odeslán na ' . $to . ' přes ' . $transport . '. Zkontrolujte prosím doručenou poštu i spam.');
         } else {
-            ny_flash_set('err', 'E-mail se nepodařilo odeslat. Zkontrolujte pole „Odesílatel (From:)" a nastavení serveru.');
+            ny_flash_set('err', 'E-mail se nepodařilo odeslat přes ' . $transport . '. Zkontrolujte „Odesílatel (From:)" a config.php (mail.smtp_*).');
         }
     }
     ny_redirect('settings.php');
@@ -171,9 +181,34 @@ ny_admin_render_header('Nastavení webu', 'settings');
     </div>
 </form>
 
+<?php
+    $mailCfg    = ny_config()['mail'] ?? [];
+    $mailFrom   = trim((string)($mailCfg['from'] ?? '')) ?: (ny_setting('mail_from') ?: ny_setting('email'));
+    $smtpHost   = trim((string)($mailCfg['smtp_host'] ?? ''));
+    $smtpPort   = (int)($mailCfg['smtp_port'] ?? 587);
+    $smtpSecure = strtoupper((string)($mailCfg['smtp_secure'] ?? 'tls'));
+    $smtpUser   = trim((string)($mailCfg['smtp_user'] ?? ''));
+?>
 <div class="admin-card">
     <h2>Testovací e-mail</h2>
-    <p class="hint">Odešle jednorázový testovací e-mail podle aktuálně uloženého nastavení výše. Pomůže ověřit, že server umí odesílat poštu.</p>
+    <p class="hint">Odešle jednorázový testovací e-mail podle aktuálního nastavení. Pomůže ověřit, že server umí odesílat poštu (SMTP nebo PHP mail()).</p>
+    <dl class="mail-diag">
+        <dt>Přenos</dt>
+        <dd>
+            <?php if ($smtpHost !== ''): ?>
+                <span class="badge badge-success">SMTP</span>
+                <code><?= e($smtpHost) ?>:<?= (int)$smtpPort ?></code>
+                <span class="hint">(<?= e($smtpSecure ?: 'TLS') ?><?= $smtpUser !== '' ? ', auth: ' . e($smtpUser) : '' ?>)</span>
+            <?php else: ?>
+                <span class="badge">PHP mail()</span>
+                <span class="hint">SMTP není v <code>config.php</code> nakonfigurováno.</span>
+            <?php endif; ?>
+        </dd>
+        <dt>Odesílatel</dt>
+        <dd><code><?= e($mailFrom ?: '—') ?></code></dd>
+        <dt>Notifikace adminovi</dt>
+        <dd><code><?= e(ny_admin_notify_email() ?: '—') ?></code></dd>
+    </dl>
     <form method="post" class="admin-form">
         <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
         <input type="hidden" name="action" value="test_mail">
