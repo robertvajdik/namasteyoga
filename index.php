@@ -24,8 +24,110 @@ $soon = $soonStmt->fetchAll();
 
 $daysCz = [1 => 'Pondělí', 2 => 'Úterý', 3 => 'Středa', 4 => 'Čtvrtek', 5 => 'Pátek', 6 => 'Sobota', 7 => 'Neděle'];
 
+<?php
+$settings = ny_settings_all();
+$siteName = $settings['site_name'] ?: 'Studio Namasté';
+$scheme   = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['SERVER_PORT'] ?? '') == 443) ? 'https' : 'http';
+$origin   = $scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'namasteyoga.cz');
+
+$ldOrganization = [
+    '@context' => 'https://schema.org',
+    '@type'    => 'LocalBusiness',
+    '@id'      => $origin . '/#studio',
+    'name'     => $siteName,
+    'url'      => $origin . '/',
+    'image'    => $origin . '/assets/logoCream.png',
+    'telephone'=> $settings['phone'] ?? '',
+    'email'    => $settings['email'] ?? '',
+    'address'  => [
+        '@type'           => 'PostalAddress',
+        'streetAddress'   => $settings['address'] ?? '',
+        'addressLocality' => 'Uherský Brod',
+        'addressCountry'  => 'CZ',
+    ],
+    'geo' => [
+        '@type'    => 'GeoCoordinates',
+        'latitude' => (float)($settings['map_lat']  ?: 49.0255),
+        'longitude'=> (float)($settings['map_lon']  ?: 17.6512),
+    ],
+    'sameAs' => array_values(array_filter([
+        $settings['facebook_url']  ?? '',
+        $settings['instagram_url'] ?? '',
+        $settings['youtube_url']   ?? '',
+    ])),
+    'priceRange' => '$$',
+    'openingHoursSpecification' => [[
+        '@type'     => 'OpeningHoursSpecification',
+        'dayOfWeek' => ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+        'opens'     => '07:00',
+        'closes'    => '21:00',
+    ]],
+];
+
+$ldWebsite = [
+    '@context' => 'https://schema.org',
+    '@type'    => 'WebSite',
+    '@id'      => $origin . '/#website',
+    'name'     => $siteName,
+    'url'      => $origin . '/',
+    'inLanguage' => 'cs-CZ',
+    'publisher'  => ['@id' => $origin . '/#studio'],
+];
+
+$ldOffers = [
+    '@context' => 'https://schema.org',
+    '@type'    => 'ItemList',
+    'name'     => 'Nabídka studia',
+    'itemListElement' => [
+        ['@type' => 'ListItem', 'position' => 1, 'name' => 'Otevřené lekce jógy',   'url' => $origin . '/lekce.php'],
+        ['@type' => 'ListItem', 'position' => 2, 'name' => 'Pilates a Core',        'url' => $origin . '/lekce.php#pilates'],
+        ['@type' => 'ListItem', 'position' => 3, 'name' => 'Uzavřené kurzy',        'url' => $origin . '/lekce.php#kurzy'],
+        ['@type' => 'ListItem', 'position' => 4, 'name' => 'Individuální lekce',    'url' => $origin . '/individualni.php'],
+        ['@type' => 'ListItem', 'position' => 5, 'name' => 'Regenerační masáže',    'url' => $origin . '/masaze.php'],
+        ['@type' => 'ListItem', 'position' => 6, 'name' => 'Workshopy a akce',      'url' => $origin . '/lekce.php#akce'],
+    ],
+];
+
+$ldFaq = [
+    '@context' => 'https://schema.org',
+    '@type'    => 'FAQPage',
+    'mainEntity' => [
+        [
+            '@type' => 'Question',
+            'name'  => 'Musím být pokročilý, abych mohl přijít?',
+            'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'Vůbec ne. Máme lekce pro úplné začátečníky i pro pokročilé. Když si nevíte rady, napište nám – pomůžeme vybrat.'],
+        ],
+        [
+            '@type' => 'Question',
+            'name'  => 'Jak to funguje s rezervací?',
+            'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'Rezervovat se dá online v kalendáři. Zrušit můžete nejpozději 12 hodin před začátkem.'],
+        ],
+        [
+            '@type' => 'Question',
+            'name'  => 'Co si mám vzít s sebou?',
+            'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'Pohodlné oblečení. Podložky a pomůcky máme na místě. Přijďte 10 minut předem, ať se v klidu rozkoukáte.'],
+        ],
+        [
+            '@type' => 'Question',
+            'name'  => 'Nabízíte permanentky?',
+            'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'Ano – v ceníku najdete varianty na 10 a 20 vstupů se zvýhodněnou cenou.'],
+        ],
+        [
+            '@type' => 'Question',
+            'name'  => 'Můžu přijít s dítětem?',
+            'acceptedAnswer' => ['@type' => 'Answer', 'text' => 'Máme prenatal lekce a specializované kurzy pro maminky. Pro obecné lekce prosíme o hlídání jinde.'],
+        ],
+    ],
+];
+
+$jsonLdBlocks = [$ldOrganization, $ldWebsite, $ldOffers, $ldFaq];
+$jsonFlags    = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
+
 ny_render_header('Úvod', 'home', ['bare' => true, 'overlay' => true]);
 ?>
+<?php foreach ($jsonLdBlocks as $ld): ?>
+<script type="application/ld+json"><?= json_encode($ld, $jsonFlags) ?></script>
+<?php endforeach; ?>
 <section class="hero hero-home">
     <div class="hero-inner">
         <div class="hero-eyebrow">Studio Namasté · Uherský Brod</div>
@@ -196,11 +298,11 @@ ny_render_header('Úvod', 'home', ['bare' => true, 'overlay' => true]);
             <h3>Zprávy ze studia jednou měsíčně</h3>
             <p>Nové kurzy, akce a inspirace do praxe. Žádný spam, kdykoliv se dá odhlásit.</p>
         </div>
-        <form class="newsletter-form" method="post" action="kontakt.php">
+        <form class="newsletter-form" method="post" action="newsletter.php" data-recaptcha="newsletter">
             <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
-            <input type="hidden" name="topic" value="newsletter">
-            <label class="sr-only" for="nl-email">E-mail</label>
-            <input id="nl-email" type="email" name="email" placeholder="vas@email.cz" required>
+            <input type="hidden" name="source" value="landing">
+            <label class="visually-hidden" for="nl-email-home">E-mail</label>
+            <input id="nl-email-home" type="email" name="email" placeholder="vas@email.cz" required>
             <button class="btn btn-primary" type="submit">Přihlásit se k odběru</button>
         </form>
     </div>

@@ -9,7 +9,54 @@ if (!$user) {
     ny_redirect('login.php');
 }
 
+ny_ensure_content_tables();
 $pdo = ny_db();
+
+$avatarDir = __DIR__ . '/assets/avatars';
+if (!is_dir($avatarDir)) {
+    @mkdir($avatarDir, 0755, true);
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    ny_csrf_check($_POST['csrf'] ?? null);
+    $act = (string)($_POST['action'] ?? '');
+    try {
+        if ($act === 'remove_avatar' && !empty($user['avatar'])) {
+            @unlink($avatarDir . '/' . basename((string)$user['avatar']));
+            $pdo->prepare('UPDATE ny_users SET avatar = "" WHERE id = ?')->execute([$user['id']]);
+            ny_flash_set('ok', 'Profilový obrázek byl odstraněn.');
+            ny_redirect('my.php');
+        }
+        if ($act === 'upload_avatar' && isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
+            $f = $_FILES['avatar'];
+            $mime = @mime_content_type($f['tmp_name']) ?: '';
+            $exts = ['image/jpeg' => 'jpg', 'image/pjpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+            if (!isset($exts[$mime])) {
+                throw new RuntimeException('Nepodporovaný typ obrázku. Použijte JPG, PNG nebo WEBP.');
+            }
+            if ($f['size'] > 4 * 1024 * 1024) {
+                throw new RuntimeException('Obrázek je příliš velký (max 4 MB).');
+            }
+            $name = bin2hex(random_bytes(6)) . '.' . $exts[$mime];
+            $dest = $avatarDir . '/' . $name;
+            if (!move_uploaded_file($f['tmp_name'], $dest)) {
+                throw new RuntimeException('Obrázek se nepodařilo uložit.');
+            }
+            if (!empty($user['avatar'])) {
+                @unlink($avatarDir . '/' . basename((string)$user['avatar']));
+            }
+            $pdo->prepare('UPDATE ny_users SET avatar = ? WHERE id = ?')->execute([$name, $user['id']]);
+            ny_flash_set('ok', 'Profilový obrázek byl nahrán.');
+            ny_redirect('my.php');
+        }
+    } catch (Throwable $e) {
+        ny_flash_set('err', $e->getMessage());
+        ny_redirect('my.php');
+    }
+}
+
+// Refresh (avatar may have changed above; but we redirect anyway, this is defensive).
+$user = ny_current_user();
 $today = (new DateTimeImmutable('today'))->format('Y-m-d');
 
 $upcomingStmt = $pdo->prepare(
@@ -73,6 +120,31 @@ ny_render_header('Moje rezervace', 'my');
     <h1 class="page-title">Moje rezervace</h1>
     <p class="page-lead">Přehled nadcházejících lekcí a historie vašich návštěv.</p>
 </section>
+
+<div class="profile-card">
+    <?php if (!empty($user['avatar'])): ?>
+        <span class="user-avatar user-avatar--lg"><img src="assets/avatars/<?= e(rawurlencode($user['avatar'])) ?>" alt=""></span>
+    <?php else: ?>
+        <span class="user-avatar user-avatar--lg"><?= e(mb_strtoupper(mb_substr((string)$user['display_name'], 0, 1))) ?></span>
+    <?php endif; ?>
+    <div class="profile-card-info">
+        <h2><?= e($user['display_name']) ?></h2>
+        <div class="muted"><?= e($user['email']) ?><?php if (!empty($user['phone'])): ?> · <?= e($user['phone']) ?><?php endif; ?></div>
+    </div>
+    <form method="post" enctype="multipart/form-data" class="profile-card-form">
+        <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+        <input type="hidden" name="action" value="upload_avatar">
+        <input type="file" name="avatar" accept="image/jpeg,image/png,image/webp" required>
+        <button class="btn btn-secondary btn-sm" type="submit"><?= !empty($user['avatar']) ? 'Změnit obrázek' : 'Nahrát obrázek' ?></button>
+    </form>
+    <?php if (!empty($user['avatar'])): ?>
+        <form method="post" onsubmit="return confirm('Odstranit profilový obrázek?');" class="inline">
+            <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+            <input type="hidden" name="action" value="remove_avatar">
+            <button class="btn btn-ghost btn-sm" type="submit">Odstranit</button>
+        </form>
+    <?php endif; ?>
+</div>
 
 <div class="my-stats">
     <div class="my-stat"><div class="num"><?= (int)$myStats['attended'] ?></div><div class="lbl">Navštívených lekcí</div></div>

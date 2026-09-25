@@ -41,6 +41,13 @@ $fields = [
             'ga_id' => ['label' => 'Google Analytics – Measurement ID', 'type' => 'text', 'hint' => 'Formát G-XXXXXXX. Nechte prázdné pro vypnutí.'],
         ],
     ],
+    'recaptcha' => [
+        'title' => 'reCAPTCHA v3',
+        'items' => [
+            'recaptcha_site'   => ['label' => 'Site key',   'type' => 'text', 'hint' => 'Vygenerujte na https://www.google.com/recaptcha/admin (v3).'],
+            'recaptcha_secret' => ['label' => 'Secret key', 'type' => 'text', 'hint' => 'Ověření probíhá serverově. Nechte prázdné pro vypnutí.'],
+        ],
+    ],
 ];
 
 $flat = [];

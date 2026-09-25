@@ -34,7 +34,7 @@ ny_render_header('Ochrana osobních údajů', 'gdpr', [
     <p>
         Pokud se na nás budete chtít v průběhu zpracování obrátit, můžete nás kontaktovat
         na tel. čísle <a href="tel:<?= e(preg_replace('/\s+/', '', $phone)) ?>"><?= e($phone) ?></a>
-        nebo na e-mail: <a href="mailto:<?= e($email) ?>"><?= e($email) ?></a>.
+        nebo na e-mail: <?= ny_email_obf($email) ?>.
     </p>
     <p>
         Prohlašujeme, že jako správce vašich osobních údajů splňujeme zákonné povinnosti
@@ -117,7 +117,7 @@ ny_render_header('Ochrana osobních údajů', 'gdpr', [
     <p>
         V souvislosti s ochranou osobních údajů máte řadu práv. Pokud budete chtít některého
         z těchto práv využít, prosím, kontaktujte nás prostřednictvím e-mailu:
-        <a href="mailto:<?= e($email) ?>"><?= e($email) ?></a>.
+        <?= ny_email_obf($email) ?>.
     </p>
     <ul>
         <li><strong>Právo na informace</strong>, které jsou plněny již touto informační stránkou

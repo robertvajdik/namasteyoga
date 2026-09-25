@@ -14,7 +14,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pass  = (string)($_POST['password'] ?? '');
     $pass2 = (string)($_POST['password2'] ?? '');
 
-    if ($name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    if (!ny_recaptcha_verify($_POST['g-recaptcha-response'] ?? null, 'register')) {
+        $error = 'Ochrana proti robotům selhala, zkuste to prosím znovu.';
+    } elseif ($name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Vyplňte prosím jméno a platný e-mail.';
     } elseif (strlen($pass) < 8) {
         $error = 'Heslo musí mít alespoň 8 znaků.';
@@ -61,7 +63,7 @@ ny_render_header('Registrace', 'register');
     <?php if ($error): ?>
         <div class="flash flash-err"><?= $error /* may contain safe link markup */ ?></div>
     <?php endif; ?>
-    <form method="post" novalidate>
+    <form method="post" novalidate data-recaptcha="register">
         <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
         <label>Jméno
             <input type="text" name="name" value="<?= e($name) ?>" required>

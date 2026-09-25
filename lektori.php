@@ -21,7 +21,13 @@ ny_render_header('Lektoři', 'lektori');
 <div class="teacher-grid">
     <?php foreach ($teachers as $t): ?>
         <article class="teacher-card">
-            <div class="teacher-avatar" aria-hidden="true"><?= e(mb_substr((string)$t['name'], 0, 1)) ?></div>
+            <?php if (!empty($t['photo'])): ?>
+                <div class="teacher-avatar has-photo">
+                    <img src="assets/teachers/<?= e(rawurlencode($t['photo'])) ?>" alt="<?= e((string)$t['name']) ?>" loading="lazy">
+                </div>
+            <?php else: ?>
+                <div class="teacher-avatar" aria-hidden="true"><?= e(mb_substr((string)$t['name'], 0, 1)) ?></div>
+            <?php endif; ?>
             <h3 class="teacher-name"><?= e((string)$t['name']) ?></h3>
             <?php if (!empty($t['role'])): ?>
                 <div class="teacher-role"><?= e((string)$t['role']) ?></div>

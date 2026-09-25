@@ -16,6 +16,10 @@ function _returnTo(): string {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ny_csrf_check($_POST['csrf'] ?? null);
+    if (!ny_recaptcha_verify($_POST['g-recaptcha-response'] ?? null, 'login')) {
+        ny_flash_set('err', 'Ochrana proti robotům selhala, zkuste to prosím znovu.');
+        ny_redirect('login.php');
+    }
     $pdo = ny_db();
 
     if ($mode === 'registered') {
@@ -83,7 +87,7 @@ ny_render_header('Přihlášení', 'login');
         <?php if ($errors['registered']): ?>
             <div class="flash flash-err"><?= e($errors['registered']) ?></div>
         <?php endif; ?>
-        <form method="post" novalidate>
+        <form method="post" novalidate data-recaptcha="login">
             <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
             <input type="hidden" name="mode" value="registered">
             <input type="hidden" name="return_class_date" value="<?= e($returnClassDate) ?>">
@@ -104,7 +108,7 @@ ny_render_header('Přihlášení', 'login');
         <?php if ($errors['guest']): ?>
             <div class="flash flash-err"><?= e($errors['guest']) ?></div>
         <?php endif; ?>
-        <form method="post" novalidate>
+        <form method="post" novalidate data-recaptcha="login">
             <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
             <input type="hidden" name="mode" value="guest">
             <input type="hidden" name="return_class_date" value="<?= e($returnClassDate) ?>">

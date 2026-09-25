@@ -1,0 +1,12 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /admin_setup.php
+Disallow: /debug_login.php
+Disallow: /migrate.php
+Disallow: /reserve.php
+Disallow: /cancel.php
+Disallow: /newsletter.php
+Disallow: /unsubscribe.php
+Disallow: /logout.php
+
+Sitemap: /sitemap.xml

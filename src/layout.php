@@ -24,6 +24,62 @@ function ny_redirect(string $to): void {
     exit;
 }
 
+/**
+ * Bot-resistant email rendering. Emits <a class="email-obf" data-e="{base64}"> whose href
+ * gets rewritten to mailto: by JS on load. The no-JS fallback shows "user (at) domain (dot) tld".
+ */
+function ny_email_obf(?string $email, string $iconHtml = '', array $attrs = []): string {
+    $email = trim((string)$email);
+    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) return '';
+    [$user, $domain] = explode('@', $email, 2);
+    $parts    = explode('.', $domain);
+    $tld      = array_pop($parts);
+    $mid      = implode('.', $parts);
+    $fallback = e($user) . ' <span class="email-at" aria-hidden="true">(at)</span> ' . e($mid) . ' <span class="email-dot" aria-hidden="true">(dot)</span> ' . e($tld);
+    $data      = base64_encode($email);
+    $extraClass = '';
+    $extra      = '';
+    foreach ($attrs as $k => $v) {
+        if ($k === 'class') { $extraClass = ' ' . (string)$v; continue; }
+        $extra .= ' ' . e((string)$k) . '="' . e((string)$v) . '"';
+    }
+    return '<a href="#" class="email-obf' . e($extraClass) . '" data-e="' . e($data) . '" rel="nofollow"' . $extra . '>'
+         . $iconHtml
+         . '<span class="email-text">' . $fallback . '</span>'
+         . '</a>';
+}
+
+/**
+ * reCAPTCHA v3 – returns true when disabled (no keys), or verified with a good score.
+ * Fails closed (returns false) if the API cannot be reached and keys ARE configured.
+ */
+function ny_recaptcha_verify(?string $token, string $action, float $minScore = 0.5): bool {
+    $secret = trim((string)ny_setting('recaptcha_secret'));
+    if ($secret === '') return true; // not configured — treat as disabled
+    if (!$token) return false;
+
+    $ctx = stream_context_create([
+        'http' => [
+            'method'        => 'POST',
+            'header'        => "Content-Type: application/x-www-form-urlencoded\r\n",
+            'content'       => http_build_query([
+                'secret'   => $secret,
+                'response' => $token,
+                'remoteip' => $_SERVER['REMOTE_ADDR'] ?? '',
+            ]),
+            'timeout'       => 5,
+            'ignore_errors' => true,
+        ],
+    ]);
+    $raw = @file_get_contents('https://www.google.com/recaptcha/api/siteverify', false, $ctx);
+    if ($raw === false) return false;
+    $data = json_decode($raw, true);
+    if (!is_array($data) || empty($data['success'])) return false;
+    if (isset($data['action']) && $data['action'] !== $action) return false;
+    $score = isset($data['score']) ? (float)$data['score'] : 0.0;
+    return $score >= $minScore;
+}
+
 function ny_week_start(?string $iso): DateTimeImmutable {
     $ref = $iso ? new DateTimeImmutable($iso) : new DateTimeImmutable('today');
     $dow = (int)$ref->format('N');
@@ -44,6 +100,7 @@ function ny_icon(string $name, int $size = 18): string {
         'chevron-left'  => '<polyline points="15 18 9 12 15 6"/>',
         'chevron-right' => '<polyline points="9 18 15 12 9 6"/>',
         'chevron-down'  => '<polyline points="6 9 12 15 18 9"/>',
+        'image'     => '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',
         'calendar'  => '<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
         'user'      => '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
         'log-out'   => '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
@@ -80,11 +137,11 @@ function ny_send_security_headers(): void {
         "form-action 'self'",
         "frame-ancestors 'self'",
         "img-src 'self' data:",
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
         "font-src 'self' https://fonts.gstatic.com",
-        "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com",
-        "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com",
-        "frame-src 'self' https://www.openstreetmap.org",
+        "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://www.google.com https://www.gstatic.com https://cdn.jsdelivr.net",
+        "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com https://www.google.com",
+        "frame-src 'self' https://www.openstreetmap.org https://www.google.com",
         "object-src 'none'",
     ];
     header('Content-Security-Policy: ' . implode('; ', $csp));
@@ -152,12 +209,47 @@ gtag('js', new Date());
 gtag('config', <?= json_encode($gaId) ?>, { anonymize_ip: true });
 </script>
 <?php endif; ?>
+<?php $rcSite = trim((string)($s['recaptcha_site'] ?? '')); if ($rcSite !== ''): ?>
+<script src="https://www.google.com/recaptcha/api.js?render=<?= e($rcSite) ?>" async defer></script>
+<script>
+(function () {
+    var siteKey = <?= json_encode($rcSite) ?>;
+    function inject(form) {
+        if (form.dataset.recaptchaBound) return;
+        form.dataset.recaptchaBound = '1';
+        var action = form.getAttribute('data-recaptcha');
+        form.addEventListener('submit', function (e) {
+            if (form.dataset.recaptchaReady === '1') return;
+            e.preventDefault();
+            if (typeof grecaptcha === 'undefined') { form.dataset.recaptchaReady = '1'; form.submit(); return; }
+            grecaptcha.ready(function () {
+                grecaptcha.execute(siteKey, { action: action }).then(function (token) {
+                    var input = form.querySelector('input[name="g-recaptcha-response"]');
+                    if (!input) {
+                        input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'g-recaptcha-response';
+                        form.appendChild(input);
+                    }
+                    input.value = token;
+                    form.dataset.recaptchaReady = '1';
+                    form.submit();
+                });
+            });
+        });
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('form[data-recaptcha]').forEach(inject);
+    });
+})();
+</script>
+<?php endif; ?>
 </head>
 <body<?= $overlayHdr ? ' class="has-overlay-header"' : '' ?>>
 <header class="site-header<?= $overlayHdr ? ' overlay' : '' ?>">
     <div class="topbar">
         <a href="tel:<?= e(preg_replace('/\s+/', '', $phone)) ?>"><?= ny_icon('phone', 14) ?> <?= e($phone) ?></a>
-        <a href="mailto:<?= e($email) ?>" class="topbar-mail"><?= ny_icon('mail', 14) ?> <?= e($email) ?></a>
+        <?= ny_email_obf($email, ny_icon('mail', 14) . ' ', ['class' => 'topbar-mail']) ?>
         <span class="spacer"></span>
         <?php if ($fbUrl): ?><a href="<?= e($fbUrl) ?>" aria-label="Facebook" target="_blank" rel="noopener"><?= ny_icon('facebook', 15) ?></a><?php endif; ?>
         <?php if ($igUrl): ?><a href="<?= e($igUrl) ?>" aria-label="Instagram" target="_blank" rel="noopener"><?= ny_icon('instagram', 15) ?></a><?php endif; ?>
@@ -177,6 +269,7 @@ gtag('config', <?= json_encode($gaId) ?>, { anonymize_ip: true });
             <a href="individualni.php" class="<?= $active === 'individ'    ? 'is-active' : '' ?>">Individuální</a>
             <a href="masaze.php"       class="<?= $active === 'masaze'     ? 'is-active' : '' ?>">Masáže</a>
             <a href="lektori.php"      class="<?= $active === 'lektori'    ? 'is-active' : '' ?>">Lektoři</a>
+            <a href="galerie.php"      class="<?= $active === 'galerie'    ? 'is-active' : '' ?>">Galerie</a>
             <a href="cenik.php"        class="<?= $active === 'cenik'      ? 'is-active' : '' ?>">Ceník</a>
             <a href="kontakt.php"      class="<?= $active === 'kontakt'    ? 'is-active' : '' ?>">Kontakt</a>
             <?php if ($user): ?>
@@ -184,7 +277,14 @@ gtag('config', <?= json_encode($gaId) ?>, { anonymize_ip: true });
                 <?php if (ny_is_admin($user)): ?>
                     <a href="admin/index.php">Admin</a>
                 <?php endif; ?>
-                <span class="who"><?= e($user['display_name']) ?><?php if ((int)$user['is_guest'] === 1): ?> <em>(host)</em><?php endif; ?></span>
+                <span class="who">
+                    <?php if (!empty($user['avatar'])): ?>
+                        <span class="user-avatar"><img src="assets/avatars/<?= e(rawurlencode($user['avatar'])) ?>" alt=""></span>
+                    <?php else: ?>
+                        <span class="user-avatar"><?= e(mb_strtoupper(mb_substr((string)$user['display_name'], 0, 1))) ?></span>
+                    <?php endif; ?>
+                    <?= e($user['display_name']) ?><?php if ((int)$user['is_guest'] === 1): ?> <em>(host)</em><?php endif; ?>
+                </span>
                 <a href="logout.php" aria-label="Odhlásit"><?= ny_icon('log-out', 18) ?></a>
             <?php else: ?>
                 <a href="login.php"    class="<?= $active === 'login'    ? 'is-active' : '' ?>">Přihlášení</a>
@@ -223,6 +323,7 @@ function ny_render_footer(bool $bare = false): void {
             <a href="individualni.php">Individuální lekce</a>
             <a href="masaze.php">Masáže</a>
             <a href="lektori.php">Lektoři</a>
+            <a href="galerie.php">Galerie</a>
         </div>
         <div class="foot-col">
             <h4>Informace</h4>
@@ -235,12 +336,24 @@ function ny_render_footer(bool $bare = false): void {
         <div class="foot-col">
             <h4>Kontakt</h4>
             <a href="tel:<?= e(preg_replace('/\s+/', '', $s['phone'])) ?>"><?= ny_icon('phone', 14) ?> <?= e($s['phone']) ?></a>
-            <a href="mailto:<?= e($s['email']) ?>"><?= ny_icon('mail', 14) ?> <?= e($s['email']) ?></a>
+            <?= ny_email_obf($s['email'], ny_icon('mail', 14) . ' ') ?>
             <div class="social">
                 <?php if ($s['instagram_url']): ?><a href="<?= e($s['instagram_url']) ?>" aria-label="Instagram" target="_blank" rel="noopener"><?= ny_icon('instagram', 22) ?></a><?php endif; ?>
                 <?php if ($s['facebook_url']): ?><a href="<?= e($s['facebook_url']) ?>" aria-label="Facebook" target="_blank" rel="noopener"><?= ny_icon('facebook', 22) ?></a><?php endif; ?>
                 <?php if ($s['youtube_url']): ?><a href="<?= e($s['youtube_url']) ?>" aria-label="YouTube" target="_blank" rel="noopener"><?= ny_icon('youtube', 22) ?></a><?php endif; ?>
             </div>
+        </div>
+        <div class="foot-col foot-col--newsletter">
+            <h4>Newsletter</h4>
+            <p class="foot-tag">Občasné novinky o rozvrhu, akcích a workshopech.</p>
+            <form class="newsletter-form" method="post" action="newsletter.php" data-recaptcha="newsletter">
+                <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+                <input type="hidden" name="source" value="footer">
+                <label class="visually-hidden" for="nl-email">E-mail</label>
+                <input id="nl-email" type="email" name="email" placeholder="váš e-mail" required>
+                <button class="btn btn-primary btn-sm" type="submit">Přihlásit</button>
+            </form>
+            <small class="foot-tag">Odhlásit se můžete kdykoli.</small>
         </div>
     </div>
     <div class="foot-legal">
@@ -281,6 +394,16 @@ function ny_render_footer(bool $bare = false): void {
     } else {
         document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('is-in'); });
     }
+
+    // Deobfuscate email links – runs client-side so plaintext addresses never appear in HTML.
+    document.querySelectorAll('a.email-obf[data-e]').forEach(function (a) {
+        try {
+            var addr = atob(a.getAttribute('data-e'));
+            a.setAttribute('href', 'mailto:' + addr);
+            var t = a.querySelector('.email-text');
+            if (t) t.textContent = addr;
+        } catch (e) {}
+    });
 
     // Cookie banner (localStorage-based).
     var banner = document.getElementById('cookie-banner');

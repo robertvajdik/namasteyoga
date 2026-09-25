@@ -12,6 +12,28 @@ $mapLat   = (float)($s['map_lat'] ?: 49.0255);
 $mapLon   = (float)($s['map_lon'] ?: 17.6512);
 $mapDelta = 0.008;
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    ny_csrf_check($_POST['csrf'] ?? null);
+    $name  = trim((string)($_POST['name'] ?? ''));
+    $from  = strtolower(trim((string)($_POST['email'] ?? '')));
+    $msg   = trim((string)($_POST['message'] ?? ''));
+
+    if (!ny_recaptcha_verify($_POST['g-recaptcha-response'] ?? null, 'kontakt')) {
+        ny_flash_set('err', 'Ochrana proti robotům selhala, zkuste to prosím znovu.');
+    } elseif ($name === '' || !filter_var($from, FILTER_VALIDATE_EMAIL) || $msg === '') {
+        ny_flash_set('err', 'Vyplňte prosím jméno, platný e-mail a zprávu.');
+    } else {
+        $subject = '=?UTF-8?B?' . base64_encode('Zpráva z webu – ' . $name) . '?=';
+        $body    = "Od: $name <$from>\r\n\r\n" . $msg;
+        $headers = 'From: ' . $email . "\r\n"
+                 . 'Reply-To: ' . $from . "\r\n"
+                 . "Content-Type: text/plain; charset=UTF-8\r\n";
+        @mail($email, $subject, $body, $headers);
+        ny_flash_set('ok', 'Děkujeme, zpráva byla odeslána.');
+    }
+    ny_redirect('kontakt.php');
+}
+
 ny_render_header('Kontakt', 'kontakt');
 ?>
 <section class="section-title-block reveal">
@@ -25,7 +47,7 @@ ny_render_header('Kontakt', 'kontakt');
         <h2>Kde nás najdete</h2>
         <p class="contact-line"><?= ny_icon('calendar', 16) ?> <?= e($opening) ?></p>
         <p class="contact-line"><?= ny_icon('phone', 16) ?> <a href="tel:<?= e(preg_replace('/\s+/', '', $phone)) ?>"><?= e($phone) ?></a></p>
-        <p class="contact-line"><?= ny_icon('mail', 16) ?> <a href="mailto:<?= e($email) ?>"><?= e($email) ?></a></p>
+        <p class="contact-line"><?= ny_email_obf($email, ny_icon('mail', 16) . ' ') ?></p>
         <p class="contact-line">Adresa: <?= e($address) ?></p>
         <div class="map-embed">
             <iframe
@@ -38,7 +60,7 @@ ny_render_header('Kontakt', 'kontakt');
     <section class="card muted reveal">
         <h2>Napište nám</h2>
         <p class="card-lead">Rezervaci na lekci prosím zadejte v <a href="rezervace.php">kalendáři</a>. Formulář slouží pro obecné dotazy.</p>
-        <form method="post" novalidate>
+        <form method="post" novalidate data-recaptcha="kontakt">
             <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
             <label>Jméno
                 <input type="text" name="name" required>
