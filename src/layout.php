@@ -319,6 +319,7 @@ gtag('config', <?= json_encode($gaId) ?>, { anonymize_ip: true });
             <a href="lektori.php"      class="<?= $active === 'lektori'    ? 'is-active' : '' ?>"><?= e(t('nav.lektori')) ?></a>
             <a href="galerie.php"      class="<?= $active === 'galerie'    ? 'is-active' : '' ?>"><?= e(t('nav.galerie')) ?></a>
             <a href="cenik.php"        class="<?= $active === 'cenik'      ? 'is-active' : '' ?>"><?= e(t('nav.cenik')) ?></a>
+            <a href="poukaz.php"       class="<?= $active === 'poukaz'     ? 'is-active' : '' ?>"><?= e(t('nav.poukaz')) ?></a>
             <a href="kontakt.php"      class="<?= $active === 'kontakt'    ? 'is-active' : '' ?>"><?= e(t('nav.kontakt')) ?></a>
             <?php if ($user): ?>
                 <a href="my.php" class="<?= $active === 'my' ? 'is-active' : '' ?>"><?= e(t('nav.my')) ?></a>
@@ -363,6 +364,7 @@ function ny_render_footer(bool $bare = false): void {
         <div class="foot-col">
             <h4><?= e(t('footer.info')) ?></h4>
             <a href="cenik.php"><?= e(t('nav.cenik')) ?></a>
+            <a href="poukaz.php"><?= e(t('nav.poukaz')) ?></a>
             <a href="rezervace.php"><?= e(t('nav.schedule')) ?></a>
             <a href="kontakt.php"><?= e(t('nav.kontakt')) ?></a>
             <a href="podminky.php"><?= e(t('footer.terms')) ?></a>

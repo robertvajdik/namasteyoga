@@ -55,6 +55,32 @@ $fields = [
             'mail_admin' => ['label' => 'Adresa admina pro notifikace', 'type' => 'email', 'hint' => 'Záložní hodnota. Přednost má nastavení v config.php (mail.admin_notify). Sem chodí upozornění o nové registraci apod.'],
         ],
     ],
+    'payments' => [
+        'title' => 'Platba – dárkový poukaz',
+        'items' => [
+            'bank_account_number' => [
+                'label' => 'Číslo účtu',
+                'type'  => 'text',
+                'hint'  => 'Např. 1234567890/0800 – zobrazí se u dárkového poukazu.',
+            ],
+            'bank_iban' => [
+                'label' => 'IBAN',
+                'type'  => 'text',
+                'hint'  => 'Např. CZ6508000000001234567890. Používá se pro QR platbu (bez mezer).',
+            ],
+            'bank_holder' => [
+                'label' => 'Jméno majitele účtu',
+                'type'  => 'text',
+                'hint'  => 'Zobrazí se pod platebními údaji. Nepovinné.',
+            ],
+            'voucher_validity_months' => [
+                'label' => 'Platnost poukazu (měsíců)',
+                'type'  => 'number',
+                'min'   => 1,
+                'hint'  => 'Zobrazí se pod platebními údaji. Výchozí 2 měsíce od data vystavení.',
+            ],
+        ],
+    ],
     'reminders' => [
         'title' => 'Připomínky lekcí',
         'items' => [

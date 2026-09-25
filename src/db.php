@@ -53,6 +53,10 @@ function ny_settings_defaults(): array {
         'mail_admin'       => '',
         'reminder_hours'   => '24',
         'cron_key'         => '',
+        'bank_account_number'    => '',
+        'bank_iban'              => '',
+        'bank_holder'            => '',
+        'voucher_validity_months'=> '2',
     ];
 }
 
@@ -224,6 +228,26 @@ function ny_ensure_content_tables(): void {
             PRIMARY KEY (id),
             UNIQUE KEY token_hash (token_hash),
             KEY user_id (user_id)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS ny_vouchers (
+            id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            code         VARCHAR(32) NOT NULL,
+            buyer_name   VARCHAR(160) NOT NULL DEFAULT "",
+            buyer_email  VARCHAR(190) NOT NULL DEFAULT "",
+            for_whom     VARCHAR(160) NOT NULL DEFAULT "",
+            amount_czk   INT NOT NULL DEFAULT 0,
+            amount_raw   VARCHAR(80) NOT NULL DEFAULT "",
+            message      TEXT NULL,
+            status       ENUM("pending","paid","issued","redeemed","cancelled") NOT NULL DEFAULT "pending",
+            valid_until  DATE NULL,
+            note         TEXT NULL,
+            created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY code (code),
+            KEY status (status)
          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
     );
     $pdo->exec(
