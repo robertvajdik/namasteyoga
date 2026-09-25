@@ -315,6 +315,7 @@ gtag('config', <?= json_encode($gaId) ?>, { anonymize_ip: true });
             <a href="lekce.php"        class="<?= $active === 'lekce'      ? 'is-active' : '' ?>"><?= e(t('nav.lekce')) ?></a>
             <a href="individualni.php" class="<?= $active === 'individ'    ? 'is-active' : '' ?>"><?= e(t('nav.individ')) ?></a>
             <a href="masaze.php"       class="<?= $active === 'masaze'     ? 'is-active' : '' ?>"><?= e(t('nav.masaze')) ?></a>
+            <a href="puppyvibe.php"    class="<?= $active === 'puppyvibe'  ? 'is-active' : '' ?>"><?= e(t('nav.puppyvibe')) ?></a>
             <a href="lektori.php"      class="<?= $active === 'lektori'    ? 'is-active' : '' ?>"><?= e(t('nav.lektori')) ?></a>
             <a href="galerie.php"      class="<?= $active === 'galerie'    ? 'is-active' : '' ?>"><?= e(t('nav.galerie')) ?></a>
             <a href="cenik.php"        class="<?= $active === 'cenik'      ? 'is-active' : '' ?>"><?= e(t('nav.cenik')) ?></a>
