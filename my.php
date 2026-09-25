@@ -27,6 +27,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ny_flash_set('ok', 'Profilový obrázek byl odstraněn.');
             ny_redirect('my.php');
         }
+        if ($act === 'newsletter_toggle') {
+            $wants = !empty($_POST['subscribe']);
+            $email = (string)($user['email'] ?? '');
+            if ($wants) {
+                ny_newsletter_subscribe($email, (string)$user['display_name'], 'profile');
+                ny_flash_set('ok', 'Novinky Vám budou chodit na e-mail.');
+            } else {
+                ny_newsletter_unsubscribe_by_email($email);
+                ny_flash_set('ok', 'Odběr novinek byl zrušen.');
+            }
+            ny_redirect('my.php');
+        }
         if ($act === 'upload_avatar' && isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
             $f = $_FILES['avatar'];
             $mime = @mime_content_type($f['tmp_name']) ?: '';
@@ -111,6 +123,8 @@ if (!empty($user['created_at'])) {
     $since = new DateTimeImmutable($myStats['first_at']);
 }
 
+$isSubscribed = ny_newsletter_is_subscribed((string)$user['email']);
+
 $daysShort = [1 => 'PO', 2 => 'ÚT', 3 => 'ST', 4 => 'ČT', 5 => 'PÁ', 6 => 'SO', 7 => 'NE'];
 
 ny_render_header('Moje rezervace', 'my');
@@ -158,6 +172,23 @@ ny_render_header('Moje rezervace', 'my');
         <div class="num num-text"><?= $since ? e($since->format('n / Y')) : '—' ?></div>
         <div class="lbl">Členem od</div>
     </div>
+</div>
+
+<div class="pref-card">
+    <div class="pref-card-info">
+        <h3>Odběr novinek</h3>
+        <p class="muted">Občasné informace o rozvrhu, workshopech a akcích na e-mail <?= e($user['email']) ?>.</p>
+    </div>
+    <form method="post" class="pref-card-form">
+        <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+        <input type="hidden" name="action" value="newsletter_toggle">
+        <label class="switch">
+            <input type="checkbox" name="subscribe" value="1" <?= $isSubscribed ? 'checked' : '' ?> onchange="this.form.submit()">
+            <span class="switch-track"><span class="switch-knob"></span></span>
+            <span class="switch-label"><?= $isSubscribed ? 'Odebíráte' : 'Neodebíráte' ?></span>
+        </label>
+        <noscript><button class="btn btn-secondary btn-sm" type="submit">Uložit</button></noscript>
+    </form>
 </div>
 
 <h2 class="section-h">Nadcházející</h2>

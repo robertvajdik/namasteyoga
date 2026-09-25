@@ -73,6 +73,18 @@ button { font-family: inherit; }
 .section-h-gap { margin-top: 40px; }
 .empty-state-title { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--text-strong); }
 .empty-state-hint { margin: 10px 0 20px; }
+
+.newsletter-thanks { max-width: 560px; margin: 0 auto; padding: 32px 24px; }
+.newsletter-thanks-icon {
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    width: 72px; height: 72px;
+    margin: 0 auto 12px;
+    border-radius: 999px;
+    background: rgba(184,137,75,.12);
+    color: var(--accent, #b8894b);
+}
+.newsletter-thanks-actions { justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
 .btn-form { margin-top: 16px; }
 .hint-form { margin-top: 14px; }
 .eyebrow {
@@ -992,6 +1004,16 @@ form textarea:focus { outline: none; border-color: var(--sage-400); box-shadow: 
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
     overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
 }
+.hp-field {
+    position: absolute !important;
+    left: -10000px; top: auto;
+    width: 1px; height: 1px;
+    overflow: hidden;
+}
+.captcha-field input {
+    max-width: 120px;
+    letter-spacing: 2px;
+}
 .email-obf { unicode-bidi: bidi-override; }
 .email-obf .email-at, .email-obf .email-dot { font-style: normal; }
 .foot-legal {
@@ -1355,6 +1377,42 @@ img.teacher-thumb { display: inline-block; }
 .profile-card-info .muted { color: var(--text-muted); font-size: 14px; }
 .profile-card-form { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .profile-card-form input[type=file] { max-width: 220px; font-size: 13px; }
+
+.pref-card {
+    display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+    background: var(--surface-card); border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg); padding: 16px 22px;
+    box-shadow: var(--shadow-soft); margin-bottom: 24px;
+}
+.pref-card-info { flex: 1 1 260px; min-width: 0; }
+.pref-card-info h3 { font-size: 17px; margin: 0 0 4px; }
+.pref-card-info .muted { color: var(--text-muted); font-size: 13px; margin: 0; }
+.pref-card-form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.switch {
+    display: inline-flex; align-items: center; gap: 10px;
+    cursor: pointer; user-select: none;
+}
+.switch input { position: absolute; opacity: 0; pointer-events: none; }
+.switch .switch-track {
+    position: relative;
+    width: 44px; height: 24px;
+    background: #d9d3c4;
+    border-radius: 999px;
+    transition: background .18s ease;
+    flex: none;
+}
+.switch .switch-knob {
+    position: absolute; top: 2px; left: 2px;
+    width: 20px; height: 20px;
+    background: #fff;
+    border-radius: 999px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    transition: transform .18s ease;
+}
+.switch input:checked + .switch-track { background: var(--accent, #b8894b); }
+.switch input:checked + .switch-track .switch-knob { transform: translateX(20px); }
+.switch input:focus-visible + .switch-track { box-shadow: 0 0 0 3px rgba(184,137,75,.25); }
+.switch .switch-label { font-size: 14px; color: var(--text-muted); }
 
 /* Checkbox row (used in edit forms). */
 .checkbox-inline {

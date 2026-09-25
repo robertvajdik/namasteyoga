@@ -81,6 +81,27 @@ function ny_recaptcha_verify(?string $token, string $action, float $minScore = 0
     return $score >= $minScore;
 }
 
+/**
+ * Lightweight offline "human check" — a math question stored in the session.
+ * Runs independently of reCAPTCHA so the form is still protected on installs
+ * where the reCAPTCHA keys are not filled in.
+ */
+function ny_captcha_generate(string $scope): array {
+    ny_session_start();
+    $a = random_int(2, 9);
+    $b = random_int(2, 9);
+    $_SESSION['captcha'][$scope] = $a + $b;
+    return ['a' => $a, 'b' => $b];
+}
+
+function ny_captcha_verify(string $scope, string $answer): bool {
+    ny_session_start();
+    $expected = $_SESSION['captcha'][$scope] ?? null;
+    unset($_SESSION['captcha'][$scope]);
+    if ($expected === null || $answer === '') return false;
+    return (int)$answer === (int)$expected;
+}
+
 function ny_week_start(?string $iso): DateTimeImmutable {
     $ref = $iso ? new DateTimeImmutable($iso) : new DateTimeImmutable('today');
     $dow = (int)$ref->format('N');

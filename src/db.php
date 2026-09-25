@@ -332,6 +332,33 @@ function ny_newsletter_unsubscribe_by_token(string $token): bool {
     return $stmt->rowCount() > 0;
 }
 
+function ny_newsletter_unsubscribe_by_email(string $email): bool {
+    ny_ensure_content_tables();
+    $email = strtolower(trim($email));
+    if ($email === '') return false;
+    $pdo = ny_db();
+    $stmt = $pdo->prepare('UPDATE ny_newsletter_subscribers SET unsubscribed_at = NOW() WHERE email = ? AND unsubscribed_at IS NULL');
+    $stmt->execute([$email]);
+    return $stmt->rowCount() > 0;
+}
+
+/**
+ * Returns whether the given e-mail is an active (confirmed, non-unsubscribed)
+ * newsletter recipient. Used by the profile page to render the toggle state.
+ */
+function ny_newsletter_is_subscribed(string $email): bool {
+    ny_ensure_content_tables();
+    $email = strtolower(trim($email));
+    if ($email === '') return false;
+    $stmt = ny_db()->prepare(
+        'SELECT 1 FROM ny_newsletter_subscribers
+          WHERE email = ? AND unsubscribed_at IS NULL AND confirmed_at IS NOT NULL
+          LIMIT 1'
+    );
+    $stmt->execute([$email]);
+    return (bool)$stmt->fetchColumn();
+}
+
 /**
  * Absolute base URL of the site (scheme + host + subdir). Used to build links
  * inside outgoing e-mails, where relative URLs would be useless.

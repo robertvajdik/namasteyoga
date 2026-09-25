@@ -14,11 +14,22 @@ $mapDelta = 0.008;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ny_csrf_check($_POST['csrf'] ?? null);
-    $name  = trim((string)($_POST['name'] ?? ''));
-    $from  = strtolower(trim((string)($_POST['email'] ?? '')));
-    $msg   = trim((string)($_POST['message'] ?? ''));
+    $name    = trim((string)($_POST['name'] ?? ''));
+    $from    = strtolower(trim((string)($_POST['email'] ?? '')));
+    $msg     = trim((string)($_POST['message'] ?? ''));
+    $captcha = trim((string)($_POST['captcha'] ?? ''));
+    $hp      = trim((string)($_POST['website'] ?? '')); // honeypot — bots fill this
 
-    if (!ny_recaptcha_verify($_POST['g-recaptcha-response'] ?? null, 'kontakt')) {
+    if ($hp !== '') {
+        // Silently drop bot submissions but still confirm to the user so we
+        // don't leak the honeypot's existence.
+        ny_flash_set('ok', 'Děkujeme, zpráva byla odeslána.');
+        ny_redirect('kontakt.php');
+    }
+
+    if (!ny_captcha_verify('kontakt', $captcha)) {
+        ny_flash_set('err', 'Kontrolní součet nesouhlasí. Zkuste to prosím znovu.');
+    } elseif (!ny_recaptcha_verify($_POST['g-recaptcha-response'] ?? null, 'kontakt')) {
         ny_flash_set('err', 'Ochrana proti robotům selhala, zkuste to prosím znovu.');
     } elseif ($name === '' || !filter_var($from, FILTER_VALIDATE_EMAIL) || $msg === '') {
         ny_flash_set('err', 'Vyplňte prosím jméno, platný e-mail a zprávu.');
@@ -33,6 +44,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     ny_redirect('kontakt.php');
 }
+
+$captcha = ny_captcha_generate('kontakt');
 
 ny_render_header('Kontakt', 'kontakt');
 ?>
@@ -88,6 +101,14 @@ ny_render_header('Kontakt', 'kontakt');
             </label>
             <label>Zpráva
                 <textarea name="message" rows="4" required></textarea>
+            </label>
+            <div class="hp-field" aria-hidden="true">
+                <label>Website (nechte prázdné)
+                    <input type="text" name="website" tabindex="-1" autocomplete="off">
+                </label>
+            </div>
+            <label class="captcha-field">Kontrolní otázka: kolik je <?= (int)$captcha['a'] ?> + <?= (int)$captcha['b'] ?>?
+                <input type="text" name="captcha" inputmode="numeric" pattern="[0-9]+" autocomplete="off" required>
             </label>
             <button class="btn btn-primary btn-form" type="submit">Odeslat</button>
         </form>

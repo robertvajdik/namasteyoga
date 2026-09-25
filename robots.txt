@@ -6,6 +6,7 @@ Disallow: /migrate.php
 Disallow: /reserve.php
 Disallow: /cancel.php
 Disallow: /newsletter.php
+Disallow: /newsletter-thanks.php
 Disallow: /unsubscribe.php
 Disallow: /logout.php
 Disallow: /forgot.php
