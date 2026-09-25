@@ -377,18 +377,6 @@ function ny_render_footer(bool $bare = false): void {
                 <?php if ($s['youtube_url']): ?><a href="<?= e($s['youtube_url']) ?>" aria-label="YouTube" target="_blank" rel="noopener"><?= ny_icon('youtube', 22) ?></a><?php endif; ?>
             </div>
         </div>
-        <div class="foot-col foot-col--newsletter">
-            <h4><?= e(t('footer.newsletter')) ?></h4>
-            <p class="foot-tag"><?= e(t('footer.newsletter.desc')) ?></p>
-            <form class="newsletter-form" method="post" action="newsletter.php" data-recaptcha="newsletter">
-                <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
-                <input type="hidden" name="source" value="footer">
-                <label class="visually-hidden" for="nl-email">E-mail</label>
-                <input id="nl-email" type="email" name="email" placeholder="<?= e(t('footer.newsletter.email')) ?>" required>
-                <button class="btn btn-primary btn-sm" type="submit"><?= e(t('footer.newsletter.submit')) ?></button>
-            </form>
-            <small class="foot-tag"><?= e(t('footer.newsletter.small')) ?></small>
-        </div>
     </div>
     <div class="foot-legal">
         <div><?= e(t('footer.legal', date('Y'))) ?></div>

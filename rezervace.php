@@ -131,10 +131,16 @@ ny_render_header('Rezervace', 'schedule');
             $cat      = ny_category((string)$c['name']);
         ?>
             <?php
-                $roster = $rosters[$key] ?? [];
-                $rosterTitle = $c['name'] . ' · ' . $date->format('j. n.') . ' · ' . substr($c['start_time'], 0, 5);
+                $roster        = $rosters[$key] ?? [];
+                $rosterTitle   = $c['name'] . ' · ' . $date->format('j. n.') . ' · ' . substr($c['start_time'], 0, 5);
+                $canShowRoster = $user && $taken > 0;
             ?>
-            <article class="class-card <?= $left === 0 ? 'is-full' : '' ?>" data-cat="<?= e($cat) ?>">
+            <article class="class-card <?= $left === 0 ? 'is-full' : '' ?> <?= $canShowRoster ? 'has-roster' : '' ?>"
+                     data-cat="<?= e($cat) ?>"
+                     <?php if ($canShowRoster): ?>
+                     data-roster='<?= e(json_encode($roster, JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT)) ?>'
+                     data-title="<?= e($rosterTitle) ?>"
+                     <?php endif; ?>>
                 <div class="time"><?= e(substr($c['start_time'], 0, 5)) ?> – <?= e(substr($c['end_time'], 0, 5)) ?></div>
                 <div class="title"><?= e($c['name']) ?></div>
                 <div class="meta">
@@ -149,11 +155,10 @@ ny_render_header('Rezervace', 'schedule');
                         <span class="badge">Volno: <?= $left ?> / <?= $capacity ?></span>
                     <?php endif; ?>
 
-                    <?php if ($user && $taken > 0): ?>
-                        <button type="button" class="roster-link"
-                                data-roster='<?= e(json_encode($roster, JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT)) ?>'
-                                data-title="<?= e($rosterTitle) ?>"
-                                aria-haspopup="dialog">Kdo tam bude? (<?= $taken ?>)</button>
+                    <?php if ($canShowRoster): ?>
+                        <button type="button" class="roster-link" aria-haspopup="dialog">
+                            <?= ny_icon('user', 12) ?> Kdo jde? (<?= $taken ?>)
+                        </button>
                     <?php endif; ?>
 
                     <?php if ($isPast): ?>
@@ -185,16 +190,17 @@ ny_render_header('Rezervace', 'schedule');
 </div>
 
 <?php if ($user): ?>
-<dialog id="roster-modal" class="roster-modal" aria-labelledby="roster-title">
-    <form method="dialog" class="roster-modal-inner">
+<div id="roster-modal" class="roster-modal" role="dialog" aria-modal="true" aria-labelledby="roster-title" hidden>
+    <div class="roster-modal-backdrop" data-roster-close></div>
+    <div class="roster-modal-inner" role="document">
         <header class="roster-modal-head">
             <h3 id="roster-title" class="roster-modal-title">Účastníci lekce</h3>
-            <button type="submit" class="roster-modal-close" aria-label="Zavřít">×</button>
+            <button type="button" class="roster-modal-close" aria-label="Zavřít" data-roster-close>×</button>
         </header>
         <ul id="roster-list" class="roster-list"></ul>
         <p id="roster-empty" class="roster-empty hint" hidden>Zatím nikdo přihlášen.</p>
-    </form>
-</dialog>
+    </div>
+</div>
 <script>
 (function () {
     var modal   = document.getElementById('roster-modal');
@@ -203,7 +209,7 @@ ny_render_header('Rezervace', 'schedule');
     var emptyEl = document.getElementById('roster-empty');
     if (!modal || !listEl) return;
 
-    function open(title, names) {
+    function openModal(title, names) {
         titleEl.textContent = title || 'Účastníci lekce';
         listEl.innerHTML = '';
         if (!names || !names.length) {
@@ -217,25 +223,39 @@ ny_render_header('Rezervace', 'schedule');
                 listEl.appendChild(li);
             });
         }
-        if (typeof modal.showModal === 'function') {
-            modal.showModal();
-        } else {
-            modal.setAttribute('open', '');
-        }
+        modal.hidden = false;
+        document.body.classList.add('has-roster-open');
+    }
+    function closeModal() {
+        modal.hidden = true;
+        document.body.classList.remove('has-roster-open');
     }
 
     document.addEventListener('click', function (e) {
+        if (e.target.closest('[data-roster-close]')) { closeModal(); return; }
+
+        // Direct trigger button always opens.
         var btn = e.target.closest('.roster-link');
-        if (!btn) {
-            // Click on backdrop closes the dialog.
-            if (e.target === modal && typeof modal.close === 'function') modal.close();
-            return;
+        var card;
+        if (btn) {
+            card = btn.closest('.class-card');
+        } else {
+            // Whole card is clickable when it carries a roster — except when the
+            // click landed on a form control or link (reserve, cancel, login).
+            card = e.target.closest('.class-card.has-roster');
+            if (!card) return;
+            if (e.target.closest('button, a, input, form')) return;
         }
+        if (!card) return;
         e.preventDefault();
         var names = [];
-        try { names = JSON.parse(btn.getAttribute('data-roster') || '[]'); }
+        try { names = JSON.parse(card.getAttribute('data-roster') || '[]'); }
         catch (err) { names = []; }
-        open(btn.getAttribute('data-title'), names);
+        openModal(card.getAttribute('data-title'), names);
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !modal.hidden) closeModal();
     });
 })();
 </script>

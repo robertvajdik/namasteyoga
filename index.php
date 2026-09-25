@@ -150,19 +150,4 @@ ny_render_header('Rezervace', 'schedule');
 <?php endfor; ?>
 </div>
 
-<section class="card newsletter newsletter-cta">
-    <div class="newsletter-copy">
-        <div class="eyebrow">Buďte v obraze</div>
-        <h3>Novinky ze studia rovnou do e-mailu</h3>
-        <p>Rozvrh, chystané workshopy a tipy na sezónní lekce – jednou za čas, žádný spam.</p>
-    </div>
-    <form class="newsletter-form" method="post" action="newsletter.php" data-recaptcha="newsletter">
-        <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
-        <input type="hidden" name="source" value="landing">
-        <label class="visually-hidden" for="nl-landing-email">E-mail</label>
-        <input id="nl-landing-email" type="email" name="email" placeholder="vas@email.cz" required>
-        <button class="btn btn-primary" type="submit">Odebírat</button>
-    </form>
-</section>
-
 <?php ny_render_footer();

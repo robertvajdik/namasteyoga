@@ -538,10 +538,9 @@ function ny_reminders_send_due(?int $overrideHours = null): int {
     $sent    = 0;
 
     while ($r = $stmt->fetch()) {
-        // Guests without an e-mail cannot receive anything — mark anyway so we
-        // don't keep re-selecting the row forever.
-        if ((int)($r['is_guest'] ?? 0) === 1 || empty($r['email'])
-            || !filter_var($r['email'], FILTER_VALIDATE_EMAIL)) {
+        // Skip rows we can't e-mail (missing / malformed address). Hosts count
+        // as recipients — they gave us a validated e-mail at guest login.
+        if (empty($r['email']) || !filter_var($r['email'], FILTER_VALIDATE_EMAIL)) {
             $mark->execute([$r['id']]);
             continue;
         }

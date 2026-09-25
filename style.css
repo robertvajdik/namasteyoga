@@ -1537,27 +1537,48 @@ img.teacher-thumb { display: inline-block; }
     .newsletter-cta { grid-template-columns: 1fr; padding: 22px 20px; margin-top: 28px; }
 }
 
-/* Class-card "who's going?" link + roster modal. */
+/* Class-card "who's going?" pill + roster modal. */
+.class-card.has-roster { cursor: pointer; }
 .roster-link {
-    display: inline-flex; align-items: center; gap: 4px;
-    background: none; border: 0; padding: 4px 6px;
-    color: var(--text-muted); font: 600 12px/1 var(--font-body);
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--sand-100); border: 1px solid var(--border-subtle);
+    padding: 4px 10px; border-radius: 999px;
+    color: var(--text-strong); font: 600 12px/1 var(--font-body);
     letter-spacing: -.01em; cursor: pointer;
-    border-radius: var(--radius-sm);
-    transition: background var(--dur-fast) var(--ease-calm), color var(--dur-fast) var(--ease-calm);
+    transition: background var(--dur-fast) var(--ease-calm), color var(--dur-fast) var(--ease-calm), border-color var(--dur-fast) var(--ease-calm);
 }
+.roster-link .icon { width: 12px; height: 12px; }
 .roster-link:hover, .roster-link:focus-visible {
-    background: var(--sand-100); color: var(--text-strong); outline: none;
+    background: var(--sage-300); color: #fff; border-color: var(--sage-300); outline: none;
 }
 
 .roster-modal {
-    padding: 0; border: 0; border-radius: var(--radius-lg);
-    background: var(--surface-card); color: var(--text-body);
-    box-shadow: 0 30px 80px rgba(90,58,34,.28);
-    max-width: 420px; width: calc(100% - 32px);
+    position: fixed; inset: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
 }
-.roster-modal::backdrop { background: rgba(31,25,20,.45); backdrop-filter: blur(2px); }
-.roster-modal-inner { display: flex; flex-direction: column; padding: 18px 20px 20px; margin: 0; }
+.roster-modal[hidden] { display: none; }
+.roster-modal-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(31,25,20,.5);
+    backdrop-filter: blur(2px);
+    cursor: pointer;
+}
+.roster-modal-inner {
+    position: relative;
+    background: var(--surface-card); color: var(--text-body);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 30px 80px rgba(90,58,34,.28);
+    max-width: 420px; width: 100%;
+    max-height: calc(100vh - 32px);
+    display: flex; flex-direction: column;
+    padding: 18px 20px 20px;
+    animation: rosterFadeIn .18s var(--ease-calm) both;
+}
+@keyframes rosterFadeIn {
+    from { opacity: 0; transform: translateY(6px) scale(.98); }
+    to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
 .roster-modal-head {
     display: flex; align-items: center; justify-content: space-between;
     gap: 12px; margin-bottom: 12px;
@@ -1585,6 +1606,7 @@ img.teacher-thumb { display: inline-block; }
     font-size: 13px; font-weight: 600; color: var(--text-strong);
 }
 .roster-empty { margin: 8px 0 0; }
+body.has-roster-open { overflow: hidden; }
 
 /* ============================================================
    Utility classes (extracted from inline styles)
