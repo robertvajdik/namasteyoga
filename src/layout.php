@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/i18n.php';
 
 function e(?string $s): string {
     return htmlspecialchars((string)$s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
@@ -165,8 +166,9 @@ function ny_render_header(string $title, string $active = '', array $opts = []):
     $gaId     = trim($s['ga_id']);
     $mapLat   = $s['map_lat'];
     $mapLon   = $s['map_lon'];
+    $lang = ny_lang();
     ?><!doctype html>
-<html lang="cs">
+<html lang="<?= e($lang) ?>">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -254,6 +256,29 @@ gtag('config', <?= json_encode($gaId) ?>, { anonymize_ip: true });
         <?php if ($fbUrl): ?><a href="<?= e($fbUrl) ?>" aria-label="Facebook" target="_blank" rel="noopener"><?= ny_icon('facebook', 15) ?></a><?php endif; ?>
         <?php if ($igUrl): ?><a href="<?= e($igUrl) ?>" aria-label="Instagram" target="_blank" rel="noopener"><?= ny_icon('instagram', 15) ?></a><?php endif; ?>
         <?php if ($ytUrl): ?><a href="<?= e($ytUrl) ?>" aria-label="YouTube" target="_blank" rel="noopener"><?= ny_icon('youtube', 15) ?></a><?php endif; ?>
+        <div class="lang-switch" role="group" aria-label="Language">
+            <?php foreach (ny_langs() as $lc => $lLabel): ?>
+                <a href="<?= e(ny_lang_url($lc)) ?>" class="<?= $lang === $lc ? 'is-active' : '' ?>" hreflang="<?= e($lc) ?>"><?= e(strtoupper($lc)) ?></a>
+            <?php endforeach; ?>
+        </div>
+        <div class="header-user">
+            <?php if ($user): ?>
+                <a class="header-user-link" href="my.php" title="Moje rezervace">
+                    <?php if (!empty($user['avatar'])): ?>
+                        <span class="user-avatar"><img src="assets/avatars/<?= e(rawurlencode($user['avatar'])) ?>" alt=""></span>
+                    <?php else: ?>
+                        <span class="user-avatar"><?= e(mb_strtoupper(mb_substr((string)$user['display_name'], 0, 1))) ?></span>
+                    <?php endif; ?>
+                    <span class="header-user-name"><?= e($user['display_name']) ?><?php if ((int)$user['is_guest'] === 1): ?> <em><?= e(t('user.guest')) ?></em><?php endif; ?></span>
+                </a>
+                <?php if (ny_is_admin($user)): ?>
+                    <a class="header-user-icon" href="admin/index.php" title="<?= e(t('user.admin')) ?>"><?= ny_icon('settings', 16) ?></a>
+                <?php endif; ?>
+                <a class="header-user-icon" href="logout.php" title="<?= e(t('user.logout')) ?>"><?= ny_icon('log-out', 16) ?></a>
+            <?php else: ?>
+                <a class="header-user-icon" href="login.php" title="<?= e(t('user.login')) ?>"><?= ny_icon('user', 15) ?> <span><?= e(t('user.login')) ?></span></a>
+            <?php endif; ?>
+        </div>
     </div>
     <div class="band">
         <a class="logo" href="index.php"><img src="assets/logoCream.png" alt="<?= e($siteName) ?>"></a>
@@ -263,32 +288,19 @@ gtag('config', <?= json_encode($gaId) ?>, { anonymize_ip: true });
             <span class="nav-toggle-close"><?= ny_icon('close', 22) ?></span>
         </label>
         <nav id="site-nav">
-            <a href="index.php"        class="<?= $active === 'home'       ? 'is-active' : '' ?>">Úvod</a>
-            <a href="rezervace.php"    class="<?= $active === 'schedule'   ? 'is-active' : '' ?>">Rezervace</a>
-            <a href="lekce.php"        class="<?= $active === 'lekce'      ? 'is-active' : '' ?>">Lekce a kurzy</a>
-            <a href="individualni.php" class="<?= $active === 'individ'    ? 'is-active' : '' ?>">Individuální</a>
-            <a href="masaze.php"       class="<?= $active === 'masaze'     ? 'is-active' : '' ?>">Masáže</a>
-            <a href="lektori.php"      class="<?= $active === 'lektori'    ? 'is-active' : '' ?>">Lektoři</a>
-            <a href="galerie.php"      class="<?= $active === 'galerie'    ? 'is-active' : '' ?>">Galerie</a>
-            <a href="cenik.php"        class="<?= $active === 'cenik'      ? 'is-active' : '' ?>">Ceník</a>
-            <a href="kontakt.php"      class="<?= $active === 'kontakt'    ? 'is-active' : '' ?>">Kontakt</a>
+            <a href="index.php"        class="<?= $active === 'home'       ? 'is-active' : '' ?>"><?= e(t('nav.home')) ?></a>
+            <a href="rezervace.php"    class="<?= $active === 'schedule'   ? 'is-active' : '' ?>"><?= e(t('nav.schedule')) ?></a>
+            <a href="lekce.php"        class="<?= $active === 'lekce'      ? 'is-active' : '' ?>"><?= e(t('nav.lekce')) ?></a>
+            <a href="individualni.php" class="<?= $active === 'individ'    ? 'is-active' : '' ?>"><?= e(t('nav.individ')) ?></a>
+            <a href="masaze.php"       class="<?= $active === 'masaze'     ? 'is-active' : '' ?>"><?= e(t('nav.masaze')) ?></a>
+            <a href="lektori.php"      class="<?= $active === 'lektori'    ? 'is-active' : '' ?>"><?= e(t('nav.lektori')) ?></a>
+            <a href="galerie.php"      class="<?= $active === 'galerie'    ? 'is-active' : '' ?>"><?= e(t('nav.galerie')) ?></a>
+            <a href="cenik.php"        class="<?= $active === 'cenik'      ? 'is-active' : '' ?>"><?= e(t('nav.cenik')) ?></a>
+            <a href="kontakt.php"      class="<?= $active === 'kontakt'    ? 'is-active' : '' ?>"><?= e(t('nav.kontakt')) ?></a>
             <?php if ($user): ?>
-                <a href="my.php" class="<?= $active === 'my' ? 'is-active' : '' ?>">Moje rezervace</a>
-                <?php if (ny_is_admin($user)): ?>
-                    <a href="admin/index.php">Admin</a>
-                <?php endif; ?>
-                <span class="who">
-                    <?php if (!empty($user['avatar'])): ?>
-                        <span class="user-avatar"><img src="assets/avatars/<?= e(rawurlencode($user['avatar'])) ?>" alt=""></span>
-                    <?php else: ?>
-                        <span class="user-avatar"><?= e(mb_strtoupper(mb_substr((string)$user['display_name'], 0, 1))) ?></span>
-                    <?php endif; ?>
-                    <?= e($user['display_name']) ?><?php if ((int)$user['is_guest'] === 1): ?> <em>(host)</em><?php endif; ?>
-                </span>
-                <a href="logout.php" aria-label="Odhlásit"><?= ny_icon('log-out', 18) ?></a>
+                <a href="my.php" class="<?= $active === 'my' ? 'is-active' : '' ?>"><?= e(t('nav.my')) ?></a>
             <?php else: ?>
-                <a href="login.php"    class="<?= $active === 'login'    ? 'is-active' : '' ?>">Přihlášení</a>
-                <a href="register.php" class="<?= $active === 'register' ? 'is-active' : '' ?>">Registrace</a>
+                <a href="register.php" class="<?= $active === 'register' ? 'is-active' : '' ?>"><?= e(t('nav.register')) ?></a>
             <?php endif; ?>
         </nav>
     </div>
@@ -310,31 +322,31 @@ function ny_render_footer(bool $bare = false): void {
 </div>
 <?php endif; ?>
 </main>
-<a href="rezervace.php" class="mobile-cta"><?= ny_icon('calendar', 16) ?> Rezervovat lekci</a>
+<a href="rezervace.php" class="mobile-cta"><?= ny_icon('calendar', 16) ?> <?= e(t('mobile.reserve')) ?></a>
 <footer class="site-footer">
     <div class="inner">
         <div class="foot-brand">
             <img src="assets/logoCream.png" alt="<?= e($siteName) ?>">
-            <p class="foot-tag">Prostor pro tělo i mysl v centru Uherského Brodu.</p>
+            <p class="foot-tag"><?= e(t('footer.tag')) ?></p>
         </div>
         <div class="foot-col">
-            <h4>Studio</h4>
-            <a href="lekce.php">Lekce a kurzy</a>
-            <a href="individualni.php">Individuální lekce</a>
-            <a href="masaze.php">Masáže</a>
-            <a href="lektori.php">Lektoři</a>
-            <a href="galerie.php">Galerie</a>
+            <h4><?= e(t('footer.studio')) ?></h4>
+            <a href="lekce.php"><?= e(t('nav.lekce')) ?></a>
+            <a href="individualni.php"><?= e(t('nav.individ')) ?></a>
+            <a href="masaze.php"><?= e(t('nav.masaze')) ?></a>
+            <a href="lektori.php"><?= e(t('nav.lektori')) ?></a>
+            <a href="galerie.php"><?= e(t('nav.galerie')) ?></a>
         </div>
         <div class="foot-col">
-            <h4>Informace</h4>
-            <a href="cenik.php">Ceník</a>
-            <a href="rezervace.php">Rezervace</a>
-            <a href="kontakt.php">Kontakt</a>
-            <a href="podminky.php">Provozní podmínky</a>
-            <a href="gdpr.php">Ochrana osobních údajů</a>
+            <h4><?= e(t('footer.info')) ?></h4>
+            <a href="cenik.php"><?= e(t('nav.cenik')) ?></a>
+            <a href="rezervace.php"><?= e(t('nav.schedule')) ?></a>
+            <a href="kontakt.php"><?= e(t('nav.kontakt')) ?></a>
+            <a href="podminky.php"><?= e(t('footer.terms')) ?></a>
+            <a href="gdpr.php"><?= e(t('footer.gdpr')) ?></a>
         </div>
         <div class="foot-col">
-            <h4>Kontakt</h4>
+            <h4><?= e(t('footer.contact')) ?></h4>
             <a href="tel:<?= e(preg_replace('/\s+/', '', $s['phone'])) ?>"><?= ny_icon('phone', 14) ?> <?= e($s['phone']) ?></a>
             <?= ny_email_obf($s['email'], ny_icon('mail', 14) . ' ') ?>
             <div class="social">
@@ -344,27 +356,27 @@ function ny_render_footer(bool $bare = false): void {
             </div>
         </div>
         <div class="foot-col foot-col--newsletter">
-            <h4>Newsletter</h4>
-            <p class="foot-tag">Občasné novinky o rozvrhu, akcích a workshopech.</p>
+            <h4><?= e(t('footer.newsletter')) ?></h4>
+            <p class="foot-tag"><?= e(t('footer.newsletter.desc')) ?></p>
             <form class="newsletter-form" method="post" action="newsletter.php" data-recaptcha="newsletter">
                 <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
                 <input type="hidden" name="source" value="footer">
                 <label class="visually-hidden" for="nl-email">E-mail</label>
-                <input id="nl-email" type="email" name="email" placeholder="váš e-mail" required>
-                <button class="btn btn-primary btn-sm" type="submit">Přihlásit</button>
+                <input id="nl-email" type="email" name="email" placeholder="<?= e(t('footer.newsletter.email')) ?>" required>
+                <button class="btn btn-primary btn-sm" type="submit"><?= e(t('footer.newsletter.submit')) ?></button>
             </form>
-            <small class="foot-tag">Odhlásit se můžete kdykoli.</small>
+            <small class="foot-tag"><?= e(t('footer.newsletter.small')) ?></small>
         </div>
     </div>
     <div class="foot-legal">
-        Copyright © 2019 - <?= date('Y') ?> Klára Bigasová | Všechna práva vyhrazena
+        <?= e(t('footer.legal', date('Y'))) ?>
     </div>
 </footer>
 
 <div id="cookie-banner" class="cookie-banner" hidden>
     <div class="cookie-inner">
-        <p>Používáme nezbytné cookies pro fungování webu<?php if (ny_setting('ga_id') !== ''): ?> a anonymní analytiku pro zlepšování obsahu<?php endif; ?>. Pokračováním souhlasíte.</p>
-        <button type="button" class="btn btn-primary btn-sm" id="cookie-accept">Rozumím</button>
+        <p><?= e(ny_setting('ga_id') !== '' ? t('cookie.text.full') : t('cookie.text.min')) ?></p>
+        <button type="button" class="btn btn-primary btn-sm" id="cookie-accept"><?= e(t('cookie.accept')) ?></button>
     </div>
 </div>
 

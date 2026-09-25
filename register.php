@@ -44,6 +44,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 )->execute([$email, $name, $phone ?: null, $hash]);
                 $id = (int)$pdo->lastInsertId();
             }
+
+            $adminEmail = ny_admin_notify_email();
+            if ($adminEmail !== '') {
+                $siteName = ny_setting('site_name', 'Studio Namasté');
+                $body = "V administraci byl vytvořen nový uživatelský účet.\n\n"
+                      . "Jméno:   " . $name . "\n"
+                      . "E-mail:  " . $email . "\n"
+                      . "Telefon: " . ($phone !== '' ? $phone : '—') . "\n"
+                      . "Čas:     " . date('d.m.Y H:i') . "\n\n"
+                      . "Detail: " . ny_base_url() . "/admin/users.php\n\n"
+                      . "-- \n" . $siteName;
+                ny_mail($adminEmail, 'Nová registrace: ' . $name, $body);
+            }
+
             ny_login_user($id, false);
             ny_flash_set('ok', 'Registrace hotova. Vítejte!');
             ny_redirect('rezervace.php');

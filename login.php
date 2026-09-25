@@ -99,7 +99,7 @@ ny_render_header('Přihlášení', 'login');
             </label>
             <button class="btn btn-primary btn-form" type="submit">Přihlásit se</button>
         </form>
-        <p class="hint hint-form">Nemáte účet? <a href="register.php">Zaregistrujte se</a>.</p>
+        <p class="hint hint-form">Nemáte účet? <a href="register.php">Zaregistrujte se</a>. · <a href="forgot.php">Zapomenuté heslo?</a></p>
     </section>
 
     <section class="card muted" id="guest">

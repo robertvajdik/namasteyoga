@@ -48,6 +48,13 @@ $fields = [
             'recaptcha_secret' => ['label' => 'Secret key', 'type' => 'text', 'hint' => 'Ověření probíhá serverově. Nechte prázdné pro vypnutí.'],
         ],
     ],
+    'mail' => [
+        'title' => 'Odesílání e-mailů',
+        'items' => [
+            'mail_from'  => ['label' => 'Odesílatel (From:)',       'type' => 'email', 'hint' => 'Adresa, ze které web posílá e-maily (upozornění, reset hesla). Nechte prázdné pro použití obecného e-mailu studia.'],
+            'mail_admin' => ['label' => 'Adresa admina pro notifikace', 'type' => 'email', 'hint' => 'Kam chodí upozornění o nové registraci apod. Nechte prázdné pro použití e-mailu studia.'],
+        ],
+    ],
 ];
 
 $flat = [];

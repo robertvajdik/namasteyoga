@@ -8,5 +8,7 @@ Disallow: /cancel.php
 Disallow: /newsletter.php
 Disallow: /unsubscribe.php
 Disallow: /logout.php
+Disallow: /forgot.php
+Disallow: /reset.php
 
 Sitemap: /sitemap.xml

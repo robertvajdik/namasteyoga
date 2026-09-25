@@ -24,7 +24,6 @@ $soon = $soonStmt->fetchAll();
 
 $daysCz = [1 => 'Pondělí', 2 => 'Úterý', 3 => 'Středa', 4 => 'Čtvrtek', 5 => 'Pátek', 6 => 'Sobota', 7 => 'Neděle'];
 
-<?php
 $settings = ny_settings_all();
 $siteName = $settings['site_name'] ?: 'Studio Namasté';
 $scheme   = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['SERVER_PORT'] ?? '') == 443) ? 'https' : 'http';

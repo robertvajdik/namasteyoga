@@ -45,6 +45,24 @@ ny_render_header('Kontakt', 'kontakt');
 <div class="cols cols-2">
     <section class="card reveal">
         <h2>Kde nás najdete</h2>
+        <figure class="studio-outside">
+            <img src="assets/studio-outside.jpg" alt="Provozovna Yoga studio Namasté – pohled z ulice" loading="lazy">
+            <figcaption>Provozovna Yoga studio Namasté – pohled z ulice.</figcaption>
+        </figure>
+        <p>
+            Namasté yoga studio se nachází přímo v centru a srdci Uherského Brodu.
+            Přesněji se nacházíme mezi farou a oční optikou.
+        </p>
+        <p>
+            Od hlavního vlakového i autobusového nádraží je studio jen 6 minut pěší chůzí
+            směrem do centra (přímo za nosem nahoru, cca 350&nbsp;m). Další autobusová
+            zastávka se nachází nad studiem na ulici Mariánské náměstí (asi 1 minutu
+            pěší chůzí směrem dolů, cca 170&nbsp;m).
+        </p>
+        <p>
+            Parkování je možné přímo před studiem. V odpoledních hodinách je parkování
+            v klidném centru Uherského Brodu zdarma.
+        </p>
         <p class="contact-line"><?= ny_icon('calendar', 16) ?> <?= e($opening) ?></p>
         <p class="contact-line"><?= ny_icon('phone', 16) ?> <a href="tel:<?= e(preg_replace('/\s+/', '', $phone)) ?>"><?= e($phone) ?></a></p>
         <p class="contact-line"><?= ny_email_obf($email, ny_icon('mail', 16) . ' ') ?></p>

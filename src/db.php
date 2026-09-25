@@ -49,6 +49,8 @@ function ny_settings_defaults(): array {
         'ga_id'         => '',
         'recaptcha_site'   => '',
         'recaptcha_secret' => '',
+        'mail_from'        => '',
+        'mail_admin'       => '',
     ];
 }
 
@@ -179,6 +181,19 @@ function ny_ensure_content_tables(): void {
          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
     );
     $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS ny_password_resets (
+            id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            user_id     INT UNSIGNED NOT NULL,
+            token_hash  CHAR(64)     NOT NULL,
+            expires_at  DATETIME     NOT NULL,
+            used_at     DATETIME NULL,
+            created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY token_hash (token_hash),
+            KEY user_id (user_id)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+    $pdo->exec(
         'CREATE TABLE IF NOT EXISTS ny_gallery (
             id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
             section     VARCHAR(40)  NOT NULL DEFAULT "studio",
@@ -302,6 +317,108 @@ function ny_newsletter_unsubscribe_by_token(string $token): bool {
     $stmt = $pdo->prepare('UPDATE ny_newsletter_subscribers SET unsubscribed_at = NOW() WHERE token = ? AND unsubscribed_at IS NULL');
     $stmt->execute([$token]);
     return $stmt->rowCount() > 0;
+}
+
+/**
+ * Absolute base URL of the site (scheme + host + subdir). Used to build links
+ * inside outgoing e-mails, where relative URLs would be useless.
+ */
+function ny_base_url(): string {
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['SERVER_PORT'] ?? '') == 443)
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')
+        ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $script = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
+    if ($script === '/' || $script === '.' || $script === '') $script = '';
+    return $scheme . '://' . $host . $script;
+}
+
+/**
+ * Simple UTF-8 aware wrapper around PHP mail(). Returns true on success.
+ * From-address falls back to setting `mail_from`, then the site e-mail.
+ */
+function ny_mail(string $to, string $subject, string $body, array $opts = []): bool {
+    $to = trim($to);
+    if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) return false;
+
+    $s        = ny_settings_all();
+    $siteName = $s['site_name'] ?: 'Studio Namasté';
+    $from     = trim($opts['from'] ?? '') ?: trim($s['mail_from'] ?? '') ?: trim($s['email'] ?? '');
+    if ($from === '' || !filter_var($from, FILTER_VALIDATE_EMAIL)) return false;
+
+    $fromName = $opts['from_name'] ?? $siteName;
+    $encodedName = '=?UTF-8?B?' . base64_encode($fromName) . '?=';
+
+    $headers   = [];
+    $headers[] = 'From: ' . $encodedName . ' <' . $from . '>';
+    $headers[] = 'Reply-To: ' . ($opts['reply_to'] ?? $from);
+    $headers[] = 'MIME-Version: 1.0';
+    $headers[] = 'Content-Type: text/plain; charset=UTF-8';
+    $headers[] = 'Content-Transfer-Encoding: 8bit';
+    $headers[] = 'X-Mailer: PHP/' . phpversion();
+
+    $encodedSubject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
+    return @mail($to, $encodedSubject, $body, implode("\r\n", $headers));
+}
+
+function ny_admin_notify_email(): string {
+    $s = ny_settings_all();
+    $to = trim($s['mail_admin'] ?? '');
+    if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+        $to = trim($s['email'] ?? '');
+    }
+    return $to;
+}
+
+/**
+ * Password reset — issue token, verify, consume. Tokens are stored as SHA-256
+ * hashes so a DB dump cannot be replayed to hijack accounts.
+ */
+function ny_password_reset_create(int $userId, int $ttlMinutes = 60): string {
+    ny_ensure_content_tables();
+    $pdo = ny_db();
+    // Invalidate any prior unused tokens for the same user.
+    $pdo->prepare('UPDATE ny_password_resets SET used_at = NOW() WHERE user_id = ? AND used_at IS NULL')
+        ->execute([$userId]);
+    $token = bin2hex(random_bytes(32));
+    $hash  = hash('sha256', $token);
+    $expires = (new DateTimeImmutable('now'))->modify('+' . $ttlMinutes . ' minutes')->format('Y-m-d H:i:s');
+    $pdo->prepare(
+        'INSERT INTO ny_password_resets (user_id, token_hash, expires_at) VALUES (?, ?, ?)'
+    )->execute([$userId, $hash, $expires]);
+    return $token;
+}
+
+function ny_password_reset_find(string $token): ?array {
+    ny_ensure_content_tables();
+    if ($token === '') return null;
+    $hash = hash('sha256', $token);
+    $stmt = ny_db()->prepare(
+        'SELECT r.*, u.email, u.display_name, u.is_guest
+           FROM ny_password_resets r
+           JOIN ny_users u ON u.id = r.user_id
+          WHERE r.token_hash = ? AND r.used_at IS NULL AND r.expires_at > NOW()
+          LIMIT 1'
+    );
+    $stmt->execute([$hash]);
+    $row = $stmt->fetch();
+    return $row ?: null;
+}
+
+function ny_password_reset_consume(int $resetId, int $userId, string $newHash): void {
+    $pdo = ny_db();
+    $pdo->beginTransaction();
+    try {
+        $pdo->prepare('UPDATE ny_password_resets SET used_at = NOW() WHERE id = ? AND used_at IS NULL')
+            ->execute([$resetId]);
+        $pdo->prepare('UPDATE ny_users SET password_hash = ? WHERE id = ?')
+            ->execute([$newHash, $userId]);
+        $pdo->commit();
+    } catch (Throwable $e) {
+        $pdo->rollBack();
+        throw $e;
+    }
 }
 
 function ny_gallery_active_grouped(): array {
