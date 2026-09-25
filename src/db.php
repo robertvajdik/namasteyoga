@@ -49,7 +49,7 @@ function ny_settings_defaults(): array {
         'ga_id'         => '',
         'recaptcha_site'   => '',
         'recaptcha_secret' => '',
-        'mail_from'        => '',
+        'mail_from'        => 'no-reply@namasteyoga.cz',
         'mail_admin'       => '',
         'reminder_hours'   => '24',
         'cron_key'         => '',
@@ -375,19 +375,25 @@ function ny_base_url(): string {
 }
 
 /**
- * Simple UTF-8 aware wrapper around PHP mail(). Returns true on success.
- * From-address falls back to setting `mail_from`, then the site e-mail.
+ * UTF-8 aware mailer. Uses authenticated SMTP when config.mail.smtp_host is
+ * set (see config.php); otherwise falls back to PHP's mail(). From/Reply-To
+ * pull from config.mail first, then optional per-call overrides in $opts.
  */
 function ny_mail(string $to, string $subject, string $body, array $opts = []): bool {
     $to = trim($to);
     if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) return false;
 
+    $cfg      = ny_config()['mail'] ?? [];
     $s        = ny_settings_all();
     $siteName = $s['site_name'] ?: 'Studio Namasté';
-    $from     = trim($opts['from'] ?? '') ?: trim($s['mail_from'] ?? '') ?: trim($s['email'] ?? '');
+
+    $from = trim($opts['from'] ?? '')
+         ?: trim((string)($cfg['from'] ?? ''))
+         ?: trim($s['mail_from'] ?? '')
+         ?: trim($s['email'] ?? '');
     if ($from === '' || !filter_var($from, FILTER_VALIDATE_EMAIL)) return false;
 
-    $fromName = $opts['from_name'] ?? $siteName;
+    $fromName    = $opts['from_name'] ?? (trim((string)($cfg['from_name'] ?? '')) ?: $siteName);
     $encodedName = '=?UTF-8?B?' . base64_encode($fromName) . '?=';
 
     $headers   = [];
@@ -399,14 +405,29 @@ function ny_mail(string $to, string $subject, string $body, array $opts = []): b
     $headers[] = 'X-Mailer: PHP/' . phpversion();
 
     $encodedSubject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
+
+    $smtpHost = trim((string)($cfg['smtp_host'] ?? ''));
+    if ($smtpHost !== '') {
+        require_once __DIR__ . '/smtp.php';
+        return ny_smtp_send($to, $encodedSubject, $body, $headers, [
+            'host'   => $smtpHost,
+            'port'   => (int)($cfg['smtp_port'] ?? 587),
+            'user'   => (string)($cfg['smtp_user'] ?? ''),
+            'pass'   => (string)($cfg['smtp_pass'] ?? ''),
+            'secure' => (string)($cfg['smtp_secure'] ?? 'tls'),
+            'from'   => $from,
+        ]);
+    }
+
     return @mail($to, $encodedSubject, $body, implode("\r\n", $headers));
 }
 
 function ny_admin_notify_email(): string {
-    $s = ny_settings_all();
-    $to = trim($s['mail_admin'] ?? '');
+    $cfg = ny_config()['mail'] ?? [];
+    $to  = trim((string)($cfg['admin_notify'] ?? ''));
     if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
-        $to = trim($s['email'] ?? '');
+        $s  = ny_settings_all();
+        $to = trim($s['mail_admin'] ?? '') ?: trim($s['email'] ?? '');
     }
     return $to;
 }

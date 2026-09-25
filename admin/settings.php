@@ -51,8 +51,8 @@ $fields = [
     'mail' => [
         'title' => 'Odesílání e-mailů',
         'items' => [
-            'mail_from'  => ['label' => 'Odesílatel (From:)',       'type' => 'email', 'hint' => 'Adresa, ze které web posílá e-maily (upozornění, reset hesla). Nechte prázdné pro použití obecného e-mailu studia.'],
-            'mail_admin' => ['label' => 'Adresa admina pro notifikace', 'type' => 'email', 'hint' => 'Kam chodí upozornění o nové registraci apod. Nechte prázdné pro použití e-mailu studia.'],
+            'mail_from'  => ['label' => 'Odesílatel (From:)',       'type' => 'email', 'hint' => 'Záložní hodnota. Přednost má nastavení v config.php (mail.from).'],
+            'mail_admin' => ['label' => 'Adresa admina pro notifikace', 'type' => 'email', 'hint' => 'Záložní hodnota. Přednost má nastavení v config.php (mail.admin_notify). Sem chodí upozornění o nové registraci apod.'],
         ],
     ],
     'reminders' => [
@@ -75,6 +75,26 @@ $fields = [
 
 $flat = [];
 foreach ($fields as $g) foreach ($g['items'] as $k => $v) $flat[$k] = $v;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') === 'test_mail') {
+    ny_csrf_check($_POST['csrf'] ?? null);
+    $to = trim((string)($_POST['test_mail_to'] ?? ''));
+    if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
+        ny_flash_set('err', 'Zadejte platnou e-mailovou adresu pro test.');
+    } else {
+        $siteName = ny_setting('site_name', 'Studio Namasté');
+        $body     = "Toto je testovací e-mail ze systému " . $siteName . ".\n\n"
+                  . "Pokud jste jej dostali, konfigurace odesílání funguje správně.\n\n"
+                  . 'Odesláno: ' . date('j. n. Y H:i') . "\n"
+                  . 'Odesílatel (From): ' . (ny_setting('mail_from') ?: ny_setting('email')) . "\n";
+        if (ny_mail($to, 'Testovací e-mail – ' . $siteName, $body)) {
+            ny_flash_set('ok', 'Testovací e-mail byl odeslán na ' . $to . '.');
+        } else {
+            ny_flash_set('err', 'E-mail se nepodařilo odeslat. Zkontrolujte pole „Odesílatel (From:)" a nastavení serveru.');
+        }
+    }
+    ny_redirect('settings.php');
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ny_csrf_check($_POST['csrf'] ?? null);
@@ -150,4 +170,29 @@ ny_admin_render_header('Nastavení webu', 'settings');
         <button class="btn btn-primary" type="submit">Uložit nastavení</button>
     </div>
 </form>
+
+<div class="admin-card">
+    <h2>Testovací e-mail</h2>
+    <p class="hint">Odešle jednorázový testovací e-mail podle aktuálně uloženého nastavení výše. Pomůže ověřit, že server umí odesílat poštu.</p>
+    <form method="post" class="admin-form">
+        <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+        <input type="hidden" name="action" value="test_mail">
+        <div class="admin-form-row">
+            <label>Poslat testovací e-mail na
+                <input type="email" name="test_mail_to" value="<?= e((string)ny_admin_notify_email()) ?>" required>
+            </label>
+        </div>
+        <div class="row form-actions">
+            <button class="btn btn-secondary" type="submit">Odeslat testovací e-mail</button>
+        </div>
+    </form>
+</div>
+
+<div class="admin-card">
+    <h2>Záloha databáze</h2>
+    <p class="hint">Stáhne kompletní SQL dump všech tabulek <code>ny_*</code> (schéma i data). Uložený soubor lze později naimportovat zpět přes phpMyAdmin.</p>
+    <div class="row form-actions">
+        <a class="btn btn-primary" href="backup.php"><?= ny_icon('download', 16) ?> Stáhnout SQL zálohu</a>
+    </div>
+</div>
 <?php ny_admin_render_footer();
