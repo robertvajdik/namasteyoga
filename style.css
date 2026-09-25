@@ -597,21 +597,15 @@ form input:focus { outline: none; border-color: var(--sage-400); box-shadow: var
     overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
 }
 
-/* Sticky, shrinking header */
+/* Sticky header — dimensions stay constant to avoid content jumps on scroll. */
 .site-header {
     position: sticky; top: 0;
-    transition: padding var(--dur-base) var(--ease-calm),
-                box-shadow var(--dur-base) var(--ease-calm),
+    transition: box-shadow var(--dur-base) var(--ease-calm),
                 background var(--dur-base) var(--ease-calm);
-    will-change: padding;
 }
 .site-header.is-scrolled {
     box-shadow: 0 6px 24px rgba(90,58,34,.14);
 }
-.site-header.is-scrolled .band .logo img { height: 52px; transition: height var(--dur-base) var(--ease-calm); }
-.site-header .band .logo img { transition: height var(--dur-base) var(--ease-calm); }
-.site-header.is-scrolled .band { padding-top: 2px; padding-bottom: 8px; }
-.site-header.is-scrolled .topbar { padding-top: 4px; padding-bottom: 2px; }
 
 /* Overlay header: crisper contrast on hero */
 body.has-overlay-header .site-header {
@@ -745,8 +739,6 @@ body.has-overlay-header .site-header.is-scrolled {
     .testimonial-grid { grid-template-columns: 1fr; }
     .mobile-cta { display: inline-flex; }
     body { padding-bottom: 76px; } /* leave space above sticky CTA */
-    /* Sticky header: relax on very small screens (nav becomes drawer). */
-    .site-header.is-scrolled .band .logo img { height: 44px; }
 }
 
 /* Print styles */
@@ -1587,7 +1579,6 @@ img, iframe, video { max-width: 100%; }
 @media (max-width: 480px) {
     .site-header .topbar { padding: 8px 14px 0; gap: 6px 12px; font-size: 11.5px; }
     .site-header .band .logo img { height: 50px; }
-    .site-header.is-scrolled .band .logo img { height: 40px; }
 }
 
 /* Feature-card grid: nudge gap down on tablet, keep readable on phone. */
