@@ -61,6 +61,13 @@ function ny_login_user(int $userId, bool $isGuest = false): void {
     session_regenerate_id(true);
     $_SESSION['user_id']  = $userId;
     $_SESSION['is_guest'] = $isGuest;
+    if (!$isGuest) {
+        try {
+            ny_db()->prepare('UPDATE ny_users SET last_login_at = NOW() WHERE id = ?')->execute([$userId]);
+        } catch (Throwable $e) {
+            // Column may not exist yet on legacy installs; ignored.
+        }
+    }
 }
 
 function ny_logout(): void {

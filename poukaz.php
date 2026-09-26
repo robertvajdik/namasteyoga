@@ -212,7 +212,17 @@ ny_render_header('Dárkový poukaz', 'poukaz');
             <input type="email" name="email" value="<?= e($user ? (string)$user['email'] : '') ?>" required>
         </label>
         <label>Hodnota poukazu
-            <input type="text" name="amount" id="poukaz-amount" placeholder="např. 1 500 Kč nebo vlastní částka" required>
+            <input type="text" name="amount" id="poukaz-amount" list="poukaz-amounts"
+                   placeholder="např. 1 500 Kč nebo vlastní částka"
+                   autocomplete="off" required>
+            <datalist id="poukaz-amounts">
+                <option value="500 Kč (Ochutnávka)">
+                <option value="1 500 Kč (Permanentka 5×)">
+                <option value="2 000 Kč (Individuální / masáž)">
+                <option value="3 000 Kč">
+                <option value="5 000 Kč">
+                <option value="Vlastní částka">
+            </datalist>
         </label>
         <label>Poukaz pro (nepovinné)
             <input type="text" name="for_whom" placeholder="Jméno obdarovaného">

@@ -211,13 +211,50 @@ if ($search !== '') {
     array_push($params, $like, $like, $like);
 }
 
-$sql = 'SELECT u.*,
+$sqlBase = 'SELECT u.*,
                (SELECT COUNT(*) FROM ny_reservations r WHERE r.user_id = u.id AND r.status = "booked") AS active_res
           FROM ny_users u';
-if ($where) $sql .= ' WHERE ' . implode(' AND ', $where);
-$sql .= ' ORDER BY ' . $sortMap[$sort] . ' ' . strtoupper($dir) . ', u.id DESC LIMIT 300';
+if ($where) $sqlBase .= ' WHERE ' . implode(' AND ', $where);
+$sqlBase .= ' ORDER BY ' . $sortMap[$sort] . ' ' . strtoupper($dir) . ', u.id DESC';
 
-$stmt = $pdo->prepare($sql);
+if ($action === 'export_csv') {
+    $stmt = $pdo->prepare($sqlBase);
+    $stmt->execute($params);
+
+    $filenameParts = ['uzivatele'];
+    if ($filter !== 'all') $filenameParts[] = $filter;
+    if ($search !== '')    $filenameParts[] = preg_replace('/[^A-Za-z0-9_-]+/', '_', $search);
+    $filenameParts[] = date('Y-m-d');
+    $filename = implode('-', array_filter($filenameParts)) . '.csv';
+
+    while (ob_get_level() > 0) ob_end_clean();
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
+    header('Cache-Control: no-store, no-cache, must-revalidate');
+    header('Pragma: no-cache');
+
+    $out = fopen('php://output', 'w');
+    // UTF-8 BOM for Excel.
+    fwrite($out, "\xEF\xBB\xBF");
+    fputcsv($out, ['ID', 'Jméno', 'E-mail', 'Telefon', 'Typ', 'Admin', 'Registrace', 'Aktivní rezervace'], ';');
+    while ($u = $stmt->fetch()) {
+        $type = (int)$u['is_admin'] === 1 ? 'admin' : ((int)$u['is_guest'] === 1 ? 'host' : 'uživatel');
+        fputcsv($out, [
+            (int)$u['id'],
+            (string)$u['display_name'],
+            (string)$u['email'],
+            (string)($u['phone'] ?? ''),
+            $type,
+            (int)$u['is_admin'] === 1 ? 'ano' : 'ne',
+            $u['created_at'] ? (new DateTimeImmutable((string)$u['created_at']))->format('Y-m-d H:i') : '',
+            (int)$u['active_res'],
+        ], ';');
+    }
+    fclose($out);
+    exit;
+}
+
+$stmt = $pdo->prepare($sqlBase . ' LIMIT 300');
 $stmt->execute($params);
 $users = $stmt->fetchAll();
 

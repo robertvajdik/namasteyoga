@@ -36,6 +36,7 @@ date_default_timezone_set(ny_config()['app']['timezone'] ?? 'UTC');
 function ny_settings_defaults(): array {
     return [
         'site_name'     => 'Studio Namasté',
+        'site_url'      => '',
         'phone'         => '+420 775 607 710',
         'email'         => 'studio@namasteyoga.cz',
         'address'       => 'Studio Namasté, Uherský Brod',
@@ -148,6 +149,16 @@ function ny_ensure_content_tables(): void {
     )->fetchColumn();
     if ($hasAvatar === 0) {
         $pdo->exec('ALTER TABLE ny_users ADD COLUMN avatar VARCHAR(190) NOT NULL DEFAULT "" AFTER phone');
+    }
+    // last_login_at – updated by ny_login_user() so the admin sees who's active.
+    $hasLastLogin = (int)$pdo->query(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME   = 'ny_users'
+            AND COLUMN_NAME  = 'last_login_at'"
+    )->fetchColumn();
+    if ($hasLastLogin === 0) {
+        $pdo->exec('ALTER TABLE ny_users ADD COLUMN last_login_at DATETIME NULL AFTER avatar');
     }
     // reminded_at on reservations – populated by cron/reminders.php when the
     // pre-class reminder e-mail has been sent so the cron doesn't send twice.

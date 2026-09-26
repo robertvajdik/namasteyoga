@@ -2,12 +2,14 @@
 declare(strict_types=1);
 
 require __DIR__ . '/_layout.php';
+require_once __DIR__ . '/../src/sitemap.php';
 
 $fields = [
     'branding' => [
         'title' => 'Značka',
         'items' => [
             'site_name' => ['label' => 'Název studia', 'type' => 'text'],
+            'site_url'  => ['label' => 'Veřejná URL webu', 'type' => 'url', 'hint' => 'Např. https://namasteyoga.cz – používá se pro sitemap.xml. Pokud je prázdné, odvodí se z aktuálního požadavku.'],
         ],
     ],
     'contacts' => [
@@ -101,6 +103,17 @@ $fields = [
 
 $flat = [];
 foreach ($fields as $g) foreach ($g['items'] as $k => $v) $flat[$k] = $v;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') === 'generate_sitemap') {
+    ny_csrf_check($_POST['csrf'] ?? null);
+    try {
+        $path = ny_sitemap_write();
+        ny_flash_set('ok', 'Sitemap byla vygenerována (' . count(ny_sitemap_urls()) . ' URL) do ' . basename($path) . '.');
+    } catch (Throwable $e) {
+        ny_flash_set('err', 'Sitemap se nepodařilo vygenerovat: ' . $e->getMessage());
+    }
+    ny_redirect('settings.php#sitemap');
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') === 'test_mail') {
     ny_csrf_check($_POST['csrf'] ?? null);
@@ -245,6 +258,48 @@ ny_admin_render_header('Nastavení webu', 'settings');
         </div>
         <div class="row form-actions">
             <button class="btn btn-secondary" type="submit">Odeslat testovací e-mail</button>
+        </div>
+    </form>
+</div>
+
+<?php $smap = ny_sitemap_status(); ?>
+<div class="admin-card" id="sitemap">
+    <h2>Sitemap pro vyhledávače</h2>
+    <p class="hint">Uloží statický <code>sitemap.xml</code> do kořene webu. Cron úloha <code>cron/sitemap.php</code> tuto akci opakuje automaticky – přidejte ji do plánovače (např. jednou denně).</p>
+    <dl class="mail-diag">
+        <dt>Soubor</dt>
+        <dd><code><?= e(basename($smap['path'])) ?></code> <span class="hint">v kořeni webu</span></dd>
+        <dt>Stav</dt>
+        <dd>
+            <?php if ($smap['exists']): ?>
+                <span class="badge badge-success">vygenerováno</span>
+                <span class="hint">
+                    <?= (int)$smap['url_count'] ?> URL · <?= number_format($smap['size'] / 1024, 1, ',', ' ') ?> kB ·
+                    naposledy <?= e(date('j. n. Y H:i', (int)$smap['mtime'])) ?>
+                </span>
+            <?php else: ?>
+                <span class="badge">chybí</span>
+                <span class="hint">dokud soubor neexistuje, <code>/sitemap.php</code> generuje výstup dynamicky.</span>
+            <?php endif; ?>
+        </dd>
+        <dt>Cron příkaz</dt>
+        <dd>
+            <code>php <?= e(realpath(__DIR__ . '/../cron/sitemap.php') ?: '/path/to/cron/sitemap.php') ?></code>
+            <?php $ck = trim((string)ny_setting('cron_key')); if ($ck !== ''): ?>
+                <br><span class="hint">nebo HTTP: <code>curl "<?= e(rtrim(ny_sitemap_origin(), '/')) ?>/cron/sitemap.php?key=<?= e($ck) ?>"</code></span>
+            <?php else: ?>
+                <br><span class="hint">HTTP volání vyžaduje vyplnit „Klíč pro cron" v sekci Připomínky.</span>
+            <?php endif; ?>
+        </dd>
+    </dl>
+    <form method="post" class="admin-form">
+        <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+        <input type="hidden" name="action" value="generate_sitemap">
+        <div class="row form-actions">
+            <button class="btn btn-primary" type="submit"><?= ny_icon('download', 16) ?> Vygenerovat sitemap.xml</button>
+            <?php if ($smap['exists']): ?>
+                <a class="btn btn-ghost" href="../sitemap.xml" target="_blank" rel="noopener">Otevřít sitemap.xml</a>
+            <?php endif; ?>
         </div>
     </form>
 </div>
