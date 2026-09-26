@@ -1659,20 +1659,23 @@ img.teacher-thumb { display: inline-block; }
     .admin-tbl--users td[data-label="E-mail"]      { grid-area: email; font-size: 12.5px; color: var(--text-muted); }
     .admin-tbl--users td[data-label="Telefon"]     { grid-area: phone; font-size: 12.5px; color: var(--text-muted); }
     .admin-tbl--users td[data-label="Registrace"]  { grid-area: meta; font-size: 11px; color: var(--text-muted); opacity: .85; }
+    .admin-tbl--users td[data-label="Poslední přihlášení"] { grid-area: meta; font-size: 11px; color: var(--text-muted); opacity: .85; justify-self: center; }
     .admin-tbl--users td[data-label="Rezervací"]   {
         grid-area: meta; font-size: 11px; color: var(--text-muted); opacity: .85;
         justify-self: end;
     }
     /* Prefix small meta labels so date/count are self-explanatory. */
     .admin-tbl--users td[data-label="Registrace"]::before,
+    .admin-tbl--users td[data-label="Poslední přihlášení"]::before,
     .admin-tbl--users td[data-label="Rezervací"]::before {
         display: inline !important;
         margin: 0;
         font-size: 11px; text-transform: none; letter-spacing: 0;
         color: var(--text-muted); opacity: .8; font-weight: 500;
     }
-    .admin-tbl--users td[data-label="Registrace"]::before { content: "reg. "; }
-    .admin-tbl--users td[data-label="Rezervací"]::before  { content: "rez. "; }
+    .admin-tbl--users td[data-label="Registrace"]::before          { content: "reg. "; }
+    .admin-tbl--users td[data-label="Poslední přihlášení"]::before { content: "přihl. "; }
+    .admin-tbl--users td[data-label="Rezervací"]::before           { content: "rez. "; }
 
     .admin-tbl--users td[data-label="Jméno"] strong { font-size: 14.5px; line-height: 1.15; }
     .admin-tbl--users .user-cell { gap: 8px; align-items: center; }

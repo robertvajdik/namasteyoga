@@ -15,7 +15,7 @@ function ny_admin_render_header(string $title, string $active = ''): void {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../style.css">
+<link rel="stylesheet" href="../style.css?v=<?= e((string)(@filemtime(__DIR__ . '/../style.css') ?: time())) ?>">
 </head>
 <body class="admin-body">
 <input type="checkbox" id="admin-nav-toggle" class="admin-toggle-input" aria-hidden="true" autocomplete="off">

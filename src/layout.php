@@ -209,7 +209,7 @@ function ny_render_header(string $title, string $active = '', array $opts = []):
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,400;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=<?= e((string)(@filemtime(__DIR__ . '/../style.css') ?: time())) ?>">
 
 <script type="application/ld+json">
 {

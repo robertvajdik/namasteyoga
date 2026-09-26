@@ -6,6 +6,7 @@ require __DIR__ . '/_layout.php';
 $pdo    = ny_db();
 $filter = (string)($_GET['f'] ?? 'upcoming');
 $search = trim((string)($_GET['q'] ?? ''));
+$export = (string)($_GET['export'] ?? '');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ny_csrf_check($_POST['csrf'] ?? null);
@@ -38,15 +39,87 @@ if ($search !== '') {
     array_push($params, $like, $like, $like);
 }
 
-$sql = 'SELECT r.*, c.name AS class_name, c.teacher, c.start_time, c.end_time,
+$sqlBase = 'SELECT r.*, c.name AS class_name, c.teacher, c.start_time, c.end_time,
                u.display_name, u.email, u.phone
           FROM ny_reservations r
           JOIN ny_classes c ON c.id = r.class_id
           JOIN ny_users   u ON u.id = r.user_id';
-if ($where) $sql .= ' WHERE ' . implode(' AND ', $where);
-$sql .= ' ORDER BY r.class_date DESC, c.start_time DESC LIMIT 200';
+if ($where) $sqlBase .= ' WHERE ' . implode(' AND ', $where);
+$sqlBase .= ' ORDER BY r.class_date DESC, c.start_time DESC';
 
-$stmt = $pdo->prepare($sql);
+if ($export === 'csv' || $export === 'xls') {
+    $stmt = $pdo->prepare($sqlBase);
+    $stmt->execute($params);
+
+    $baseName = 'rezervace-' . $filter . ($search !== '' ? '-' . preg_replace('/[^A-Za-z0-9_-]+/', '_', $search) : '') . '-' . date('Y-m-d');
+    $headers  = ['Datum', 'Čas od', 'Čas do', 'Lekce', 'Lektor', 'Klient', 'E-mail', 'Telefon', 'Stav', 'Vytvořeno'];
+
+    $rowFor = function (array $r) {
+        return [
+            $r['class_date'] ? (new DateTimeImmutable((string)$r['class_date']))->format('Y-m-d') : '',
+            substr((string)$r['start_time'], 0, 5),
+            substr((string)$r['end_time'],   0, 5),
+            (string)$r['class_name'],
+            (string)$r['teacher'],
+            (string)$r['display_name'],
+            (string)$r['email'],
+            (string)($r['phone'] ?? ''),
+            $r['status'] === 'booked' ? 'rezervováno' : ($r['status'] === 'cancelled' ? 'zrušeno' : (string)$r['status']),
+            !empty($r['created_at']) ? (new DateTimeImmutable((string)$r['created_at']))->format('Y-m-d H:i') : '',
+        ];
+    };
+
+    while (ob_get_level() > 0) ob_end_clean();
+
+    if ($export === 'csv') {
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $baseName . '.csv"');
+        header('Cache-Control: no-store, no-cache, must-revalidate');
+        header('Pragma: no-cache');
+        $out = fopen('php://output', 'w');
+        fwrite($out, "\xEF\xBB\xBF");
+        fputcsv($out, $headers, ';');
+        while ($r = $stmt->fetch()) fputcsv($out, $rowFor($r), ';');
+        fclose($out);
+        exit;
+    }
+
+    // Excel: SpreadsheetML 2003 XML – opens natively in Excel, no library needed.
+    header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $baseName . '.xls"');
+    header('Cache-Control: no-store, no-cache, must-revalidate');
+    header('Pragma: no-cache');
+
+    $xmlCell = function ($v): string {
+        if (is_int($v) || (is_string($v) && $v !== '' && ctype_digit($v))) {
+            return '<Cell><Data ss:Type="Number">' . htmlspecialchars((string)$v, ENT_QUOTES | ENT_XML1, 'UTF-8') . '</Data></Cell>';
+        }
+        return '<Cell><Data ss:Type="String">' . htmlspecialchars((string)$v, ENT_QUOTES | ENT_XML1, 'UTF-8') . '</Data></Cell>';
+    };
+
+    echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+    echo '<?mso-application progid="Excel.Sheet"?>' . "\n";
+    echo '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"'
+       . ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">' . "\n";
+    echo '<Styles>'
+       . '<Style ss:ID="hdr"><Font ss:Bold="1"/><Interior ss:Color="#ECDCCB" ss:Pattern="Solid"/></Style>'
+       . '</Styles>' . "\n";
+    echo '<Worksheet ss:Name="Rezervace"><Table>' . "\n";
+    echo '<Row>';
+    foreach ($headers as $h) {
+        echo '<Cell ss:StyleID="hdr"><Data ss:Type="String">' . htmlspecialchars($h, ENT_QUOTES | ENT_XML1, 'UTF-8') . '</Data></Cell>';
+    }
+    echo "</Row>\n";
+    while ($r = $stmt->fetch()) {
+        echo '<Row>';
+        foreach ($rowFor($r) as $cell) echo $xmlCell($cell);
+        echo "</Row>\n";
+    }
+    echo '</Table></Worksheet></Workbook>' . "\n";
+    exit;
+}
+
+$stmt = $pdo->prepare($sqlBase . ' LIMIT 200');
 $stmt->execute($params);
 $rows = $stmt->fetchAll();
 
@@ -90,6 +163,14 @@ ny_admin_render_header('Rezervace', 'reservations');
         <input type="hidden" name="f" value="<?= e($filter) ?>">
         <input type="search" name="q" value="<?= e($search) ?>" placeholder="Hledat jméno, e-mail, lekci…" class="filter-input">
         <button class="btn btn-secondary" type="submit">Hledat</button>
+        <?php
+            $exportQs = ['f' => $filter];
+            if ($search !== '') $exportQs['q'] = $search;
+            $csvUrl = 'reservations.php?' . http_build_query($exportQs + ['export' => 'csv']);
+            $xlsUrl = 'reservations.php?' . http_build_query($exportQs + ['export' => 'xls']);
+        ?>
+        <a class="btn btn-ghost" href="<?= e($csvUrl) ?>" title="Stáhnout jako CSV (respektuje filtr a hledání)"><?= ny_icon('download', 14) ?> CSV</a>
+        <a class="btn btn-ghost" href="<?= e($xlsUrl) ?>" title="Stáhnout jako Excel (.xls)"><?= ny_icon('download', 14) ?> Excel</a>
     </form>
 </div>
 

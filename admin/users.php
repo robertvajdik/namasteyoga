@@ -52,6 +52,7 @@ $sortMap = [
     'email'   => 'u.email',
     'phone'   => 'u.phone',
     'created' => 'u.created_at',
+    'login'   => 'u.last_login_at',
     'type'    => 'u.is_admin DESC, u.is_guest',
     'res'     => 'active_res',
 ];
@@ -236,7 +237,7 @@ if ($action === 'export_csv') {
     $out = fopen('php://output', 'w');
     // UTF-8 BOM for Excel.
     fwrite($out, "\xEF\xBB\xBF");
-    fputcsv($out, ['ID', 'Jméno', 'E-mail', 'Telefon', 'Typ', 'Admin', 'Registrace', 'Aktivní rezervace'], ';');
+    fputcsv($out, ['ID', 'Jméno', 'E-mail', 'Telefon', 'Typ', 'Admin', 'Registrace', 'Poslední přihlášení', 'Aktivní rezervace'], ';');
     while ($u = $stmt->fetch()) {
         $type = (int)$u['is_admin'] === 1 ? 'admin' : ((int)$u['is_guest'] === 1 ? 'host' : 'uživatel');
         fputcsv($out, [
@@ -246,7 +247,8 @@ if ($action === 'export_csv') {
             (string)($u['phone'] ?? ''),
             $type,
             (int)$u['is_admin'] === 1 ? 'ano' : 'ne',
-            $u['created_at'] ? (new DateTimeImmutable((string)$u['created_at']))->format('Y-m-d H:i') : '',
+            $u['created_at']    ? (new DateTimeImmutable((string)$u['created_at']))->format('Y-m-d H:i')    : '',
+            !empty($u['last_login_at']) ? (new DateTimeImmutable((string)$u['last_login_at']))->format('Y-m-d H:i') : '',
             (int)$u['active_res'],
         ], ';');
     }
@@ -340,6 +342,7 @@ ny_admin_render_header('Uživatelé', 'users');
         <?php if ($search !== '' || $filter !== 'all'): ?>
             <a class="btn btn-ghost" href="users.php">Vymazat</a>
         <?php endif; ?>
+        <a class="btn btn-ghost" href="users.php<?= e($queryString(['action' => 'export_csv'])) ?>" title="Stáhnout jako CSV (respektuje filtr a hledání)"><?= ny_icon('download', 14) ?> CSV</a>
     </form>
 </div>
 
@@ -357,6 +360,7 @@ ny_admin_render_header('Uživatelé', 'users');
             <label class="mobile-sort-label" for="mobile-sort">Řadit dle</label>
             <select id="mobile-sort" name="s" onchange="this.form.submit()">
                 <option value="created" <?= $sort === 'created' ? 'selected' : '' ?>>Data registrace</option>
+                <option value="login"   <?= $sort === 'login'   ? 'selected' : '' ?>>Posledního přihlášení</option>
                 <option value="name"    <?= $sort === 'name'    ? 'selected' : '' ?>>Jména</option>
                 <option value="email"   <?= $sort === 'email'   ? 'selected' : '' ?>>E-mailu</option>
                 <option value="phone"   <?= $sort === 'phone'   ? 'selected' : '' ?>>Telefonu</option>
@@ -376,6 +380,7 @@ ny_admin_render_header('Uživatelé', 'users');
                 <th><a href="<?= $sortLink('email') ?>">E-mail <?= $sortArrow('email') ?></a></th>
                 <th><a href="<?= $sortLink('phone') ?>">Telefon <?= $sortArrow('phone') ?></a></th>
                 <th><a href="<?= $sortLink('created') ?>">Registrace <?= $sortArrow('created') ?></a></th>
+                <th><a href="<?= $sortLink('login') ?>">Poslední přihlášení <?= $sortArrow('login') ?></a></th>
                 <th><a href="<?= $sortLink('type') ?>">Typ <?= $sortArrow('type') ?></a></th>
                 <th><a href="<?= $sortLink('res') ?>">Rezervací <?= $sortArrow('res') ?></a></th>
                 <th></th>
@@ -399,6 +404,14 @@ ny_admin_render_header('Uživatelé', 'users');
                     <td data-label="E-mail"><?= e($u['email']) ?></td>
                     <td data-label="Telefon"><?= e((string)($u['phone'] ?? '—')) ?></td>
                     <td data-label="Registrace"><?= $created ? e($created->format('j. n. Y')) : '—' ?></td>
+                    <td data-label="Poslední přihlášení">
+                        <?php if (!empty($u['last_login_at'])):
+                            $ll = new DateTimeImmutable((string)$u['last_login_at']); ?>
+                            <span title="<?= e($ll->format('j. n. Y H:i')) ?>"><?= e($ll->format('j. n. Y')) ?></span>
+                        <?php else: ?>
+                            <span class="hint">—</span>
+                        <?php endif; ?>
+                    </td>
                     <td data-label="Typ">
                         <?php if ((int)$u['is_admin'] === 1): ?>
                             <span class="badge badge-success">admin</span>
