@@ -27,7 +27,11 @@ ny_render_header(t('index.title'), 'home', ['description' => t('index.meta.descr
     </div>
 </section>
 
-<?php $homeClasses = ny_gallery_by_section('home_classes'); ?>
+<?php
+$homeClasses = ny_gallery_by_section('home_classes');
+$homeEvents  = ny_gallery_by_section('home_events');
+$hasPromo    = $homeClasses || $homeEvents;
+?>
 <?php if ($homeClasses): ?>
 <section class="home-promo">
     <header class="home-promo-head">
@@ -38,9 +42,14 @@ ny_render_header(t('index.title'), 'home', ['description' => t('index.meta.descr
     <div class="home-promo-grid">
         <?php foreach ($homeClasses as $g):
             $caption = (string)($g['title'] ?: $g['alt']);
+            $altText = (string)($g['alt'] ?: $g['title']);
+            $src     = 'assets/gallery/' . rawurlencode((string)$g['file']);
         ?>
-        <a class="promo-tile" href="rezervace.php" aria-label="<?= e($caption) ?>">
-            <img src="assets/gallery/<?= e(rawurlencode((string)$g['file'])) ?>" alt="<?= e((string)($g['alt'] ?: $g['title'])) ?>" loading="lazy" decoding="async">
+        <a class="promo-tile" href="rezervace.php" aria-label="<?= e($caption) ?>"
+           data-zoom-src="<?= e($src) ?>"
+           data-zoom-alt="<?= e($altText) ?>"
+           data-zoom-caption="<?= e($caption) ?>">
+            <img src="<?= e($src) ?>" alt="<?= e($altText) ?>" loading="lazy" decoding="async">
             <?php if ($caption !== ''): ?>
                 <span class="promo-tile-cap"><?= e($caption) ?></span>
             <?php endif; ?>
@@ -50,7 +59,6 @@ ny_render_header(t('index.title'), 'home', ['description' => t('index.meta.descr
 </section>
 <?php endif; ?>
 
-<?php $homeEvents = ny_gallery_by_section('home_events'); ?>
 <?php if ($homeEvents): ?>
 <section class="home-promo">
     <header class="home-promo-head">
@@ -61,9 +69,14 @@ ny_render_header(t('index.title'), 'home', ['description' => t('index.meta.descr
     <div class="home-promo-grid">
         <?php foreach ($homeEvents as $g):
             $caption = (string)($g['title'] ?: $g['alt']);
+            $altText = (string)($g['alt'] ?: $g['title']);
+            $src     = 'assets/gallery/' . rawurlencode((string)$g['file']);
         ?>
-        <a class="promo-tile" href="rezervace.php" aria-label="<?= e($caption) ?>">
-            <img src="assets/gallery/<?= e(rawurlencode((string)$g['file'])) ?>" alt="<?= e((string)($g['alt'] ?: $g['title'])) ?>" loading="lazy" decoding="async">
+        <a class="promo-tile" href="rezervace.php" aria-label="<?= e($caption) ?>"
+           data-zoom-src="<?= e($src) ?>"
+           data-zoom-alt="<?= e($altText) ?>"
+           data-zoom-caption="<?= e($caption) ?>">
+            <img src="<?= e($src) ?>" alt="<?= e($altText) ?>" loading="lazy" decoding="async">
             <?php if ($caption !== ''): ?>
                 <span class="promo-tile-cap"><?= e($caption) ?></span>
             <?php endif; ?>
@@ -71,6 +84,59 @@ ny_render_header(t('index.title'), 'home', ['description' => t('index.meta.descr
         <?php endforeach; ?>
     </div>
 </section>
+<?php endif; ?>
+
+<?php if ($hasPromo): ?>
+<div id="promo-zoom" class="promo-zoom" role="dialog" aria-modal="true" aria-labelledby="promo-zoom-cap" hidden>
+    <div class="promo-zoom-backdrop" data-zoom-close></div>
+    <figure class="promo-zoom-inner" role="document">
+        <button type="button" class="promo-zoom-close" aria-label="<?= e(t('index.zoom.close')) ?>" data-zoom-close>×</button>
+        <img id="promo-zoom-img" class="promo-zoom-img" src="" alt="">
+        <figcaption class="promo-zoom-foot">
+            <span id="promo-zoom-cap" class="promo-zoom-cap"></span>
+            <a class="btn btn-primary btn-sm promo-zoom-cta" href="rezervace.php"><?= e(t('index.zoom.book')) ?></a>
+        </figcaption>
+    </figure>
+</div>
+<script>
+(function () {
+    var modal   = document.getElementById('promo-zoom');
+    var imgEl   = document.getElementById('promo-zoom-img');
+    var capEl   = document.getElementById('promo-zoom-cap');
+    if (!modal || !imgEl) return;
+
+    function openZoom(src, alt, caption) {
+        imgEl.src = src;
+        imgEl.alt = alt || '';
+        capEl.textContent = caption || '';
+        capEl.hidden = !caption;
+        modal.hidden = false;
+        document.body.classList.add('has-promo-zoom-open');
+    }
+    function closeZoom() {
+        modal.hidden = true;
+        imgEl.src = '';
+        document.body.classList.remove('has-promo-zoom-open');
+    }
+
+    document.addEventListener('click', function (e) {
+        if (e.target.closest('[data-zoom-close]')) { closeZoom(); return; }
+        if (e.target.closest('.promo-zoom-cta'))   { return; }
+        var tile = e.target.closest('.promo-tile[data-zoom-src]');
+        if (!tile) return;
+        e.preventDefault();
+        openZoom(
+            tile.getAttribute('data-zoom-src'),
+            tile.getAttribute('data-zoom-alt'),
+            tile.getAttribute('data-zoom-caption')
+        );
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !modal.hidden) closeZoom();
+    });
+})();
+</script>
 <?php endif; ?>
 
 <section class="home-features">

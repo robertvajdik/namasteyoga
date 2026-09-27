@@ -3504,3 +3504,72 @@ img, iframe, video { max-width: 100%; }
     .home-promo-grid { grid-template-columns: 1fr; gap: 12px; }
     .promo-tile { aspect-ratio: 4 / 3; }
 }
+.promo-tile[data-zoom-src] { cursor: zoom-in; }
+
+/* Zoom lightbox for promo tiles */
+.promo-zoom {
+    position: fixed; inset: 0; z-index: 120;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+}
+.promo-zoom[hidden] { display: none; }
+.promo-zoom-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(31,25,20,.72);
+    backdrop-filter: blur(3px);
+    cursor: zoom-out;
+}
+.promo-zoom-inner {
+    position: relative;
+    margin: 0;
+    display: flex; flex-direction: column;
+    max-width: min(1100px, 96vw);
+    max-height: calc(100vh - 48px);
+    animation: promoZoomIn .2s var(--ease-calm) both;
+}
+@keyframes promoZoomIn {
+    from { opacity: 0; transform: scale(.96); }
+    to   { opacity: 1; transform: scale(1); }
+}
+.promo-zoom-img {
+    display: block;
+    max-width: 100%;
+    max-height: calc(100vh - 140px);
+    object-fit: contain;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 30px 80px rgba(0,0,0,.45);
+    background: #000;
+}
+.promo-zoom-close {
+    position: absolute; top: -14px; right: -14px;
+    background: var(--surface-card); border: 0;
+    width: 40px; height: 40px; border-radius: 50%;
+    font-size: 26px; line-height: 1; color: var(--text-strong);
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(0,0,0,.35);
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background var(--dur-fast) var(--ease-calm), transform var(--dur-fast) var(--ease-calm);
+}
+.promo-zoom-close:hover, .promo-zoom-close:focus-visible {
+    background: var(--sand-100); transform: scale(1.05); outline: none;
+}
+.promo-zoom-foot {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px; flex-wrap: wrap;
+    margin-top: 12px;
+    color: #fff;
+}
+.promo-zoom-cap {
+    font: 600 15px/1.35 var(--font-body);
+    letter-spacing: .01em;
+    text-shadow: 0 2px 12px rgba(0,0,0,.5);
+}
+.promo-zoom-cap[hidden] { display: none; }
+.promo-zoom-cta { margin-left: auto; }
+body.has-promo-zoom-open { overflow: hidden; }
+@media (max-width: 520px) {
+    .promo-zoom { padding: 14px; }
+    .promo-zoom-close { top: -10px; right: -10px; width: 34px; height: 34px; font-size: 22px; }
+    .promo-zoom-foot { justify-content: center; }
+    .promo-zoom-cta { margin-left: 0; }
+}
