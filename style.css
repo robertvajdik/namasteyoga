@@ -2722,12 +2722,16 @@ img, iframe, video { max-width: 100%; }
    Puppy & štěněcí vibe – landing page
 ------------------------------------------------------------------ */
 .puppy-hero {
-    text-align: center;
-    max-width: 900px;
+    display: grid;
+    grid-template-columns: minmax(0, 320px) 1fr;
+    gap: 36px;
+    align-items: center;
+    max-width: 1000px;
     margin: 0 auto var(--space-7);
     padding: 24px 0 12px;
 }
-.puppy-hero .eyebrow {
+.puppy-hero-copy { text-align: left; }
+.puppy-hero-copy .eyebrow {
     display: inline-block;
     color: var(--accent-ink);
     padding-bottom: 6px;
@@ -2751,15 +2755,34 @@ img, iframe, video { max-width: 100%; }
 }
 .puppy-hero-sub {
     max-width: 620px;
-    margin: 0 auto 26px;
+    margin: 0 0 26px;
     color: var(--text-body);
     line-height: 1.65;
 }
 .puppy-hero-cta {
-    display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;
+    display: flex; gap: 14px; flex-wrap: wrap;
 }
 .puppy-hero-cta .btn {
     padding: 12px 26px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700;
+}
+.puppy-hero-visual {
+    margin: 0;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-float);
+    background: var(--clay-500);
+}
+.puppy-hero-visual img { display: block; width: 100%; height: auto; }
+@media (max-width: 780px) {
+    .puppy-hero {
+        grid-template-columns: 1fr;
+        gap: 24px;
+        text-align: center;
+    }
+    .puppy-hero-copy { text-align: center; }
+    .puppy-hero-sub { margin-left: auto; margin-right: auto; }
+    .puppy-hero-cta { justify-content: center; }
+    .puppy-hero-visual { max-width: 280px; margin: 0 auto; }
 }
 
 .puppy-tagline {

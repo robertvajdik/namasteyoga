@@ -41,15 +41,20 @@ $user    = ny_current_user();
 ny_render_header(t('puppy.title'), 'puppyvibe', ['description' => t('puppy.meta.description')]);
 ?>
 <section class="puppy-hero">
-    <div class="eyebrow"><?= e(t('puppy.hero.eyebrow')) ?></div>
-    <h1 class="puppy-hero-title"><?= t('puppy.hero.title') ?></h1>
-    <p class="puppy-hero-lead"><?= e(t('puppy.hero.lead')) ?></p>
-    <p class="puppy-hero-sub">
-        <?= e(t('puppy.hero.sub')) ?>
-    </p>
-    <div class="puppy-hero-cta">
-        <a class="btn btn-primary" href="#rezervace"><?= e(t('puppy.hero.cta.book')) ?></a>
-        <a class="btn btn-secondary" href="#o-co-jde"><?= e(t('puppy.hero.cta.more')) ?></a>
+    <figure class="puppy-hero-visual">
+        <img src="assets/puppy.png" alt="<?= e(t('puppy.hero.image.alt')) ?>" loading="lazy">
+    </figure>
+    <div class="puppy-hero-copy">
+        <div class="eyebrow"><?= e(t('puppy.hero.eyebrow')) ?></div>
+        <h1 class="puppy-hero-title"><?= t('puppy.hero.title') ?></h1>
+        <p class="puppy-hero-lead"><?= e(t('puppy.hero.lead')) ?></p>
+        <p class="puppy-hero-sub">
+            <?= e(t('puppy.hero.sub')) ?>
+        </p>
+        <div class="puppy-hero-cta">
+            <a class="btn btn-primary" href="#rezervace"><?= e(t('puppy.hero.cta.book')) ?></a>
+            <a class="btn btn-secondary" href="#o-co-jde"><?= e(t('puppy.hero.cta.more')) ?></a>
+        </div>
     </div>
 </section>
 
