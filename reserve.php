@@ -8,13 +8,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 ny_csrf_check($_POST['csrf'] ?? null);
 if (!ny_recaptcha_verify($_POST['g-recaptcha-response'] ?? null, 'reserve')) {
-    ny_flash_set('err', 'Ochrana proti robotům selhala, zkuste to prosím znovu.');
+    ny_flash_set('err', t('reserve.err.recaptcha'));
     ny_redirect('rezervace.php');
 }
 
 $user = ny_current_user();
 if (!$user) {
-    ny_flash_set('err', 'Pro rezervaci se prosím přihlaste.');
+    ny_flash_set('err', t('reserve.err.login_required'));
     ny_redirect('login.php');
 }
 
@@ -22,13 +22,13 @@ $classId   = (int)($_POST['class_id'] ?? 0);
 $classDate = (string)($_POST['class_date'] ?? '');
 $dateObj   = DateTimeImmutable::createFromFormat('Y-m-d', $classDate);
 if (!$classId || !$dateObj || $dateObj->format('Y-m-d') !== $classDate) {
-    ny_flash_set('err', 'Neplatné údaje o lekci.');
+    ny_flash_set('err', t('reserve.err.invalid'));
     ny_redirect('rezervace.php');
 }
 
 $today = new DateTimeImmutable('today');
 if ($dateObj < $today) {
-    ny_flash_set('err', 'Nelze rezervovat lekci v minulosti.');
+    ny_flash_set('err', t('reserve.err.past'));
     ny_redirect('rezervace.php');
 }
 
@@ -39,11 +39,11 @@ try {
     $c->execute([$classId]);
     $class = $c->fetch();
     if (!$class) {
-        throw new RuntimeException('Lekce nenalezena.');
+        throw new RuntimeException(t('reserve.err.not_found'));
     }
     // Class must match the weekday.
     if ((int)$class['day_of_week'] !== (int)$dateObj->format('N')) {
-        throw new RuntimeException('Datum nesouhlasí s dnem, kdy lekce probíhá.');
+        throw new RuntimeException(t('reserve.err.day_mismatch'));
     }
 
     $countStmt = $pdo->prepare(
@@ -54,7 +54,7 @@ try {
     $taken = (int)$countStmt->fetchColumn();
 
     if ($taken >= (int)$class['capacity']) {
-        throw new RuntimeException('Lekce je bohužel obsazená.');
+        throw new RuntimeException(t('reserve.err.full'));
     }
 
     // Insert (or reactivate a cancelled) reservation.
@@ -66,7 +66,7 @@ try {
     $ins->execute([$user['id'], $classId, $classDate]);
 
     $pdo->commit();
-    ny_flash_set('ok', 'Rezervace potvrzena: ' . $class['name'] . ' – ' . $dateObj->format('j. n. Y'));
+    ny_flash_set('ok', t('reserve.flash.confirmed', $class['name'], $dateObj->format('j. n. Y')));
 } catch (Throwable $ex) {
     $pdo->rollBack();
     ny_flash_set('err', $ex->getMessage());

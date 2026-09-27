@@ -6,12 +6,12 @@ require __DIR__ . '/src/layout.php';
 $email = trim((string)($_GET['e'] ?? ''));
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $email = '';
 
-ny_render_header('Přihlášení k odběru novinek', '');
+ny_render_header(t('nl_thx.title'), '', ['description' => t('nl_thx.meta.description')]);
 ?>
 <section class="section-title-block">
-    <div class="eyebrow">Newsletter</div>
-    <h1 class="page-title">Děkujeme za přihlášení!</h1>
-    <p class="page-lead">Budeme vás občas informovat o rozvrhu, akcích a workshopech studia.</p>
+    <div class="eyebrow"><?= e(t('nl_thx.eyebrow')) ?></div>
+    <h1 class="page-title"><?= e(t('nl_thx.h')) ?></h1>
+    <p class="page-lead"><?= e(t('nl_thx.lead')) ?></p>
 </section>
 
 <div class="card text-center empty-state newsletter-thanks">
@@ -22,18 +22,18 @@ ny_render_header('Přihlášení k odběru novinek', '');
             <path d="M9 14l2 2 4-4"/>
         </svg>
     </div>
-    <div class="empty-state-title">Přihlášení bylo uloženo</div>
+    <div class="empty-state-title"><?= e(t('nl_thx.saved')) ?></div>
     <p class="text-muted empty-state-hint">
         <?php if ($email !== ''): ?>
-            Adresu <strong><?= e($email) ?></strong> jsme přidali do seznamu odběratelů.
+            <?= sprintf(e(t('nl_thx.added_email')), '<strong>' . e($email) . '</strong>') ?>
         <?php else: ?>
-            Vaši e-mailovou adresu jsme přidali do seznamu odběratelů.
+            <?= e(t('nl_thx.added_generic')) ?>
         <?php endif; ?>
-        Odhlásit se můžete kdykoli odkazem v patičce každého e-mailu.
+        <?= e(t('nl_thx.unsub_hint')) ?>
     </p>
     <div class="row row-center newsletter-thanks-actions">
-        <a class="btn btn-primary" href="index.php">Zpět na úvod</a>
-        <a class="btn btn-secondary" href="rezervace.php">Prohlédnout rozvrh</a>
+        <a class="btn btn-primary" href="index.php"><?= e(t('nl_thx.back_home')) ?></a>
+        <a class="btn btn-secondary" href="rezervace.php"><?= e(t('nl_thx.see_schedule')) ?></a>
     </div>
 </div>
 <?php ny_render_footer();

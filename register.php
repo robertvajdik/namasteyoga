@@ -15,13 +15,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pass2 = (string)($_POST['password2'] ?? '');
 
     if (!ny_recaptcha_verify($_POST['g-recaptcha-response'] ?? null, 'register')) {
-        $error = 'Ochrana proti robotům selhala, zkuste to prosím znovu.';
+        $error = t('register.err.recaptcha');
     } elseif ($name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error = 'Vyplňte prosím jméno a platný e-mail.';
+        $error = t('register.err.name_email');
     } elseif (strlen($pass) < 8) {
-        $error = 'Heslo musí mít alespoň 8 znaků.';
+        $error = t('register.err.password_short');
     } elseif ($pass !== $pass2) {
-        $error = 'Hesla se neshodují.';
+        $error = t('register.err.password_mismatch');
     } else {
         $pdo = ny_db();
         $stmt = $pdo->prepare('SELECT id, is_guest FROM ny_users WHERE email = ? LIMIT 1');
@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $existing = $stmt->fetch();
 
         if ($existing && (int)$existing['is_guest'] === 0) {
-            $error = 'Účet s tímto e-mailem již existuje. <a href="login.php">Přihlaste se</a>.';
+            $error = t('register.err.email_taken');
         } else {
             $hash = password_hash($pass, PASSWORD_DEFAULT);
             if ($existing) {
@@ -59,18 +59,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             ny_login_user($id, false);
-            ny_flash_set('ok', 'Registrace hotova. Vítejte!');
+            ny_flash_set('ok', t('register.flash.welcome'));
             ny_redirect('rezervace.php');
         }
     }
 }
 
-ny_render_header('Registrace', 'register');
+ny_render_header(t('register.title'), 'register', ['description' => t('register.meta.description')]);
 ?>
 <section class="section-title-block">
-    <div class="eyebrow">Nový účet</div>
-    <h1 class="page-title">Registrace</h1>
-    <p class="page-lead">Vytvořte si účet a rezervujte lekce jedním kliknutím.</p>
+    <div class="eyebrow"><?= e(t('register.eyebrow')) ?></div>
+    <h1 class="page-title"><?= e(t('register.title')) ?></h1>
+    <p class="page-lead"><?= e(t('register.lead')) ?></p>
 </section>
 
 <section class="card narrow">
@@ -79,23 +79,23 @@ ny_render_header('Registrace', 'register');
     <?php endif; ?>
     <form method="post" novalidate data-recaptcha="register">
         <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
-        <label>Jméno
+        <label><?= e(t('register.field.name')) ?>
             <input type="text" name="name" value="<?= e($name) ?>" required>
         </label>
-        <label>E-mail
+        <label><?= e(t('register.field.email')) ?>
             <input type="email" name="email" value="<?= e($email) ?>" required>
         </label>
-        <label>Telefon (nepovinné)
+        <label><?= e(t('register.field.phone_optional')) ?>
             <input type="tel" name="phone" value="<?= e($phone) ?>">
         </label>
-        <label>Heslo (min. 8 znaků)
+        <label><?= e(t('register.field.password')) ?>
             <input type="password" name="password" required autocomplete="new-password">
         </label>
-        <label>Heslo znovu
+        <label><?= e(t('register.field.password2')) ?>
             <input type="password" name="password2" required autocomplete="new-password">
         </label>
-        <button class="btn btn-primary btn-form" type="submit">Zaregistrovat</button>
+        <button class="btn btn-primary btn-form" type="submit"><?= e(t('register.btn.submit')) ?></button>
     </form>
-    <p class="hint hint-form">Už máte účet? <a href="login.php">Přihlaste se</a>.</p>
+    <p class="hint hint-form"><?= e(t('register.have_account')) ?> <a href="login.php"><?= e(t('register.login_link')) ?></a>.</p>
 </section>
 <?php ny_render_footer();

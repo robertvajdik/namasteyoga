@@ -2,70 +2,70 @@
 declare(strict_types=1);
 
 require __DIR__ . '/src/layout.php';
-ny_render_header('Ceník', 'cenik');
+ny_render_header(t('cenik.title'), 'cenik', ['description' => t('cenik.meta.description')]);
 ?>
 <section class="section-title-block">
-    <div class="eyebrow">Jednoduché a férové</div>
-    <h1 class="page-title">Ceník</h1>
+    <div class="eyebrow"><?= e(t('cenik.hero.eyebrow')) ?></div>
+    <h1 class="page-title"><?= e(t('cenik.hero.title')) ?></h1>
     <p class="page-lead">
-        Vyberte si jednorázový vstup nebo permanentku. Studenti a senioři mají zvýhodněnou cenu.
+        <?= e(t('cenik.hero.lead')) ?>
     </p>
 </section>
 
-<h2 class="section-h">Otevřené lekce</h2>
+<h2 class="section-h"><?= e(t('cenik.open.title')) ?></h2>
 <div class="price-grid">
     <article class="price-card">
-        <div class="price-eyebrow">Jednorázově</div>
-        <h3>1 vstup</h3>
-        <div class="price-amount">250 Kč</div>
-        <p>Pro pravidelné i příležitostné praktikující.</p>
+        <div class="price-eyebrow"><?= e(t('cenik.open.1.eyebrow')) ?></div>
+        <h3><?= e(t('cenik.open.1.title')) ?></h3>
+        <div class="price-amount"><?= e(t('cenik.open.1.amount')) ?></div>
+        <p><?= e(t('cenik.open.1.desc')) ?></p>
     </article>
     <article class="price-card featured">
-        <div class="price-eyebrow">Doporučujeme</div>
-        <h3>Permanentka 10×</h3>
-        <div class="price-amount">2 200 Kč</div>
-        <p>Platnost 4 měsíce. 220 Kč za lekci.</p>
+        <div class="price-eyebrow"><?= e(t('cenik.open.2.eyebrow')) ?></div>
+        <h3><?= e(t('cenik.open.2.title')) ?></h3>
+        <div class="price-amount"><?= e(t('cenik.open.2.amount')) ?></div>
+        <p><?= e(t('cenik.open.2.desc')) ?></p>
     </article>
     <article class="price-card">
-        <div class="price-eyebrow">Nejvýhodnější</div>
-        <h3>Permanentka 20×</h3>
-        <div class="price-amount">4 000 Kč</div>
-        <p>Platnost 6 měsíců. 200 Kč za lekci.</p>
+        <div class="price-eyebrow"><?= e(t('cenik.open.3.eyebrow')) ?></div>
+        <h3><?= e(t('cenik.open.3.title')) ?></h3>
+        <div class="price-amount"><?= e(t('cenik.open.3.amount')) ?></div>
+        <p><?= e(t('cenik.open.3.desc')) ?></p>
     </article>
 </div>
 
-<h2 class="section-h section-h-gap">Individuální lekce</h2>
+<h2 class="section-h section-h-gap"><?= e(t('cenik.individ.title')) ?></h2>
 <div class="price-grid">
     <article class="price-card">
-        <h3>60 minut · 1 osoba</h3>
-        <div class="price-amount">900 Kč</div>
+        <h3><?= e(t('cenik.individ.1.title')) ?></h3>
+        <div class="price-amount"><?= e(t('cenik.individ.1.amount')) ?></div>
     </article>
     <article class="price-card">
-        <h3>90 minut · 1 osoba</h3>
-        <div class="price-amount">1 250 Kč</div>
+        <h3><?= e(t('cenik.individ.2.title')) ?></h3>
+        <div class="price-amount"><?= e(t('cenik.individ.2.amount')) ?></div>
     </article>
     <article class="price-card">
-        <h3>60 minut · 2 osoby</h3>
-        <div class="price-amount">1 400 Kč</div>
+        <h3><?= e(t('cenik.individ.3.title')) ?></h3>
+        <div class="price-amount"><?= e(t('cenik.individ.3.amount')) ?></div>
     </article>
 </div>
 
-<h2 class="section-h section-h-gap">Masáže</h2>
+<h2 class="section-h section-h-gap"><?= e(t('cenik.massage.title')) ?></h2>
 <div class="tbl-wrap">
     <table class="tbl">
-        <thead><tr><th>Masáž</th><th>Trvání</th><th>Cena</th></tr></thead>
+        <thead><tr><th><?= e(t('cenik.massage.th.name')) ?></th><th><?= e(t('cenik.massage.th.duration')) ?></th><th><?= e(t('cenik.massage.th.price')) ?></th></tr></thead>
         <tbody>
-            <tr><td data-label="Masáž">Klasická relaxační</td><td data-label="Trvání">60 min</td><td data-label="Cena">850 Kč</td></tr>
-            <tr><td data-label="Masáž">Klasická relaxační</td><td data-label="Trvání">90 min</td><td data-label="Cena">1 200 Kč</td></tr>
-            <tr><td data-label="Masáž">Sportovní</td><td data-label="Trvání">60 min</td><td data-label="Cena">900 Kč</td></tr>
-            <tr><td data-label="Masáž">Thajská olejová</td><td data-label="Trvání">90 min</td><td data-label="Cena">1 350 Kč</td></tr>
-            <tr><td data-label="Masáž">Lávové kameny</td><td data-label="Trvání">90 min</td><td data-label="Cena">1 400 Kč</td></tr>
+            <tr><td data-label="<?= e(t('cenik.massage.th.name')) ?>"><?= e(t('cenik.massage.1.name')) ?></td><td data-label="<?= e(t('cenik.massage.th.duration')) ?>"><?= e(t('cenik.massage.1.duration')) ?></td><td data-label="<?= e(t('cenik.massage.th.price')) ?>"><?= e(t('cenik.massage.1.price')) ?></td></tr>
+            <tr><td data-label="<?= e(t('cenik.massage.th.name')) ?>"><?= e(t('cenik.massage.2.name')) ?></td><td data-label="<?= e(t('cenik.massage.th.duration')) ?>"><?= e(t('cenik.massage.2.duration')) ?></td><td data-label="<?= e(t('cenik.massage.th.price')) ?>"><?= e(t('cenik.massage.2.price')) ?></td></tr>
+            <tr><td data-label="<?= e(t('cenik.massage.th.name')) ?>"><?= e(t('cenik.massage.3.name')) ?></td><td data-label="<?= e(t('cenik.massage.th.duration')) ?>"><?= e(t('cenik.massage.3.duration')) ?></td><td data-label="<?= e(t('cenik.massage.th.price')) ?>"><?= e(t('cenik.massage.3.price')) ?></td></tr>
+            <tr><td data-label="<?= e(t('cenik.massage.th.name')) ?>"><?= e(t('cenik.massage.4.name')) ?></td><td data-label="<?= e(t('cenik.massage.th.duration')) ?>"><?= e(t('cenik.massage.4.duration')) ?></td><td data-label="<?= e(t('cenik.massage.th.price')) ?>"><?= e(t('cenik.massage.4.price')) ?></td></tr>
+            <tr><td data-label="<?= e(t('cenik.massage.th.name')) ?>"><?= e(t('cenik.massage.5.name')) ?></td><td data-label="<?= e(t('cenik.massage.th.duration')) ?>"><?= e(t('cenik.massage.5.duration')) ?></td><td data-label="<?= e(t('cenik.massage.th.price')) ?>"><?= e(t('cenik.massage.5.price')) ?></td></tr>
         </tbody>
     </table>
 </div>
 
 <p class="hint hint-form">
-    Studenti a senioři mají slevu 10 % na jednorázový vstup a permanentky (proti platnému průkazu).
+    <?= e(t('cenik.discount.note')) ?>
 </p>
 
 <?php ny_render_footer();

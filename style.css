@@ -355,14 +355,20 @@ form input:focus { outline: none; border-color: var(--sage-400); box-shadow: var
 }
 .class-card .row .hint { font-size: 11px; }
 .class-card-login {
-    margin-top: 6px;
-    display: block;
-    text-align: center;
-    padding: 8px 12px;
-    font-size: 12px;
+    margin-top: 8px;
+    display: flex;
     width: 100%;
     box-sizing: border-box;
-    justify-content: center;
+    padding: 7px 10px;
+    font-size: 12px;
+    background: var(--sage-100);
+    border-color: var(--sage-200);
+    color: var(--accent-ink);
+}
+.class-card-login:hover {
+    background: var(--sage-300);
+    border-color: var(--sage-300);
+    color: #fff;
 }
 
 /* Wider cards (4-col tablet layer): keep badge + button side-by-side. */

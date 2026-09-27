@@ -76,32 +76,31 @@ function ny_category(string $name): string {
     return 'yoga';
 }
 
-$daysCz = [1 => 'Pondělí', 2 => 'Úterý', 3 => 'Středa', 4 => 'Čtvrtek', 5 => 'Pátek', 6 => 'Sobota', 7 => 'Neděle'];
 $weekIsoNum = (int)$monday->format('W');
 
-ny_render_header('Rezervace', 'schedule');
+ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervace.meta.description')]);
 ?>
 <section class="section-title-block">
-    <div class="eyebrow">Rozvrh lekcí</div>
-    <h1 class="page-title">Rezervace</h1>
+    <div class="eyebrow"><?= e(t('rezervace.eyebrow')) ?></div>
+    <h1 class="page-title"><?= e(t('rezervace.title')) ?></h1>
     <p class="page-lead">
-        Vyberte si lekci v týdenním rozvrhu. Rezervaci můžete zrušit nejpozději 12 hodin před začátkem.
+        <?= e(t('rezervace.lead')) ?>
     </p>
 </section>
 
 <div class="schedule-toolbar">
-    <div class="week-nav" role="navigation" aria-label="Navigace týdnem">
-        <a href="?week=<?= e($prevWeek) ?>" aria-label="Předchozí týden"><?= ny_icon('chevron-left', 16) ?></a>
+    <div class="week-nav" role="navigation" aria-label="<?= e(t('rezervace.nav.aria')) ?>">
+        <a href="?week=<?= e($prevWeek) ?>" aria-label="<?= e(t('rezervace.nav.prev')) ?>"><?= ny_icon('chevron-left', 16) ?></a>
         <div class="range">
             <strong><?= e($monday->format('j. n.')) ?> – <?= e($sunday->format('j. n. Y')) ?></strong>
-            <small>Týden <?= $weekIsoNum ?></small>
+            <small><?= e(t('rezervace.week.label')) ?> <?= $weekIsoNum ?></small>
         </div>
-        <a href="?week=<?= e($nextWeek) ?>" aria-label="Následující týden"><?= ny_icon('chevron-right', 16) ?></a>
-        <a href="?">Dnes</a>
+        <a href="?week=<?= e($nextWeek) ?>" aria-label="<?= e(t('rezervace.nav.next')) ?>"><?= ny_icon('chevron-right', 16) ?></a>
+        <a href="?"><?= e(t('rezervace.nav.today')) ?></a>
     </div>
     <?php if (!$user): ?>
         <span class="hint">
-            Rezervace vyžaduje přihlášení – <a href="login.php">přihlaste se</a> nebo pokračujte jako <a href="login.php#guest">host</a>.
+            <?= t('rezervace.login.hint') ?>
         </span>
     <?php endif; ?>
 </div>
@@ -121,12 +120,12 @@ ny_render_header('Rezervace', 'schedule');
 ?>
     <section class="day <?= $isPast ? 'is-past' : '' ?> <?= $isToday ? 'is-today' : '' ?>">
         <header class="day-head">
-            <div class="day-name"><?= e($daysCz[$d]) ?></div>
+            <div class="day-name"><?= e(t('day.' . $d)) ?></div>
             <div class="day-date"><?= e($date->format('j. n.')) ?></div>
         </header>
         <div class="day-slots">
         <?php if (!$dayClasses): ?>
-            <div class="day-empty">Žádné lekce</div>
+            <div class="day-empty"><?= e(t('rezervace.day.empty')) ?></div>
         <?php else: foreach ($dayClasses as $c):
             $key      = $c['id'] . '|' . $dateStr;
             $taken    = $counts[$key] ?? 0;
@@ -153,39 +152,39 @@ ny_render_header('Rezervace', 'schedule');
                 </div>
                 <div class="row">
                     <?php if ($booked): ?>
-                        <span class="badge badge-success"><span class="dot"></span>Rezervováno</span>
+                        <span class="badge badge-success"><span class="dot"></span><?= e(t('rezervace.badge.booked')) ?></span>
                     <?php elseif ($left === 0): ?>
-                        <span class="badge badge-danger">Obsazeno</span>
+                        <span class="badge badge-danger"><?= e(t('rezervace.badge.full')) ?></span>
                     <?php else: ?>
-                        <span class="badge">Volno: <?= $left ?> / <?= $capacity ?></span>
+                        <span class="badge"><?= e(t('rezervace.badge.free')) ?>: <?= $left ?> / <?= $capacity ?></span>
                     <?php endif; ?>
 
                     <?php if ($canShowRoster): ?>
                         <button type="button" class="roster-link" aria-haspopup="dialog">
-                            <?= ny_icon('user', 12) ?> Kdo jde? (<?= $taken ?>)
+                            <?= ny_icon('user', 12) ?> <?= e(t('rezervace.roster.who')) ?> (<?= $taken ?>)
                         </button>
                     <?php endif; ?>
 
                     <?php if ($isPast): ?>
-                        <span class="hint">Proběhlo</span>
+                        <span class="hint"><?= e(t('rezervace.past')) ?></span>
                     <?php elseif ($booked): ?>
                         <form method="post" action="cancel.php" class="inline">
                             <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
                             <input type="hidden" name="class_id" value="<?= (int)$c['id'] ?>">
                             <input type="hidden" name="class_date" value="<?= e($dateStr) ?>">
-                            <button class="btn btn-ghost btn-sm" type="submit">Zrušit</button>
+                            <button class="btn btn-ghost btn-sm" type="submit"><?= e(t('rezervace.btn.cancel')) ?></button>
                         </form>
                     <?php elseif ($user && $left > 0): ?>
                         <form method="post" action="reserve.php" class="inline" data-recaptcha="reserve">
                             <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
                             <input type="hidden" name="class_id" value="<?= (int)$c['id'] ?>">
                             <input type="hidden" name="class_date" value="<?= e($dateStr) ?>">
-                            <button class="btn btn-primary btn-sm" type="submit">Rezervovat</button>
+                            <button class="btn btn-primary btn-sm" type="submit"><?= e(t('rezervace.btn.reserve')) ?></button>
                         </form>
                     <?php endif; ?>
                 </div>
                 <?php if (!$user && !$isPast): ?>
-                    <a class="btn btn-secondary btn-sm class-card-login" href="login.php?class_date=<?= e($dateStr) ?>">Přihlásit</a>
+                    <a class="btn btn-secondary btn-sm class-card-login" href="login.php?class_date=<?= e($dateStr) ?>"><?= e(t('rezervace.btn.login')) ?></a>
                 <?php endif; ?>
             </article>
         <?php endforeach; endif; ?>
@@ -195,8 +194,8 @@ ny_render_header('Rezervace', 'schedule');
 </div>
 
 <section class="room-equipment">
-    <div class="room-equipment-eyebrow">Vybavení sálu</div>
-    <p>Pro cvičení jógy jsou zdarma k dispozici jógové podložky, deky, cihličky, jógové pásy a pohankové válce. Dále jsou součástí sálu a k dispozici speciální popruhy na zdi, vzdušné sítě, overbally, balanční podložky a wheel (kolečko na jógu). Sebou si stačí vzít pohodlné oblečení, ručník či jiné vlastní potřeby.</p>
+    <div class="room-equipment-eyebrow"><?= e(t('rezervace.equipment.eyebrow')) ?></div>
+    <p><?= e(t('rezervace.equipment.text')) ?></p>
 </section>
 
 <?php if ($user): ?>
@@ -204,11 +203,11 @@ ny_render_header('Rezervace', 'schedule');
     <div class="roster-modal-backdrop" data-roster-close></div>
     <div class="roster-modal-inner" role="document">
         <header class="roster-modal-head">
-            <h3 id="roster-title" class="roster-modal-title">Účastníci lekce</h3>
-            <button type="button" class="roster-modal-close" aria-label="Zavřít" data-roster-close>×</button>
+            <h3 id="roster-title" class="roster-modal-title"><?= e(t('rezervace.roster.title')) ?></h3>
+            <button type="button" class="roster-modal-close" aria-label="<?= e(t('rezervace.roster.close')) ?>" data-roster-close>×</button>
         </header>
         <ul id="roster-list" class="roster-list"></ul>
-        <p id="roster-empty" class="roster-empty hint" hidden>Zatím nikdo přihlášen.</p>
+        <p id="roster-empty" class="roster-empty hint" hidden><?= e(t('rezervace.roster.empty')) ?></p>
     </div>
 </div>
 <script>
@@ -218,9 +217,10 @@ ny_render_header('Rezervace', 'schedule');
     var titleEl = document.getElementById('roster-title');
     var emptyEl = document.getElementById('roster-empty');
     if (!modal || !listEl) return;
+    var defaultTitle = <?= json_encode(t('rezervace.roster.title')) ?>;
 
     function openModal(title, names) {
-        titleEl.textContent = title || 'Účastníci lekce';
+        titleEl.textContent = title || defaultTitle;
         listEl.innerHTML = '';
         if (!names || !names.length) {
             emptyEl.hidden = false;

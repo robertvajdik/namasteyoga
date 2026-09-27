@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $ok = false;
     if (!ny_recaptcha_verify($_POST['g-recaptcha-response'] ?? null, 'newsletter')) {
-        ny_flash_set('err', 'Ochrana proti robotům selhala, zkuste to prosím znovu.');
+        ny_flash_set('err', t('nl.err.recaptcha'));
     } else {
         try {
             ny_newsletter_subscribe($email, $name, $source);
@@ -32,26 +32,26 @@ $user      = ny_current_user();
 $prefEmail = $user ? (string)$user['email'] : '';
 $prefName  = $user ? (string)$user['display_name'] : '';
 
-ny_render_header('Odběr novinek', '');
+ny_render_header(t('nl.title'), '', ['description' => t('nl.meta.description')]);
 ?>
 <section class="section-title-block">
-    <div class="eyebrow">Newsletter</div>
-    <h1 class="page-title">Odběr novinek</h1>
-    <p class="page-lead">Občasné novinky o rozvrhu, akcích a workshopech studia. Odhlásit se můžete kdykoli.</p>
+    <div class="eyebrow"><?= e(t('nl.eyebrow')) ?></div>
+    <h1 class="page-title"><?= e(t('nl.title')) ?></h1>
+    <p class="page-lead"><?= e(t('nl.lead')) ?></p>
 </section>
 
 <div class="card newsletter-page">
     <form method="post" class="newsletter-page-form" data-recaptcha="newsletter" novalidate>
         <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
         <input type="hidden" name="source" value="page">
-        <label>Jméno (nepovinné)
+        <label><?= e(t('nl.field.name')) ?>
             <input type="text" name="name" value="<?= e($prefName) ?>" autocomplete="name">
         </label>
-        <label>E-mail
+        <label><?= e(t('nl.field.email')) ?>
             <input type="email" name="email" value="<?= e($prefEmail) ?>" required autocomplete="email">
         </label>
-        <button class="btn btn-primary" type="submit">Přihlásit k odběru</button>
-        <p class="hint">Odesláním souhlasíte se zasíláním e-mailů o dění ve studiu. Odhlásit se můžete kdykoli odkazem v každém e-mailu.</p>
+        <button class="btn btn-primary" type="submit"><?= e(t('nl.btn.submit')) ?></button>
+        <p class="hint"><?= e(t('nl.hint')) ?></p>
     </form>
 </div>
 <?php ny_render_footer();

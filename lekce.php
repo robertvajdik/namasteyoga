@@ -8,7 +8,15 @@ $classes = $pdo->query(
     'SELECT * FROM ny_classes WHERE active = 1 ORDER BY day_of_week, start_time'
 )->fetchAll();
 
-$daysCz = [1 => 'Pondělí', 2 => 'Úterý', 3 => 'Středa', 4 => 'Čtvrtek', 5 => 'Pátek', 6 => 'Sobota', 7 => 'Neděle'];
+$daysCz = [
+    1 => t('lekce.days.1'),
+    2 => t('lekce.days.2'),
+    3 => t('lekce.days.3'),
+    4 => t('lekce.days.4'),
+    5 => t('lekce.days.5'),
+    6 => t('lekce.days.6'),
+    7 => t('lekce.days.7'),
+];
 
 $categories = ny_categories_active();
 
@@ -21,13 +29,13 @@ function ny_category_page(string $name): string {
     return 'yoga';
 }
 
-ny_render_header('Lekce a kurzy', 'lekce');
+ny_render_header(t('lekce.title'), 'lekce', ['description' => t('lekce.meta.description')]);
 ?>
 <section class="section-title-block">
-    <div class="eyebrow">Nabídka studia</div>
-    <h1 class="page-title">Lekce a kurzy</h1>
+    <div class="eyebrow"><?= e(t('lekce.hero.eyebrow')) ?></div>
+    <h1 class="page-title"><?= e(t('lekce.hero.title')) ?></h1>
     <p class="page-lead">
-        Pravidelné otevřené lekce, dlouhodobé kurzy i workshopy. Vyberte si podle stylu, dne nebo obtížnosti.
+        <?= e(t('lekce.hero.lead')) ?>
     </p>
 </section>
 
@@ -47,8 +55,8 @@ ny_render_header('Lekce a kurzy', 'lekce');
 </section>
 <?php endif; ?>
 
-<h2 class="section-h section-h-gap" id="rozvrh">Týdenní rozvrh</h2>
-<p class="hint">Časy a lektoři podle aktuálního rozvrhu. Rezervovat můžete v <a href="rezervace.php">kalendáři rezervací</a>.</p>
+<h2 class="section-h section-h-gap" id="rozvrh"><?= e(t('lekce.schedule.title')) ?></h2>
+<p class="hint"><?= t('lekce.schedule.hint') ?></p>
 
 <div class="week-list">
     <?php for ($d = 1; $d <= 7; $d++):
@@ -65,7 +73,7 @@ ny_render_header('Lekce a kurzy', 'lekce');
                         <div class="wdi-time"><?= e(substr($c['start_time'], 0, 5)) ?> – <?= e(substr($c['end_time'], 0, 5)) ?></div>
                         <div class="wdi-name"><?= e($c['name']) ?></div>
                         <div class="wdi-meta"><?= e($c['teacher']) ?><?php if ($c['room']): ?> · <?= e($c['room']) ?><?php endif; ?></div>
-                        <a class="btn btn-secondary btn-sm wdi-btn" href="rezervace.php">Rezervovat</a>
+                        <a class="btn btn-secondary btn-sm wdi-btn" href="rezervace.php"><?= e(t('lekce.schedule.book')) ?></a>
                     </li>
                 <?php endforeach; ?>
             </ul>
@@ -75,9 +83,9 @@ ny_render_header('Lekce a kurzy', 'lekce');
 
 <section class="cta-band">
     <div class="cta-inner">
-        <h2>Vyberte si termín</h2>
-        <p>Přehled kapacit a rezervace v týdenním kalendáři.</p>
-        <a class="btn btn-primary btn-lg" href="rezervace.php">Otevřít kalendář rezervací</a>
+        <h2><?= e(t('lekce.cta.title')) ?></h2>
+        <p><?= e(t('lekce.cta.lead')) ?></p>
+        <a class="btn btn-primary btn-lg" href="rezervace.php"><?= e(t('lekce.cta.button')) ?></a>
     </div>
 </section>
 

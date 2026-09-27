@@ -40,16 +40,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $hp       = trim((string)($_POST['website'] ?? ''));
 
     if ($hp !== '') {
-        ny_flash_set('ok', 'Děkujeme, poukaz jsme přijali. Ozveme se vám na e-mail.');
+        ny_flash_set('ok', t('poukaz.flash.hp'));
         ny_redirect('poukaz.php#objednavka');
     }
 
     if (!ny_captcha_verify('poukaz', $captcha)) {
-        ny_flash_set('err', 'Kontrolní součet nesouhlasí. Zkuste to prosím znovu.');
+        ny_flash_set('err', t('poukaz.flash.err.captcha'));
     } elseif (!ny_recaptcha_verify($_POST['g-recaptcha-response'] ?? null, 'poukaz')) {
-        ny_flash_set('err', 'Ochrana proti robotům selhala, zkuste to prosím znovu.');
+        ny_flash_set('err', t('poukaz.flash.err.recaptcha'));
     } elseif ($name === '' || !filter_var($from, FILTER_VALIDATE_EMAIL) || $amount === '') {
-        ny_flash_set('err', 'Vyplňte prosím jméno, platný e-mail a hodnotu poukazu.');
+        ny_flash_set('err', t('poukaz.flash.err.fields'));
     } else {
         $amountCzk = (int)preg_replace('/[^0-9]/', '', $amount);
         try {
@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                  . ($voucherId ? 'Interní ID: #' . $voucherId . "\r\n" : '')
                  . "\r\nZpráva:\r\n" . ($msg !== '' ? $msg : '(bez zprávy)') . "\r\n";
         ny_mail($email, $subject, $body, ['reply_to' => $from]);
-        ny_flash_set('ok', 'Děkujeme! Objednávku jsme přijali a ozveme se vám na e-mail s platebními údaji.');
+        ny_flash_set('ok', t('poukaz.flash.ok'));
     }
     ny_redirect('poukaz.php#objednavka');
 }
@@ -79,81 +79,80 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $captcha = ny_captcha_generate('poukaz');
 $user    = ny_current_user();
 
-ny_render_header('Dárkový poukaz', 'poukaz');
+ny_render_header(t('poukaz.title'), 'poukaz', ['description' => t('poukaz.meta.description')]);
 ?>
 <section class="poukaz-hero">
     <div class="poukaz-hero-copy">
-        <div class="eyebrow">Namasté yoga studio</div>
-        <h1 class="poukaz-hero-title">Dárkový poukaz</h1>
-        <p class="poukaz-hero-lead"><em>Move and relax beautifully.</em></p>
+        <div class="eyebrow"><?= e(t('poukaz.hero.eyebrow')) ?></div>
+        <h1 class="poukaz-hero-title"><?= e(t('poukaz.hero.title')) ?></h1>
+        <p class="poukaz-hero-lead"><em><?= e(t('poukaz.hero.tagline')) ?></em></p>
         <p class="poukaz-hero-sub">
-            Darujte blízkým hodinu klidu, pohybu a péče o sebe. Poukaz platí na kteroukoli
-            lekci jógy, pilates, individuální trénink nebo masáž ve studiu Namasté.
+            <?= e(t('poukaz.hero.sub')) ?>
         </p>
         <div class="poukaz-hero-cta">
-            <a class="btn btn-primary" href="#objednavka">Objednat poukaz</a>
-            <a class="btn btn-secondary" href="#varianty">Zobrazit varianty</a>
+            <a class="btn btn-primary" href="#objednavka"><?= e(t('poukaz.hero.cta.order')) ?></a>
+            <a class="btn btn-secondary" href="#varianty"><?= e(t('poukaz.hero.cta.variants')) ?></a>
         </div>
     </div>
     <figure class="poukaz-hero-visual">
-        <img src="assets/darkovy-poukaz.jpg" alt="Ukázka dárkového poukazu Namasté yoga studio" loading="lazy">
+        <img src="assets/darkovy-poukaz.jpg" alt="<?= e(t('poukaz.hero.image.alt')) ?>" loading="lazy">
     </figure>
 </section>
 
 <section class="poukaz-variants" id="varianty">
     <div class="poukaz-variants-head">
-        <div class="eyebrow">Vyberte hodnotu</div>
-        <h2>Poukaz na míru</h2>
-        <p>Nabízíme doporučené varianty, poukaz ale rádi vystavíme na jakoukoli částku nebo konkrétní službu.</p>
+        <div class="eyebrow"><?= e(t('poukaz.variants.eyebrow')) ?></div>
+        <h2><?= e(t('poukaz.variants.title')) ?></h2>
+        <p><?= e(t('poukaz.variants.lead')) ?></p>
     </div>
     <div class="poukaz-variants-grid">
         <article class="poukaz-variant">
-            <div class="poukaz-variant-badge">Ochutnávka</div>
-            <div class="poukaz-variant-price">500 Kč</div>
-            <p>Jednorázová skupinová lekce dle výběru – jóga, pilates nebo yin.</p>
-            <a class="btn btn-ghost btn-sm" href="#objednavka" data-preset="500 Kč (Ochutnávka)">Vybrat</a>
+            <div class="poukaz-variant-badge"><?= e(t('poukaz.variant.1.badge')) ?></div>
+            <div class="poukaz-variant-price"><?= e(t('poukaz.variant.1.price')) ?></div>
+            <p><?= e(t('poukaz.variant.1.desc')) ?></p>
+            <a class="btn btn-ghost btn-sm" href="#objednavka" data-preset="<?= e(t('poukaz.preset.1')) ?>"><?= e(t('poukaz.variant.select')) ?></a>
         </article>
         <article class="poukaz-variant is-featured">
-            <div class="poukaz-variant-badge">Nejoblíbenější</div>
-            <div class="poukaz-variant-price">1&nbsp;500 Kč</div>
-            <p>Permanentka na 5 vstupů na skupinové lekce dle výběru, s platností 3 měsíce.</p>
-            <a class="btn btn-primary btn-sm" href="#objednavka" data-preset="1 500 Kč (Permanentka 5×)">Vybrat</a>
+            <div class="poukaz-variant-badge"><?= e(t('poukaz.variant.2.badge')) ?></div>
+            <div class="poukaz-variant-price"><?= t('poukaz.variant.2.price') ?></div>
+            <p><?= e(t('poukaz.variant.2.desc')) ?></p>
+            <a class="btn btn-primary btn-sm" href="#objednavka" data-preset="<?= e(t('poukaz.preset.2')) ?>"><?= e(t('poukaz.variant.select')) ?></a>
         </article>
         <article class="poukaz-variant">
-            <div class="poukaz-variant-badge">Wellness</div>
-            <div class="poukaz-variant-price">2&nbsp;000 Kč</div>
-            <p>Individuální lekce 1:1 nebo masáž na míru – čas jen pro obdarovaného.</p>
-            <a class="btn btn-ghost btn-sm" href="#objednavka" data-preset="2 000 Kč (Individuální / masáž)">Vybrat</a>
+            <div class="poukaz-variant-badge"><?= e(t('poukaz.variant.3.badge')) ?></div>
+            <div class="poukaz-variant-price"><?= t('poukaz.variant.3.price') ?></div>
+            <p><?= e(t('poukaz.variant.3.desc')) ?></p>
+            <a class="btn btn-ghost btn-sm" href="#objednavka" data-preset="<?= e(t('poukaz.preset.3')) ?>"><?= e(t('poukaz.variant.select')) ?></a>
         </article>
         <article class="poukaz-variant">
-            <div class="poukaz-variant-badge">Vlastní</div>
-            <div class="poukaz-variant-price">? Kč</div>
-            <p>Poukaz na libovolnou částku. Do zprávy nám napište, na kolik ho vystavit.</p>
-            <a class="btn btn-ghost btn-sm" href="#objednavka" data-preset="Vlastní částka">Vybrat</a>
+            <div class="poukaz-variant-badge"><?= e(t('poukaz.variant.4.badge')) ?></div>
+            <div class="poukaz-variant-price"><?= e(t('poukaz.variant.4.price')) ?></div>
+            <p><?= e(t('poukaz.variant.4.desc')) ?></p>
+            <a class="btn btn-ghost btn-sm" href="#objednavka" data-preset="<?= e(t('poukaz.preset.custom')) ?>"><?= e(t('poukaz.variant.select')) ?></a>
         </article>
     </div>
 </section>
 
 <section class="poukaz-how">
     <div class="poukaz-how-head">
-        <div class="eyebrow">Jak to funguje</div>
-        <h2>Od objednávky k dárku za tři kroky</h2>
+        <div class="eyebrow"><?= e(t('poukaz.how.eyebrow')) ?></div>
+        <h2><?= e(t('poukaz.how.title')) ?></h2>
     </div>
     <div class="poukaz-how-grid">
         <div class="poukaz-how-step">
             <div class="poukaz-how-num">01</div>
-            <h3>Vyplňte formulář</h3>
-            <p>Napište nám hodnotu poukazu a pro koho je určený. Odpovíme obratem s platebními údaji.</p>
+            <h3><?= e(t('poukaz.how.1.title')) ?></h3>
+            <p><?= e(t('poukaz.how.1.desc')) ?></p>
         </div>
         <div class="poukaz-how-step">
             <div class="poukaz-how-num">02</div>
-            <h3>Zaplaťte převodem</h3>
-            <p>Po přijetí platby vám poukaz připravíme – v tištěné formě k osobnímu vyzvednutí nebo v PDF k vytištění.</p>
+            <h3><?= e(t('poukaz.how.2.title')) ?></h3>
+            <p><?= e(t('poukaz.how.2.desc')) ?></p>
         </div>
         <div class="poukaz-how-step">
             <div class="poukaz-how-num">03</div>
-            <h3>Předejte a užijte</h3>
-            <p>Obdarovaný si termín rezervuje přes web nebo telefonicky. Platnost poukazu je 2 měsíce od data vystavení.</p>
+            <h3><?= e(t('poukaz.how.3.title')) ?></h3>
+            <p><?= e(t('poukaz.how.3.desc')) ?></p>
         </div>
     </div>
 </section>
@@ -161,88 +160,93 @@ ny_render_header('Dárkový poukaz', 'poukaz');
 <?php $defaultAmount = 1500.0; $defaultSpayd = $iban !== '' ? ny_spayd($iban, $defaultAmount, 'Darkovy poukaz Namaste') : ''; ?>
 <section class="poukaz-payment" id="platba">
     <div class="poukaz-payment-head">
-        <div class="eyebrow">Platba</div>
-        <h2>Zaplaťte pohodlně převodem nebo QR kódem</h2>
-        <p>Naskenujte QR kód v mobilním bankovnictví, nebo použijte údaje níže pro klasický převod.</p>
+        <div class="eyebrow"><?= e(t('poukaz.payment.eyebrow')) ?></div>
+        <h2><?= e(t('poukaz.payment.title')) ?></h2>
+        <p><?= e(t('poukaz.payment.lead')) ?></p>
     </div>
     <div class="poukaz-payment-grid">
         <div class="poukaz-qr">
             <?php if ($iban !== ''): ?>
-                <div class="poukaz-qr-box" id="poukaz-qr" data-iban="<?= e($iban) ?>" data-amount="<?= e((string)$defaultAmount) ?>" data-msg="Darkovy poukaz Namaste" data-spayd="<?= e($defaultSpayd) ?>"></div>
+                <div class="poukaz-qr-box" id="poukaz-qr" data-iban="<?= e($iban) ?>" data-amount="<?= e((string)$defaultAmount) ?>" data-msg="Darkovy poukaz Namaste" data-any-amount="<?= e(t('poukaz.payment.qr.any')) ?>" data-spayd="<?= e($defaultSpayd) ?>"></div>
                 <div class="poukaz-qr-amount">
-                    <span>Částka QR platby</span>
+                    <span><?= e(t('poukaz.payment.qr.amount')) ?></span>
                     <strong id="poukaz-qr-amount-lbl"><?= number_format($defaultAmount, 0, ',', ' ') ?> Kč</strong>
                 </div>
-                <p class="poukaz-qr-hint">Standard SPAYD (Czech QR platba). Funguje v Air Bank, ČSOB, Fio, KB, Raiffeisenbank a dalších.</p>
+                <p class="poukaz-qr-hint"><?= e(t('poukaz.payment.qr.hint')) ?></p>
             <?php else: ?>
                 <div class="poukaz-qr-placeholder">
-                    QR platba bude k dispozici, jakmile bude vyplněn IBAN v administraci.
+                    <?= e(t('poukaz.payment.qr.placeholder')) ?>
                 </div>
             <?php endif; ?>
         </div>
         <dl class="poukaz-bank">
             <?php if ($holder !== ''): ?>
-                <dt>Majitel účtu</dt><dd><?= e($holder) ?></dd>
+                <dt><?= e(t('poukaz.bank.holder')) ?></dt><dd><?= e($holder) ?></dd>
             <?php endif; ?>
             <?php if ($account !== ''): ?>
-                <dt>Číslo účtu</dt><dd class="mono"><?= e($account) ?></dd>
+                <dt><?= e(t('poukaz.bank.account')) ?></dt><dd class="mono"><?= e($account) ?></dd>
             <?php endif; ?>
             <?php if ($iban !== ''): ?>
-                <dt>IBAN</dt><dd class="mono"><?= e($iban) ?></dd>
+                <dt><?= e(t('poukaz.bank.iban')) ?></dt><dd class="mono"><?= e($iban) ?></dd>
             <?php endif; ?>
-            <dt>Variabilní symbol</dt><dd class="mono">datum narození obdarovaného <em>(nebo dle domluvy)</em></dd>
-            <dt>Zpráva pro příjemce</dt><dd>„Dárkový poukaz Namasté“</dd>
-            <dt>Platnost poukazu</dt><dd><?= (int)$validity ?> měsíc<?= $validity >= 5 ? 'ů' : ($validity >= 2 ? 'e' : '') ?> od data vystavení</dd>
+            <dt><?= e(t('poukaz.bank.vs')) ?></dt><dd class="mono"><?= t('poukaz.bank.vs.value') ?></dd>
+            <dt><?= e(t('poukaz.bank.msg')) ?></dt><dd><?= e(t('poukaz.bank.msg.value')) ?></dd>
+            <?php
+                $monthKey = 'poukaz.bank.validity.months.one';
+                if ($validity >= 5)      $monthKey = 'poukaz.bank.validity.months.many';
+                elseif ($validity >= 2)  $monthKey = 'poukaz.bank.validity.months.few';
+            ?>
+            <dt><?= e(t('poukaz.bank.validity')) ?></dt><dd><?= (int)$validity ?> <?= e(t($monthKey)) ?> <?= e(t('poukaz.bank.validity.from')) ?></dd>
         </dl>
     </div>
 </section>
 
 <section class="poukaz-order" id="objednavka">
     <div class="poukaz-order-head">
-        <div class="eyebrow">Objednávka poukazu</div>
-        <h2>Napište nám</h2>
-        <p>Pošleme vám zpět potvrzení, platební údaje a domluvíme způsob předání.</p>
+        <div class="eyebrow"><?= e(t('poukaz.order.eyebrow')) ?></div>
+        <h2><?= e(t('poukaz.order.title')) ?></h2>
+        <p><?= e(t('poukaz.order.lead')) ?></p>
     </div>
     <form method="post" class="poukaz-form" data-recaptcha="poukaz" novalidate>
         <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
-        <label>Vaše jméno
+        <label><?= e(t('poukaz.form.name')) ?>
             <input type="text" name="name" value="<?= e($user ? (string)$user['display_name'] : '') ?>" required>
         </label>
-        <label>Váš e-mail
+        <label><?= e(t('poukaz.form.email')) ?>
             <input type="email" name="email" value="<?= e($user ? (string)$user['email'] : '') ?>" required>
         </label>
-        <label>Hodnota poukazu
+        <label><?= e(t('poukaz.form.amount')) ?>
             <input type="text" name="amount" id="poukaz-amount" list="poukaz-amounts"
-                   placeholder="např. 1 500 Kč nebo vlastní částka"
+                   placeholder="<?= e(t('poukaz.form.amount.placeholder')) ?>"
                    autocomplete="off" required>
             <datalist id="poukaz-amounts">
-                <option value="500 Kč (Ochutnávka)">
-                <option value="1 500 Kč (Permanentka 5×)">
-                <option value="2 000 Kč (Individuální / masáž)">
-                <option value="3 000 Kč">
-                <option value="5 000 Kč">
-                <option value="Vlastní částka">
+                <option value="<?= e(t('poukaz.preset.1')) ?>">
+                <option value="<?= e(t('poukaz.preset.2')) ?>">
+                <option value="<?= e(t('poukaz.preset.3')) ?>">
+                <option value="<?= e(t('poukaz.preset.4')) ?>">
+                <option value="<?= e(t('poukaz.preset.5')) ?>">
+                <option value="<?= e(t('poukaz.preset.custom')) ?>">
             </datalist>
         </label>
-        <label>Poukaz pro (nepovinné)
-            <input type="text" name="for_whom" placeholder="Jméno obdarovaného">
+        <label><?= e(t('poukaz.form.for_whom')) ?>
+            <input type="text" name="for_whom" placeholder="<?= e(t('poukaz.form.for_whom.placeholder')) ?>">
         </label>
-        <label class="poukaz-form-full">Zpráva (nepovinné)
-            <textarea name="message" rows="4" placeholder="Máte přání ohledně věnování, formy předání nebo termínu?"></textarea>
+        <label class="poukaz-form-full"><?= e(t('poukaz.form.message')) ?>
+            <textarea name="message" rows="4" placeholder="<?= e(t('poukaz.form.message.placeholder')) ?>"></textarea>
         </label>
         <div class="hp-field" aria-hidden="true">
-            <label>Website (nechte prázdné)
+            <label><?= e(t('poukaz.form.hp')) ?>
                 <input type="text" name="website" tabindex="-1" autocomplete="off">
             </label>
         </div>
-        <label class="captcha-field poukaz-form-full">Kontrolní otázka: kolik je <?= (int)$captcha['a'] ?> + <?= (int)$captcha['b'] ?>?
+        <label class="captcha-field poukaz-form-full"><?= e(t('poukaz.form.captcha')) ?> <?= (int)$captcha['a'] ?> + <?= (int)$captcha['b'] ?>?
             <input type="text" name="captcha" inputmode="numeric" pattern="[0-9]+" autocomplete="off" required>
         </label>
-        <button class="btn btn-primary btn-form" type="submit">Odeslat objednávku</button>
+        <button class="btn btn-primary btn-form" type="submit"><?= e(t('poukaz.form.submit')) ?></button>
     </form>
     <p class="poukaz-order-contact">
-        Raději telefonicky? Zavolejte na <a href="tel:<?= e(preg_replace('/\s+/', '', $phone)) ?>"><?= e($phone) ?></a>
-        nebo nám napište přímo <?= ny_email_obf($email) ?>.
+        <?= t('poukaz.order.contact') ?> <a href="tel:<?= e(preg_replace('/\s+/', '', $phone)) ?>"><?= e($phone) ?></a>
+        <?= t('poukaz.order.contact.or') ?> <?= ny_email_obf($email) ?>.
     </p>
 </section>
 
@@ -285,9 +289,10 @@ ny_render_header('Dárkový poukaz', 'poukaz');
         if (!iban) return;
         renderQr(buildSpayd(iban, amount, msg));
         if (qrAmountLbl) {
+            var anyLbl = qrEl.getAttribute('data-any-amount') || 'any amount';
             qrAmountLbl.textContent = amount > 0
                 ? amount.toLocaleString('cs-CZ') + ' Kč'
-                : 'libovolná částka';
+                : anyLbl;
         }
     }
 

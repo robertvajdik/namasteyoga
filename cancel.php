@@ -29,8 +29,8 @@ $upd = $pdo->prepare(
 $upd->execute([$user['id'], $classId, $classDate]);
 
 if ($upd->rowCount() > 0) {
-    ny_flash_set('ok', 'Rezervace byla zrušena.');
+    ny_flash_set('ok', t('cancel.flash.ok'));
 } else {
-    ny_flash_set('err', 'Rezervace nenalezena.');
+    ny_flash_set('err', t('cancel.flash.not_found'));
 }
 ny_redirect('rezervace.php?week=' . $classDate);

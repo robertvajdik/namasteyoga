@@ -5,18 +5,18 @@ require __DIR__ . '/src/layout.php';
 
 $teachers = ny_teachers_active();
 
-ny_render_header('Lektoři', 'lektori');
+ny_render_header(t('lektori.title'), 'lektori', ['description' => t('lektori.meta.description')]);
 ?>
 <section class="section-title-block">
-    <div class="eyebrow">Kdo vás povede</div>
-    <h1 class="page-title">Naši lektoři</h1>
+    <div class="eyebrow"><?= e(t('lektori.hero.eyebrow')) ?></div>
+    <h1 class="page-title"><?= e(t('lektori.hero.title')) ?></h1>
     <p class="page-lead">
-        Zkušený tým, který učí s péčí a citem. Každý lektor má svůj styl – vyberte si, co vám bude sedět.
+        <?= e(t('lektori.hero.lead')) ?>
     </p>
 </section>
 
 <?php if (!$teachers): ?>
-    <p class="hint">Seznam lektorů zatím není k dispozici.</p>
+    <p class="hint"><?= e(t('lektori.empty')) ?></p>
 <?php else: ?>
 <div class="teacher-grid">
     <?php foreach ($teachers as $t): ?>
@@ -42,9 +42,9 @@ ny_render_header('Lektoři', 'lektori');
 
 <section class="cta-band">
     <div class="cta-inner">
-        <h2>Přijďte na lekci</h2>
-        <p>Rezervujte si termín v týdenním rozvrhu.</p>
-        <a class="btn btn-primary btn-lg" href="rezervace.php">Zobrazit rozvrh</a>
+        <h2><?= e(t('lektori.cta.title')) ?></h2>
+        <p><?= e(t('lektori.cta.lead')) ?></p>
+        <a class="btn btn-primary btn-lg" href="rezervace.php"><?= e(t('lektori.cta.button')) ?></a>
     </div>
 </section>
 

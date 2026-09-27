@@ -6,24 +6,24 @@ require __DIR__ . '/src/layout.php';
 $token = (string)($_GET['t'] ?? '');
 $done  = $token !== '' && ny_newsletter_unsubscribe_by_token($token);
 
-ny_render_header('Odhlášení z newsletteru', '');
+ny_render_header(t('unsub.title'), '', ['description' => t('unsub.meta.description')]);
 ?>
 <section class="section-title-block">
-    <div class="eyebrow">Newsletter</div>
-    <h1 class="page-title">Odhlášení z odběru novinek</h1>
+    <div class="eyebrow"><?= e(t('unsub.eyebrow')) ?></div>
+    <h1 class="page-title"><?= e(t('unsub.h')) ?></h1>
 </section>
 
 <div class="card text-center empty-state">
     <?php if ($done): ?>
-        <div class="empty-state-title">Odhlášení proběhlo</div>
-        <p class="text-muted empty-state-hint">Tento e-mail už od nás nebude dostávat žádné novinky.</p>
+        <div class="empty-state-title"><?= e(t('unsub.done.title')) ?></div>
+        <p class="text-muted empty-state-hint"><?= e(t('unsub.done.hint')) ?></p>
     <?php elseif ($token === ''): ?>
-        <div class="empty-state-title">Chybí odhlašovací odkaz</div>
-        <p class="text-muted empty-state-hint">Použijte odkaz z e-mailu, který jsme vám zaslali.</p>
+        <div class="empty-state-title"><?= e(t('unsub.missing.title')) ?></div>
+        <p class="text-muted empty-state-hint"><?= e(t('unsub.missing.hint')) ?></p>
     <?php else: ?>
-        <div class="empty-state-title">Odkaz nebyl rozpoznán</div>
-        <p class="text-muted empty-state-hint">Možná jste už dříve odhlášeni, nebo je odkaz neplatný.</p>
+        <div class="empty-state-title"><?= e(t('unsub.bad.title')) ?></div>
+        <p class="text-muted empty-state-hint"><?= e(t('unsub.bad.hint')) ?></p>
     <?php endif; ?>
-    <a class="btn btn-primary" href="index.php">Zpět na úvod</a>
+    <a class="btn btn-primary" href="index.php"><?= e(t('unsub.back_home')) ?></a>
 </div>
 <?php ny_render_footer();

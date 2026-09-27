@@ -23,16 +23,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($hp !== '') {
         // Silently drop bot submissions but still confirm to the user so we
         // don't leak the honeypot's existence.
-        ny_flash_set('ok', 'Děkujeme, zpráva byla odeslána.');
+        ny_flash_set('ok', t('kontakt.flash.ok'));
         ny_redirect('kontakt.php');
     }
 
     if (!ny_captcha_verify('kontakt', $captcha)) {
-        ny_flash_set('err', 'Kontrolní součet nesouhlasí. Zkuste to prosím znovu.');
+        ny_flash_set('err', t('kontakt.flash.err.captcha'));
     } elseif (!ny_recaptcha_verify($_POST['g-recaptcha-response'] ?? null, 'kontakt')) {
-        ny_flash_set('err', 'Ochrana proti robotům selhala, zkuste to prosím znovu.');
+        ny_flash_set('err', t('kontakt.flash.err.recaptcha'));
     } elseif ($name === '' || !filter_var($from, FILTER_VALIDATE_EMAIL) || $msg === '') {
-        ny_flash_set('err', 'Vyplňte prosím jméno, platný e-mail a zprávu.');
+        ny_flash_set('err', t('kontakt.flash.err.fields'));
     } else {
         $subject = '=?UTF-8?B?' . base64_encode('Zpráva z webu – ' . $name) . '?=';
         $body    = "Od: $name <$from>\r\n\r\n" . $msg;
@@ -40,77 +40,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                  . 'Reply-To: ' . $from . "\r\n"
                  . "Content-Type: text/plain; charset=UTF-8\r\n";
         @mail($email, $subject, $body, $headers);
-        ny_flash_set('ok', 'Děkujeme, zpráva byla odeslána.');
+        ny_flash_set('ok', t('kontakt.flash.ok'));
     }
     ny_redirect('kontakt.php');
 }
 
 $captcha = ny_captcha_generate('kontakt');
 
-ny_render_header('Kontakt', 'kontakt');
+ny_render_header(t('kontakt.title'), 'kontakt', ['description' => t('kontakt.meta.description')]);
 ?>
 <section class="section-title-block reveal">
-    <div class="eyebrow">Studio Namasté</div>
-    <h1 class="page-title">Kontakt</h1>
-    <p class="page-lead">Najdete nás v centru Uherského Brodu. Ozvěte se – rádi vám pomůžeme vybrat lekci.</p>
+    <div class="eyebrow"><?= e(t('kontakt.hero.eyebrow')) ?></div>
+    <h1 class="page-title"><?= e(t('kontakt.hero.title')) ?></h1>
+    <p class="page-lead"><?= e(t('kontakt.hero.lead')) ?></p>
 </section>
 
 <div class="cols cols-2">
     <section class="card reveal">
-        <h2>Kde nás najdete</h2>
+        <h2><?= e(t('kontakt.where.title')) ?></h2>
         <figure class="studio-outside">
-            <img src="assets/studio-outside.jpg" alt="Provozovna Yoga studio Namasté – pohled z ulice" loading="lazy">
-            <figcaption>Provozovna Yoga studio Namasté – pohled z ulice.</figcaption>
+            <img src="assets/studio-outside.jpg" alt="<?= e(t('kontakt.where.image.alt')) ?>" loading="lazy">
+            <figcaption><?= e(t('kontakt.where.image.caption')) ?></figcaption>
         </figure>
-        <p>
-            Namasté yoga studio se nachází přímo v centru a srdci Uherského Brodu.
-            Přesněji se nacházíme mezi farou a oční optikou.
-        </p>
-        <p>
-            Od hlavního vlakového i autobusového nádraží je studio jen 6 minut pěší chůzí
-            směrem do centra (přímo za nosem nahoru, cca 350&nbsp;m). Další autobusová
-            zastávka se nachází nad studiem na ulici Mariánské náměstí (asi 1 minutu
-            pěší chůzí směrem dolů, cca 170&nbsp;m).
-        </p>
-        <p>
-            Parkování je možné přímo před studiem. V odpoledních hodinách je parkování
-            v klidném centru Uherského Brodu zdarma.
-        </p>
+        <p><?= e(t('kontakt.where.p1')) ?></p>
+        <p><?= t('kontakt.where.p2') ?></p>
+        <p><?= e(t('kontakt.where.p3')) ?></p>
         <p class="contact-line"><?= ny_icon('calendar', 16) ?> <?= e($opening) ?></p>
         <p class="contact-line"><?= ny_icon('phone', 16) ?> <a href="tel:<?= e(preg_replace('/\s+/', '', $phone)) ?>"><?= e($phone) ?></a></p>
         <p class="contact-line"><?= ny_email_obf($email, ny_icon('mail', 16) . ' ') ?></p>
-        <p class="contact-line">Adresa: <?= e($address) ?></p>
+        <p class="contact-line"><?= e(t('kontakt.where.address')) ?> <?= e($address) ?></p>
         <div class="map-embed">
             <iframe
-                title="Mapa – <?= e($s['site_name']) ?>"
+                title="<?= e(t('kontakt.where.map.title')) ?> – <?= e($s['site_name']) ?>"
                 src="https://www.openstreetmap.org/export/embed.html?bbox=<?= e((string)($mapLon - $mapDelta)) ?>%2C<?= e((string)($mapLat - $mapDelta / 2)) ?>%2C<?= e((string)($mapLon + $mapDelta)) ?>%2C<?= e((string)($mapLat + $mapDelta / 2)) ?>&amp;layer=mapnik&amp;marker=<?= e((string)$mapLat) ?>%2C<?= e((string)$mapLon) ?>"
                 loading="lazy"
                 referrerpolicy="no-referrer-when-downgrade"></iframe>
         </div>
     </section>
     <section class="card muted reveal">
-        <h2>Napište nám</h2>
-        <p class="card-lead">Rezervaci na lekci prosím zadejte v <a href="rezervace.php">kalendáři</a>. Formulář slouží pro obecné dotazy.</p>
+        <h2><?= e(t('kontakt.form.title')) ?></h2>
+        <p class="card-lead"><?= t('kontakt.form.lead') ?></p>
         <form method="post" novalidate data-recaptcha="kontakt">
             <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
-            <label>Jméno
+            <label><?= e(t('kontakt.form.name')) ?>
                 <input type="text" name="name" required>
             </label>
-            <label>E-mail
+            <label><?= e(t('kontakt.form.email')) ?>
                 <input type="email" name="email" required>
             </label>
-            <label>Zpráva
+            <label><?= e(t('kontakt.form.message')) ?>
                 <textarea name="message" rows="4" required></textarea>
             </label>
             <div class="hp-field" aria-hidden="true">
-                <label>Website (nechte prázdné)
+                <label><?= e(t('kontakt.form.hp')) ?>
                     <input type="text" name="website" tabindex="-1" autocomplete="off">
                 </label>
             </div>
-            <label class="captcha-field">Kontrolní otázka: kolik je <?= (int)$captcha['a'] ?> + <?= (int)$captcha['b'] ?>?
+            <label class="captcha-field"><?= e(t('kontakt.form.captcha')) ?> <?= (int)$captcha['a'] ?> + <?= (int)$captcha['b'] ?>?
                 <input type="text" name="captcha" inputmode="numeric" pattern="[0-9]+" autocomplete="off" required>
             </label>
-            <button class="btn btn-primary btn-form" type="submit">Odeslat</button>
+            <button class="btn btn-primary btn-form" type="submit"><?= e(t('kontakt.form.submit')) ?></button>
         </form>
     </section>
 </div>

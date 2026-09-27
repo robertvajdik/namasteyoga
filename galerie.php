@@ -8,22 +8,21 @@ $fbUrl  = $s['facebook_url'];
 $igUrl  = $s['instagram_url'];
 $groups = ny_gallery_active_grouped();
 
-ny_render_header('Galerie', 'galerie', [
-    'description' => 'Fotografie ze studia Namasté, z lekcí, akcí a jóga festivalů.',
+ny_render_header(t('galerie.title'), 'galerie', [
+    'description' => t('galerie.meta.description'),
 ]);
 ?>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
 <section class="section-title-block reveal">
-    <div class="eyebrow">Ze života studia</div>
-    <h1 class="page-title">Galerie</h1>
+    <div class="eyebrow"><?= e(t('galerie.hero.eyebrow')) ?></div>
+    <h1 class="page-title"><?= e(t('galerie.hero.title')) ?></h1>
     <p class="page-lead">
-        Studio, lekce, akce i festivaly – přinášíme kousek atmosféry, kterou u nás
-        můžete zažít. Další fotky najdete také na našich sociálních sítích.
+        <?= e(t('galerie.hero.lead')) ?>
     </p>
     <?php if ($fbUrl || $igUrl): ?>
     <p class="gallery-social">
-        <?php if ($igUrl): ?><a class="btn btn-secondary btn-sm" href="<?= e($igUrl) ?>" target="_blank" rel="noopener"><?= ny_icon('instagram', 16) ?> Instagram</a><?php endif; ?>
-        <?php if ($fbUrl): ?><a class="btn btn-secondary btn-sm" href="<?= e($fbUrl) ?>" target="_blank" rel="noopener"><?= ny_icon('facebook', 16) ?> Facebook</a><?php endif; ?>
+        <?php if ($igUrl): ?><a class="btn btn-secondary btn-sm" href="<?= e($igUrl) ?>" target="_blank" rel="noopener"><?= ny_icon('instagram', 16) ?> <?= e(t('galerie.social.instagram')) ?></a><?php endif; ?>
+        <?php if ($fbUrl): ?><a class="btn btn-secondary btn-sm" href="<?= e($fbUrl) ?>" target="_blank" rel="noopener"><?= ny_icon('facebook', 16) ?> <?= e(t('galerie.social.facebook')) ?></a><?php endif; ?>
     </p>
     <?php endif; ?>
 </section>
@@ -35,7 +34,7 @@ foreach ($groups as $g) { if ($g['items']) { $hasAny = true; break; } }
 
 <?php if (!$hasAny): ?>
     <div class="card muted reveal" style="text-align:center">
-        <p>Galerie se právě připravuje. Zatím se můžete podívat na naše sociální sítě.</p>
+        <p><?= e(t('galerie.empty')) ?></p>
     </div>
 <?php else: ?>
     <?php foreach ($groups as $slug => $g): if (!$g['items']) continue; ?>

@@ -2,59 +2,58 @@
 declare(strict_types=1);
 
 require __DIR__ . '/src/layout.php';
-ny_render_header('Individuální lekce', 'individ');
+ny_render_header(t('individ.title'), 'individ', ['description' => t('individ.meta.description')]);
 ?>
 <section class="section-title-block">
-    <div class="eyebrow">1 : 1 praxe</div>
-    <h1 class="page-title">Individuální lekce</h1>
+    <div class="eyebrow"><?= e(t('individ.hero.eyebrow')) ?></div>
+    <h1 class="page-title"><?= e(t('individ.hero.title')) ?></h1>
     <p class="page-lead">
-        Praxe šitá přímo pro vás. Zaměříme se na to, co potřebujete – ať už jde o dech,
-        držení těla, přípravu na porod, návrat po zranění nebo prohloubení vaší praxe.
+        <?= e(t('individ.hero.lead')) ?>
     </p>
 </section>
 
 <div class="cols cols-2">
     <section class="card">
-        <h2>Kdy má individuální lekce smysl?</h2>
+        <h2><?= e(t('individ.when.title')) ?></h2>
         <ul class="check-list">
-            <li>Začínáte a chcete jistotu ve správném provedení.</li>
-            <li>Řešíte konkrétní obtíž (záda, pánevní dno, dech).</li>
-            <li>Vracíte se k pohybu po pauze nebo po zranění.</li>
-            <li>Chcete lekci mimo běžný rozvrh.</li>
-            <li>Preferujete soukromí a klid bez skupiny.</li>
+            <li><?= e(t('individ.when.1')) ?></li>
+            <li><?= e(t('individ.when.2')) ?></li>
+            <li><?= e(t('individ.when.3')) ?></li>
+            <li><?= e(t('individ.when.4')) ?></li>
+            <li><?= e(t('individ.when.5')) ?></li>
         </ul>
     </section>
     <section class="card muted">
-        <h2>Jak to probíhá</h2>
+        <h2><?= e(t('individ.how.title')) ?></h2>
         <ol class="steps">
-            <li><strong>Domluvíme se</strong> – krátký úvodní hovor, co potřebujete.</li>
-            <li><strong>Vybereme termín</strong> – ve studiu, nebo online.</li>
-            <li><strong>Praxe na míru</strong> – 60 nebo 90 minut jen pro vás.</li>
-            <li><strong>Plán do praxe</strong> – jednoduché tipy, s čím dál pracovat.</li>
+            <li><?= t('individ.how.1') ?></li>
+            <li><?= t('individ.how.2') ?></li>
+            <li><?= t('individ.how.3') ?></li>
+            <li><?= t('individ.how.4') ?></li>
         </ol>
-        <p><a class="btn btn-primary btn-form" href="kontakt.php">Domluvit lekci</a></p>
+        <p><a class="btn btn-primary btn-form" href="kontakt.php"><?= e(t('individ.how.button')) ?></a></p>
     </section>
 </div>
 
-<h2 class="section-h section-h-gap">Ceny individuálních lekcí</h2>
+<h2 class="section-h section-h-gap"><?= e(t('individ.prices.title')) ?></h2>
 <div class="price-grid">
     <article class="price-card">
-        <div class="price-eyebrow">1 osoba</div>
-        <h3>60 minut</h3>
-        <div class="price-amount">900 Kč</div>
-        <p>Jóga, pilates nebo dechová praxe.</p>
+        <div class="price-eyebrow"><?= e(t('individ.prices.1.eyebrow')) ?></div>
+        <h3><?= e(t('individ.prices.1.title')) ?></h3>
+        <div class="price-amount"><?= e(t('individ.prices.1.amount')) ?></div>
+        <p><?= e(t('individ.prices.1.desc')) ?></p>
     </article>
     <article class="price-card featured">
-        <div class="price-eyebrow">Nejoblíbenější</div>
-        <h3>90 minut</h3>
-        <div class="price-amount">1 250 Kč</div>
-        <p>Prostor na hlubší práci a klidný závěr.</p>
+        <div class="price-eyebrow"><?= e(t('individ.prices.2.eyebrow')) ?></div>
+        <h3><?= e(t('individ.prices.2.title')) ?></h3>
+        <div class="price-amount"><?= e(t('individ.prices.2.amount')) ?></div>
+        <p><?= e(t('individ.prices.2.desc')) ?></p>
     </article>
     <article class="price-card">
-        <div class="price-eyebrow">2 osoby</div>
-        <h3>Dvojice · 60 min</h3>
-        <div class="price-amount">1 400 Kč</div>
-        <p>Přijďte s partnerem, kamarádkou nebo sourozencem.</p>
+        <div class="price-eyebrow"><?= e(t('individ.prices.3.eyebrow')) ?></div>
+        <h3><?= e(t('individ.prices.3.title')) ?></h3>
+        <div class="price-amount"><?= e(t('individ.prices.3.amount')) ?></div>
+        <p><?= e(t('individ.prices.3.desc')) ?></p>
     </article>
 </div>
 

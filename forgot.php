@@ -12,9 +12,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = strtolower(trim((string)($_POST['email'] ?? '')));
 
     if (!ny_recaptcha_verify($_POST['g-recaptcha-response'] ?? null, 'forgot')) {
-        $error = 'Ochrana proti robotům selhala, zkuste to prosím znovu.';
+        $error = t('forgot.err.recaptcha');
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error = 'Zadejte prosím platnou e-mailovou adresu.';
+        $error = t('forgot.err.email');
     } else {
         $pdo  = ny_db();
         $stmt = $pdo->prepare('SELECT id, display_name, is_guest FROM ny_users WHERE email = ? LIMIT 1');
@@ -39,30 +39,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-ny_render_header('Zapomenuté heslo', 'login');
+ny_render_header(t('forgot.title'), 'login', ['description' => t('forgot.meta.description')]);
 ?>
 <section class="section-title-block">
-    <div class="eyebrow">Přihlášení</div>
-    <h1 class="page-title">Zapomenuté heslo</h1>
-    <p class="page-lead">Zadejte e-mail účtu a pošleme vám odkaz pro nastavení nového hesla.</p>
+    <div class="eyebrow"><?= e(t('forgot.eyebrow')) ?></div>
+    <h1 class="page-title"><?= e(t('forgot.title')) ?></h1>
+    <p class="page-lead"><?= e(t('forgot.lead')) ?></p>
 </section>
 
 <section class="card narrow">
     <?php if ($sent): ?>
-        <div class="flash flash-ok">Pokud e-mail patří k účtu, odeslali jsme na něj odkaz pro obnovení hesla. Zkontrolujte prosím i složku spam.</div>
-        <p class="hint hint-form"><a href="login.php">Zpět na přihlášení</a></p>
+        <div class="flash flash-ok"><?= e(t('forgot.sent')) ?></div>
+        <p class="hint hint-form"><a href="login.php"><?= e(t('forgot.back_login')) ?></a></p>
     <?php else: ?>
         <?php if ($error): ?>
             <div class="flash flash-err"><?= e($error) ?></div>
         <?php endif; ?>
         <form method="post" novalidate data-recaptcha="forgot">
             <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
-            <label>E-mail
+            <label><?= e(t('forgot.field.email')) ?>
                 <input type="email" name="email" value="<?= e($email) ?>" required autocomplete="email">
             </label>
-            <button class="btn btn-primary btn-form" type="submit">Odeslat odkaz</button>
+            <button class="btn btn-primary btn-form" type="submit"><?= e(t('forgot.btn.submit')) ?></button>
         </form>
-        <p class="hint hint-form"><a href="login.php">Zpět na přihlášení</a></p>
+        <p class="hint hint-form"><a href="login.php"><?= e(t('forgot.back_login')) ?></a></p>
     <?php endif; ?>
 </section>
 <?php ny_render_footer();

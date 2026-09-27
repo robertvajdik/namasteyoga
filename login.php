@@ -17,7 +17,7 @@ function _returnTo(): string {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ny_csrf_check($_POST['csrf'] ?? null);
     if (!ny_recaptcha_verify($_POST['g-recaptcha-response'] ?? null, 'login')) {
-        ny_flash_set('err', 'Ochrana proti robotům selhala, zkuste to prosím znovu.');
+        ny_flash_set('err', t('login.err.recaptcha'));
         ny_redirect('login.php');
     }
     $pdo = ny_db();
@@ -35,22 +35,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ->execute([$new, $u['id']]);
             }
             ny_login_user((int)$u['id'], false);
-            ny_flash_set('ok', 'Vítejte, ' . $u['display_name'] . '.');
+            ny_flash_set('ok', t('login.welcome', $u['display_name']));
             ny_redirect(_returnTo());
         }
-        $errors['registered'] = 'Nesprávný e-mail nebo heslo.';
+        $errors['registered'] = t('login.err.bad_credentials');
     } elseif ($mode === 'guest') {
         $email = strtolower(trim((string)($_POST['email'] ?? '')));
         $name  = trim((string)($_POST['name'] ?? ''));
         $phone = trim((string)($_POST['phone'] ?? ''));
         if (!filter_var($email, FILTER_VALIDATE_EMAIL) || $name === '') {
-            $errors['guest'] = 'Vyplňte prosím jméno a platný e-mail.';
+            $errors['guest'] = t('login.err.name_email');
         } else {
             $stmt = $pdo->prepare('SELECT * FROM ny_users WHERE email = ? LIMIT 1');
             $stmt->execute([$email]);
             $u = $stmt->fetch();
             if ($u && (int)$u['is_guest'] === 0) {
-                $errors['guest'] = 'Pro tento e-mail existuje účet – přihlaste se prosím heslem.';
+                $errors['guest'] = t('login.err.email_has_account');
             } else {
                 if ($u) {
                     $pdo->prepare('UPDATE ny_users SET display_name = ?, phone = ? WHERE id = ?')
@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $id = (int)$pdo->lastInsertId();
                 }
                 ny_login_user($id, true);
-                ny_flash_set('ok', 'Přihlášeni jako host.');
+                ny_flash_set('ok', t('login.welcome_guest'));
                 ny_redirect(_returnTo());
             }
         }
@@ -72,18 +72,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $returnClassDate = (string)($_GET['class_date'] ?? '');
 
-ny_render_header('Přihlášení', 'login');
+ny_render_header(t('login.title'), 'login', ['description' => t('login.meta.description')]);
 ?>
 <section class="section-title-block">
-    <div class="eyebrow">Vaše cesta</div>
-    <h1 class="page-title">Přihlášení</h1>
-    <p class="page-lead">Přihlaste se ke svému účtu, nebo pokračujte jako host bez registrace.</p>
+    <div class="eyebrow"><?= e(t('login.eyebrow')) ?></div>
+    <h1 class="page-title"><?= e(t('login.title')) ?></h1>
+    <p class="page-lead"><?= e(t('login.lead')) ?></p>
 </section>
 
 <div class="cols">
     <section class="card">
-        <h2>Registrovaný uživatel</h2>
-        <p class="card-lead">Máte účet ze staré verze webu? Vaše heslo funguje dál.</p>
+        <h2><?= e(t('login.section.registered.h')) ?></h2>
+        <p class="card-lead"><?= e(t('login.section.registered.lead')) ?></p>
         <?php if ($errors['registered']): ?>
             <div class="flash flash-err"><?= e($errors['registered']) ?></div>
         <?php endif; ?>
@@ -91,20 +91,20 @@ ny_render_header('Přihlášení', 'login');
             <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
             <input type="hidden" name="mode" value="registered">
             <input type="hidden" name="return_class_date" value="<?= e($returnClassDate) ?>">
-            <label>E-mail
+            <label><?= e(t('login.field.email')) ?>
                 <input type="email" name="email" required autocomplete="email">
             </label>
-            <label>Heslo
+            <label><?= e(t('login.field.password')) ?>
                 <input type="password" name="password" required autocomplete="current-password">
             </label>
-            <button class="btn btn-primary btn-form" type="submit">Přihlásit se</button>
+            <button class="btn btn-primary btn-form" type="submit"><?= e(t('login.btn.login')) ?></button>
         </form>
-        <p class="hint hint-form">Nemáte účet? <a href="register.php">Zaregistrujte se</a>. · <a href="forgot.php">Zapomenuté heslo?</a></p>
+        <p class="hint hint-form"><?= e(t('auth.no.account')) ?> <a href="register.php"><?= e(t('auth.register.link')) ?></a>. · <a href="forgot.php"><?= e(t('auth.forgot')) ?></a></p>
     </section>
 
     <section class="card muted" id="guest">
-        <h2>Pokračovat jako host</h2>
-        <p class="card-lead">Bez hesla, stačí jméno a e-mail. Rezervaci uvidíte, dokud jste přihlášeni.</p>
+        <h2><?= e(t('login.section.guest.h')) ?></h2>
+        <p class="card-lead"><?= e(t('login.section.guest.lead')) ?></p>
         <?php if ($errors['guest']): ?>
             <div class="flash flash-err"><?= e($errors['guest']) ?></div>
         <?php endif; ?>
@@ -112,16 +112,16 @@ ny_render_header('Přihlášení', 'login');
             <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
             <input type="hidden" name="mode" value="guest">
             <input type="hidden" name="return_class_date" value="<?= e($returnClassDate) ?>">
-            <label>Jméno
+            <label><?= e(t('login.field.name')) ?>
                 <input type="text" name="name" required>
             </label>
-            <label>E-mail
+            <label><?= e(t('login.field.email')) ?>
                 <input type="email" name="email" required>
             </label>
-            <label>Telefon (nepovinné)
+            <label><?= e(t('login.field.phone_optional')) ?>
                 <input type="tel" name="phone">
             </label>
-            <button class="btn btn-sand btn-form" type="submit">Pokračovat</button>
+            <button class="btn btn-sand btn-form" type="submit"><?= e(t('login.btn.continue')) ?></button>
         </form>
     </section>
 </div>
