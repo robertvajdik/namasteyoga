@@ -316,6 +316,61 @@ function ny_ensure_content_tables(): void {
         foreach ($seed as $r) $ins->execute($r);
     }
 
+    // First-run seed for homepage promo tiles (Vyberte si lekci / Nenechte si ujít).
+    // Files ship in /assets/ and are copied into /assets/gallery/ so the standard
+    // gallery admin can manage them. Guarded by a setting flag so re-running is a no-op.
+    if (ny_setting('home_promo_seeded', '') !== '1') {
+        $assetsSrc = __DIR__ . '/../assets';
+        $galDest   = __DIR__ . '/../assets/gallery';
+        if (!is_dir($galDest)) @mkdir($galDest, 0755, true);
+
+        $copy = static function (string $file) use ($assetsSrc, $galDest): bool {
+            $src = $assetsSrc . '/' . $file;
+            $dst = $galDest . '/' . $file;
+            if (!is_file($src)) return false;
+            if (is_file($dst)) return true;
+            return @copy($src, $dst);
+        };
+        $ins = $pdo->prepare(
+            'INSERT INTO ny_gallery (section, title, alt, file, sort_order, active)
+             VALUES (?, ?, ?, ?, ?, 1)'
+        );
+
+        $classesSeed = [
+            ['Pilates – otevřená lekce', 'namasteyoga.cz_pilates_open_zari26_2.jpg'],
+            ['Power jóga',               'namasteyoga.cz_power_zari26.jpg'],
+            ['Restorativní jóga',        'namasteyoga.cz_restorativni_zari26.jpg'],
+            ['Těhotenská jóga',          'namasteyoga.cz_tehotenska_zari26_OK.jpg'],
+            ['Yin jóga',                 'namasteyoga.cz_yin_zari26_streda_2.jpg'],
+            ['Core jóga',                'namasteyoga.cz_core_zari26_streda_2.jpg'],
+        ];
+        $order = 10;
+        foreach ($classesSeed as [$title, $file]) {
+            if ($copy($file)) {
+                $ins->execute(['home_classes', $title, $title, $file, $order]);
+                $order += 10;
+            }
+        }
+
+        $eventsSeed = [
+            ['Blacklight pilates & jóga – říjen 2026',  'namasteyoga.cz_blacklight_pilates-a-yoga_rijen2026_368.jpg'],
+            ['Puppy vibe – jóga se štěňaty',            'namasteyoga.cz_puppyvibe_zari.jpg'],
+            ['Pilates, jóga & brunch – září 2026',      'namasteyoga.cz_pilates_yoga_brunch_zari2026_368.jpg'],
+            ['Pilates, jóga & brunch – říjen 2026',     'namasteyoga.cz_pilates_yoga_brunch_rijen2026_369.jpg'],
+            ['Pilates, jóga & brunch – listopad 2026',  'namasteyoga.cz_pilates_yoga_brunch_listopad2026_369.jpg'],
+            ['Dárkový poukaz 2026',                     'namasteyoga.cz_darkovypoukaz_2026.jpg'],
+        ];
+        $order = 10;
+        foreach ($eventsSeed as [$title, $file]) {
+            if ($copy($file)) {
+                $ins->execute(['home_events', $title, $title, $file, $order]);
+                $order += 10;
+            }
+        }
+
+        ny_settings_save(['home_promo_seeded' => '1']);
+    }
+
     $done = true;
 }
 
@@ -377,10 +432,21 @@ function ny_categories_active(): array {
 
 function ny_gallery_sections(): array {
     return [
-        'studio'    => 'Studio',
-        'lekce'     => 'Foto z lekcí, akcí ad.',
-        'festivaly' => 'Jóga festivaly',
+        'studio'       => 'Studio',
+        'lekce'        => 'Foto z lekcí, akcí ad.',
+        'festivaly'    => 'Jóga festivaly',
+        'home_classes' => 'Domů – Vyberte si lekci',
+        'home_events'  => 'Domů – Nenechte si ujít',
     ];
+}
+
+function ny_gallery_by_section(string $slug): array {
+    ny_ensure_content_tables();
+    $stmt = ny_db()->prepare(
+        'SELECT * FROM ny_gallery WHERE section = ? AND active = 1 ORDER BY sort_order, id'
+    );
+    $stmt->execute([$slug]);
+    return $stmt->fetchAll();
 }
 
 /**

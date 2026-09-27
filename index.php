@@ -27,6 +27,8 @@ ny_render_header(t('index.title'), 'home', ['description' => t('index.meta.descr
     </div>
 </section>
 
+<?php $homeClasses = ny_gallery_by_section('home_classes'); ?>
+<?php if ($homeClasses): ?>
 <section class="home-promo">
     <header class="home-promo-head">
         <div class="eyebrow"><?= e(t('index.promo.eyebrow')) ?></div>
@@ -34,33 +36,22 @@ ny_render_header(t('index.title'), 'home', ['description' => t('index.meta.descr
         <p class="page-lead"><?= e(t('index.promo.lead')) ?></p>
     </header>
     <div class="home-promo-grid">
-        <a class="promo-tile" href="rezervace.php" aria-label="<?= e(t('index.promo.pilatesopen.title')) ?>">
-            <img src="assets/namasteyoga.cz_pilates_open_zari26_2.jpg" alt="" loading="lazy" decoding="async">
-            <span class="promo-tile-cap"><?= e(t('index.promo.pilatesopen.title')) ?></span>
+        <?php foreach ($homeClasses as $g):
+            $caption = (string)($g['title'] ?: $g['alt']);
+        ?>
+        <a class="promo-tile" href="rezervace.php" aria-label="<?= e($caption) ?>">
+            <img src="assets/gallery/<?= e(rawurlencode((string)$g['file'])) ?>" alt="<?= e((string)($g['alt'] ?: $g['title'])) ?>" loading="lazy" decoding="async">
+            <?php if ($caption !== ''): ?>
+                <span class="promo-tile-cap"><?= e($caption) ?></span>
+            <?php endif; ?>
         </a>
-        <a class="promo-tile" href="rezervace.php" aria-label="<?= e(t('index.promo.power.title')) ?>">
-            <img src="assets/namasteyoga.cz_power_zari26.jpg" alt="" loading="lazy" decoding="async">
-            <span class="promo-tile-cap"><?= e(t('index.promo.power.title')) ?></span>
-        </a>
-        <a class="promo-tile" href="rezervace.php" aria-label="<?= e(t('index.promo.restorativni.title')) ?>">
-            <img src="assets/namasteyoga.cz_restorativni_zari26.jpg" alt="" loading="lazy" decoding="async">
-            <span class="promo-tile-cap"><?= e(t('index.promo.restorativni.title')) ?></span>
-        </a>
-        <a class="promo-tile" href="rezervace.php" aria-label="<?= e(t('index.promo.tehotenska.title')) ?>">
-            <img src="assets/namasteyoga.cz_tehotenska_zari26_OK.jpg" alt="" loading="lazy" decoding="async">
-            <span class="promo-tile-cap"><?= e(t('index.promo.tehotenska.title')) ?></span>
-        </a>
-        <a class="promo-tile" href="rezervace.php" aria-label="<?= e(t('index.promo.yin.title')) ?>">
-            <img src="assets/namasteyoga.cz_yin_zari26_streda_2.jpg" alt="" loading="lazy" decoding="async">
-            <span class="promo-tile-cap"><?= e(t('index.promo.yin.title')) ?></span>
-        </a>
-        <a class="promo-tile" href="rezervace.php" aria-label="<?= e(t('index.promo.core.title')) ?>">
-            <img src="assets/namasteyoga.cz_core_zari26_streda_2.jpg" alt="" loading="lazy" decoding="async">
-            <span class="promo-tile-cap"><?= e(t('index.promo.core.title')) ?></span>
-        </a>
+        <?php endforeach; ?>
     </div>
 </section>
+<?php endif; ?>
 
+<?php $homeEvents = ny_gallery_by_section('home_events'); ?>
+<?php if ($homeEvents): ?>
 <section class="home-promo">
     <header class="home-promo-head">
         <div class="eyebrow"><?= e(t('index.events.eyebrow')) ?></div>
@@ -68,32 +59,19 @@ ny_render_header(t('index.title'), 'home', ['description' => t('index.meta.descr
         <p class="page-lead"><?= e(t('index.events.lead')) ?></p>
     </header>
     <div class="home-promo-grid">
-        <a class="promo-tile" href="rezervace.php" aria-label="<?= e(t('index.events.blacklight.title')) ?>">
-            <img src="assets/namasteyoga.cz_blacklight_pilates-a-yoga_rijen2026_368.jpg" alt="" loading="lazy" decoding="async">
-            <span class="promo-tile-cap"><?= e(t('index.events.blacklight.title')) ?></span>
+        <?php foreach ($homeEvents as $g):
+            $caption = (string)($g['title'] ?: $g['alt']);
+        ?>
+        <a class="promo-tile" href="rezervace.php" aria-label="<?= e($caption) ?>">
+            <img src="assets/gallery/<?= e(rawurlencode((string)$g['file'])) ?>" alt="<?= e((string)($g['alt'] ?: $g['title'])) ?>" loading="lazy" decoding="async">
+            <?php if ($caption !== ''): ?>
+                <span class="promo-tile-cap"><?= e($caption) ?></span>
+            <?php endif; ?>
         </a>
-        <a class="promo-tile" href="puppyvibe.php" aria-label="<?= e(t('index.events.puppyvibe.title')) ?>">
-            <img src="assets/namasteyoga.cz_puppyvibe_zari.jpg" alt="" loading="lazy" decoding="async">
-            <span class="promo-tile-cap"><?= e(t('index.events.puppyvibe.title')) ?></span>
-        </a>
-        <a class="promo-tile" href="rezervace.php" aria-label="<?= e(t('index.events.brunchsep.title')) ?>">
-            <img src="assets/namasteyoga.cz_pilates_yoga_brunch_zari2026_368.jpg" alt="" loading="lazy" decoding="async">
-            <span class="promo-tile-cap"><?= e(t('index.events.brunchsep.title')) ?></span>
-        </a>
-        <a class="promo-tile" href="rezervace.php" aria-label="<?= e(t('index.events.brunchoct.title')) ?>">
-            <img src="assets/namasteyoga.cz_pilates_yoga_brunch_rijen2026_369.jpg" alt="" loading="lazy" decoding="async">
-            <span class="promo-tile-cap"><?= e(t('index.events.brunchoct.title')) ?></span>
-        </a>
-        <a class="promo-tile" href="rezervace.php" aria-label="<?= e(t('index.events.brunchnov.title')) ?>">
-            <img src="assets/namasteyoga.cz_pilates_yoga_brunch_listopad2026_369.jpg" alt="" loading="lazy" decoding="async">
-            <span class="promo-tile-cap"><?= e(t('index.events.brunchnov.title')) ?></span>
-        </a>
-        <a class="promo-tile" href="poukaz.php" aria-label="<?= e(t('index.events.voucher.title')) ?>">
-            <img src="assets/namasteyoga.cz_darkovypoukaz_2026.jpg" alt="" loading="lazy" decoding="async">
-            <span class="promo-tile-cap"><?= e(t('index.events.voucher.title')) ?></span>
-        </a>
+        <?php endforeach; ?>
     </div>
 </section>
+<?php endif; ?>
 
 <section class="home-features">
     <div class="home-feature">
