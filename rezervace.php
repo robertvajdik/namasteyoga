@@ -184,7 +184,7 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
                     <?php endif; ?>
                 </div>
                 <?php if (!$user && !$isPast): ?>
-                    <a class="btn btn-secondary btn-sm class-card-login" href="login.php?class_date=<?= e($dateStr) ?>"><?= e(t('rezervace.btn.login')) ?></a>
+                    <a class="btn btn-secondary btn-sm class-card-login" href="login.php?class_date=<?= e($dateStr) ?>&amp;class_id=<?= (int)$c['id'] ?>"><?= e(t('rezervace.btn.login')) ?></a>
                 <?php endif; ?>
             </article>
         <?php endforeach; endif; ?>

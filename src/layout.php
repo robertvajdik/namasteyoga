@@ -109,6 +109,54 @@ function ny_week_start(?string $iso): DateTimeImmutable {
 }
 
 /**
+ * Book a class for a user. Shared by reserve.php and the auto-book flow after
+ * a guest signs in from a class card. Returns ['ok' => true, 'class' => row,
+ * 'date' => DateTimeImmutable] on success, or ['ok' => false, 'msg' => string]
+ * on any validation / capacity / DB error.
+ */
+function ny_reserve_class(int $userId, int $classId, string $classDate): array {
+    $dateObj = DateTimeImmutable::createFromFormat('Y-m-d', $classDate);
+    if (!$classId || !$dateObj || $dateObj->format('Y-m-d') !== $classDate) {
+        return ['ok' => false, 'msg' => t('reserve.err.invalid')];
+    }
+    if ($dateObj < new DateTimeImmutable('today')) {
+        return ['ok' => false, 'msg' => t('reserve.err.past')];
+    }
+    $pdo = ny_db();
+    $pdo->beginTransaction();
+    try {
+        $c = $pdo->prepare('SELECT * FROM ny_classes WHERE id = ? AND active = 1 FOR UPDATE');
+        $c->execute([$classId]);
+        $class = $c->fetch();
+        if (!$class) {
+            throw new RuntimeException(t('reserve.err.not_found'));
+        }
+        if ((int)$class['day_of_week'] !== (int)$dateObj->format('N')) {
+            throw new RuntimeException(t('reserve.err.day_mismatch'));
+        }
+        $countStmt = $pdo->prepare(
+            "SELECT COUNT(*) FROM ny_reservations
+              WHERE class_id = ? AND class_date = ? AND status = 'booked' FOR UPDATE"
+        );
+        $countStmt->execute([$classId, $classDate]);
+        if ((int)$countStmt->fetchColumn() >= (int)$class['capacity']) {
+            throw new RuntimeException(t('reserve.err.full'));
+        }
+        $ins = $pdo->prepare(
+            "INSERT INTO ny_reservations (user_id, class_id, class_date, status)
+             VALUES (?, ?, ?, 'booked')
+             ON DUPLICATE KEY UPDATE status = 'booked', created_at = CURRENT_TIMESTAMP"
+        );
+        $ins->execute([$userId, $classId, $classDate]);
+        $pdo->commit();
+        return ['ok' => true, 'class' => $class, 'date' => $dateObj];
+    } catch (Throwable $ex) {
+        $pdo->rollBack();
+        return ['ok' => false, 'msg' => $ex->getMessage()];
+    }
+}
+
+/**
  * Minimal inline-SVG helper for Lucide-style icons (matches the design's stroke look).
  */
 function ny_icon(string $name, int $size = 18): string {

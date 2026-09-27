@@ -45,6 +45,30 @@ $cancelled30 = (int)($row['cancelled'] ?? 0);
 $total30     = $booked30 + $cancelled30;
 $stats['cancel_rate'] = $total30 > 0 ? round(100 * $cancelled30 / $total30) : 0;
 
+// Guest booking activity — how much of the traffic comes from the walk-in
+// (host) flow vs registered members. Uses `booked` rows only so cancellations
+// don't muddy the share.
+$q = $pdo->prepare(
+    "SELECT
+        SUM(u.is_guest = 1) AS by_guests,
+        SUM(u.is_guest = 0) AS by_users
+       FROM ny_reservations r
+       JOIN ny_users u ON u.id = r.user_id
+      WHERE r.status = 'booked' AND r.created_at >= ?"
+);
+$q->execute([$last30 . ' 00:00:00']);
+$row = $q->fetch();
+$guestBookings30 = (int)($row['by_guests'] ?? 0);
+$userBookings30  = (int)($row['by_users']  ?? 0);
+$stats['guest_reservations_30d'] = $guestBookings30;
+$stats['guest_share_30d'] = ($guestBookings30 + $userBookings30) > 0
+    ? round(100 * $guestBookings30 / ($guestBookings30 + $userBookings30))
+    : 0;
+
+$q = $pdo->prepare("SELECT COUNT(*) FROM ny_users WHERE is_guest = 1 AND created_at >= ?");
+$q->execute([$last30 . ' 00:00:00']);
+$stats['new_guests_30d'] = (int)$q->fetchColumn();
+
 $q = $pdo->prepare(
     "SELECT COALESCE(SUM(taken), 0) AS taken_total, COALESCE(SUM(cap), 0) AS cap_total
        FROM (
@@ -105,7 +129,7 @@ $upcomingStmt->execute([$today, $in7]);
 $upcoming = $upcomingStmt->fetchAll();
 
 $latestStmt = $pdo->prepare(
-    "SELECT r.*, c.name, c.start_time, u.display_name, u.email
+    "SELECT r.*, c.name, c.start_time, u.display_name, u.email, u.is_guest
        FROM ny_reservations r
        JOIN ny_classes c ON c.id = r.class_id
        JOIN ny_users   u ON u.id = r.user_id
@@ -127,6 +151,9 @@ ny_admin_render_header('Dashboard', 'dashboard');
     <div class="admin-stat"><div class="num"><?= $stats['guests'] ?></div><div class="lbl">Hostů</div></div>
     <div class="admin-stat"><div class="num"><?= $stats['new_users_30d'] ?></div><div class="lbl">Noví za 30 dní</div></div>
     <div class="admin-stat"><div class="num"><?= $stats['cancel_rate'] ?>&nbsp;%</div><div class="lbl">Stornováno (30 d)</div></div>
+    <div class="admin-stat"><div class="num"><?= $stats['guest_reservations_30d'] ?></div><div class="lbl">Rezervací hostů (30 d)</div></div>
+    <div class="admin-stat"><div class="num"><?= $stats['guest_share_30d'] ?>&nbsp;%</div><div class="lbl">Podíl hostů (30 d)</div></div>
+    <div class="admin-stat"><div class="num"><?= $stats['new_guests_30d'] ?></div><div class="lbl">Nových hostů (30 d)</div></div>
 </div>
 
 <div class="admin-card">
@@ -207,7 +234,13 @@ ny_admin_render_header('Dashboard', 'dashboard');
                 $d = new DateTimeImmutable($r['class_date']); ?>
                 <tr>
                     <td><?= e($created->format('j. n. H:i')) ?></td>
-                    <td><?= e($r['display_name']) ?><br><small class="hint"><?= e($r['email']) ?></small></td>
+                    <td>
+                        <?= e($r['display_name']) ?>
+                        <?php if ((int)$r['is_guest'] === 1): ?>
+                            <span class="badge badge-warn">host</span>
+                        <?php endif; ?>
+                        <br><small class="hint"><?= e($r['email']) ?></small>
+                    </td>
                     <td><?= e($r['name']) ?></td>
                     <td><?= e($d->format('j. n.')) ?> <?= e(substr($r['start_time'], 0, 5)) ?></td>
                     <td>
