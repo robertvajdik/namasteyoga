@@ -5,9 +5,14 @@ require __DIR__ . '/src/layout.php';
 
 ny_render_header(t('index.title'), 'home', ['description' => t('index.meta.description')]);
 ?>
-<section class="home-hero">
-    <div class="eyebrow"><?= e(t('index.hero.eyebrow')) ?></div>
-    <h1 class="page-title home-hero-title"><?= e(t('index.hero.title')) ?></h1>
+<section class="home-hero home-hero--media">
+    <div class="home-hero-body">
+        <div class="eyebrow"><?= e(t('index.hero.eyebrow')) ?></div>
+        <h1 class="page-title home-hero-title"><?= e(t('index.hero.title')) ?></h1>
+    </div>
+    <div class="home-hero-media">
+        <img src="assets/namasteyoga.cz_joga2.jpg" alt="<?= e(t('index.hero.image.alt')) ?>" loading="eager" decoding="async">
+    </div>
 </section>
 
 <section class="home-video">
@@ -19,6 +24,74 @@ ny_render_header(t('index.title'), 'home', ['description' => t('index.meta.descr
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowfullscreen
             referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    </div>
+</section>
+
+<section class="home-promo">
+    <header class="home-promo-head">
+        <div class="eyebrow"><?= e(t('index.promo.eyebrow')) ?></div>
+        <h2 class="section-h"><?= e(t('index.promo.h')) ?></h2>
+        <p class="page-lead"><?= e(t('index.promo.lead')) ?></p>
+    </header>
+    <div class="home-promo-grid">
+        <a class="promo-tile" href="rezervace.php" aria-label="<?= e(t('index.promo.pilatesopen.title')) ?>">
+            <img src="assets/namasteyoga.cz_pilates_open_zari26_2.jpg" alt="" loading="lazy" decoding="async">
+            <span class="promo-tile-cap"><?= e(t('index.promo.pilatesopen.title')) ?></span>
+        </a>
+        <a class="promo-tile" href="rezervace.php" aria-label="<?= e(t('index.promo.power.title')) ?>">
+            <img src="assets/namasteyoga.cz_power_zari26.jpg" alt="" loading="lazy" decoding="async">
+            <span class="promo-tile-cap"><?= e(t('index.promo.power.title')) ?></span>
+        </a>
+        <a class="promo-tile" href="rezervace.php" aria-label="<?= e(t('index.promo.restorativni.title')) ?>">
+            <img src="assets/namasteyoga.cz_restorativni_zari26.jpg" alt="" loading="lazy" decoding="async">
+            <span class="promo-tile-cap"><?= e(t('index.promo.restorativni.title')) ?></span>
+        </a>
+        <a class="promo-tile" href="rezervace.php" aria-label="<?= e(t('index.promo.tehotenska.title')) ?>">
+            <img src="assets/namasteyoga.cz_tehotenska_zari26_OK.jpg" alt="" loading="lazy" decoding="async">
+            <span class="promo-tile-cap"><?= e(t('index.promo.tehotenska.title')) ?></span>
+        </a>
+        <a class="promo-tile" href="rezervace.php" aria-label="<?= e(t('index.promo.yin.title')) ?>">
+            <img src="assets/namasteyoga.cz_yin_zari26_streda_2.jpg" alt="" loading="lazy" decoding="async">
+            <span class="promo-tile-cap"><?= e(t('index.promo.yin.title')) ?></span>
+        </a>
+        <a class="promo-tile" href="rezervace.php" aria-label="<?= e(t('index.promo.core.title')) ?>">
+            <img src="assets/namasteyoga.cz_core_zari26_streda_2.jpg" alt="" loading="lazy" decoding="async">
+            <span class="promo-tile-cap"><?= e(t('index.promo.core.title')) ?></span>
+        </a>
+    </div>
+</section>
+
+<section class="home-promo">
+    <header class="home-promo-head">
+        <div class="eyebrow"><?= e(t('index.events.eyebrow')) ?></div>
+        <h2 class="section-h"><?= e(t('index.events.h')) ?></h2>
+        <p class="page-lead"><?= e(t('index.events.lead')) ?></p>
+    </header>
+    <div class="home-promo-grid">
+        <a class="promo-tile" href="rezervace.php" aria-label="<?= e(t('index.events.blacklight.title')) ?>">
+            <img src="assets/namasteyoga.cz_blacklight_pilates-a-yoga_rijen2026_368.jpg" alt="" loading="lazy" decoding="async">
+            <span class="promo-tile-cap"><?= e(t('index.events.blacklight.title')) ?></span>
+        </a>
+        <a class="promo-tile" href="puppyvibe.php" aria-label="<?= e(t('index.events.puppyvibe.title')) ?>">
+            <img src="assets/namasteyoga.cz_puppyvibe_zari.jpg" alt="" loading="lazy" decoding="async">
+            <span class="promo-tile-cap"><?= e(t('index.events.puppyvibe.title')) ?></span>
+        </a>
+        <a class="promo-tile" href="rezervace.php" aria-label="<?= e(t('index.events.brunchsep.title')) ?>">
+            <img src="assets/namasteyoga.cz_pilates_yoga_brunch_zari2026_368.jpg" alt="" loading="lazy" decoding="async">
+            <span class="promo-tile-cap"><?= e(t('index.events.brunchsep.title')) ?></span>
+        </a>
+        <a class="promo-tile" href="rezervace.php" aria-label="<?= e(t('index.events.brunchoct.title')) ?>">
+            <img src="assets/namasteyoga.cz_pilates_yoga_brunch_rijen2026_369.jpg" alt="" loading="lazy" decoding="async">
+            <span class="promo-tile-cap"><?= e(t('index.events.brunchoct.title')) ?></span>
+        </a>
+        <a class="promo-tile" href="rezervace.php" aria-label="<?= e(t('index.events.brunchnov.title')) ?>">
+            <img src="assets/namasteyoga.cz_pilates_yoga_brunch_listopad2026_369.jpg" alt="" loading="lazy" decoding="async">
+            <span class="promo-tile-cap"><?= e(t('index.events.brunchnov.title')) ?></span>
+        </a>
+        <a class="promo-tile" href="poukaz.php" aria-label="<?= e(t('index.events.voucher.title')) ?>">
+            <img src="assets/namasteyoga.cz_darkovypoukaz_2026.jpg" alt="" loading="lazy" decoding="async">
+            <span class="promo-tile-cap"><?= e(t('index.events.voucher.title')) ?></span>
+        </a>
     </div>
 </section>
 

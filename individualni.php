@@ -4,12 +4,17 @@ declare(strict_types=1);
 require __DIR__ . '/src/layout.php';
 ny_render_header(t('individ.title'), 'individ', ['description' => t('individ.meta.description')]);
 ?>
-<section class="section-title-block">
-    <div class="eyebrow"><?= e(t('individ.hero.eyebrow')) ?></div>
-    <h1 class="page-title"><?= e(t('individ.hero.title')) ?></h1>
-    <p class="page-lead">
-        <?= e(t('individ.hero.lead')) ?>
-    </p>
+<section class="page-hero-media">
+    <div class="page-hero-media-img">
+        <img src="assets/57F8EEC2-42C9-4945-B5C9-CDC3312B5D5F.png" alt="<?= e(t('individ.hero.image.alt')) ?>" loading="eager" decoding="async">
+    </div>
+    <div class="page-hero-media-body">
+        <div class="eyebrow"><?= e(t('individ.hero.eyebrow')) ?></div>
+        <h1 class="page-title"><?= e(t('individ.hero.title')) ?></h1>
+        <p class="page-lead">
+            <?= e(t('individ.hero.lead')) ?>
+        </p>
+    </div>
 </section>
 
 <div class="cols cols-2">
