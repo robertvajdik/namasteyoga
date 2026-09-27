@@ -91,6 +91,8 @@ $hasPromo    = $homeClasses || $homeEvents;
     <div class="promo-zoom-backdrop" data-zoom-close></div>
     <figure class="promo-zoom-inner" role="document">
         <button type="button" class="promo-zoom-close" aria-label="<?= e(t('index.zoom.close')) ?>" data-zoom-close>×</button>
+        <button type="button" class="promo-zoom-nav promo-zoom-prev" aria-label="<?= e(t('index.zoom.prev')) ?>" data-zoom-nav="-1">‹</button>
+        <button type="button" class="promo-zoom-nav promo-zoom-next" aria-label="<?= e(t('index.zoom.next')) ?>" data-zoom-nav="1">›</button>
         <img id="promo-zoom-img" class="promo-zoom-img" src="" alt="">
         <figcaption class="promo-zoom-foot">
             <span id="promo-zoom-cap" class="promo-zoom-cap"></span>
@@ -103,13 +105,32 @@ $hasPromo    = $homeClasses || $homeEvents;
     var modal   = document.getElementById('promo-zoom');
     var imgEl   = document.getElementById('promo-zoom-img');
     var capEl   = document.getElementById('promo-zoom-cap');
+    var prevBtn = modal ? modal.querySelector('.promo-zoom-prev') : null;
+    var nextBtn = modal ? modal.querySelector('.promo-zoom-next') : null;
     if (!modal || !imgEl) return;
 
-    function openZoom(src, alt, caption) {
-        imgEl.src = src;
-        imgEl.alt = alt || '';
-        capEl.textContent = caption || '';
+    var group = [];
+    var index = 0;
+
+    function render() {
+        var tile = group[index];
+        if (!tile) return;
+        imgEl.src = tile.getAttribute('data-zoom-src');
+        imgEl.alt = tile.getAttribute('data-zoom-alt') || '';
+        var caption = tile.getAttribute('data-zoom-caption') || '';
+        capEl.textContent = caption;
         capEl.hidden = !caption;
+        var multi = group.length > 1;
+        if (prevBtn) prevBtn.hidden = !multi;
+        if (nextBtn) nextBtn.hidden = !multi;
+    }
+    function openZoom(tile) {
+        var grid = tile.closest('.home-promo-grid');
+        group = grid
+            ? Array.prototype.slice.call(grid.querySelectorAll('.promo-tile[data-zoom-src]'))
+            : [tile];
+        index = Math.max(0, group.indexOf(tile));
+        render();
         modal.hidden = false;
         document.body.classList.add('has-promo-zoom-open');
     }
@@ -118,22 +139,28 @@ $hasPromo    = $homeClasses || $homeEvents;
         imgEl.src = '';
         document.body.classList.remove('has-promo-zoom-open');
     }
+    function step(delta) {
+        if (!group.length) return;
+        index = (index + delta + group.length) % group.length;
+        render();
+    }
 
     document.addEventListener('click', function (e) {
         if (e.target.closest('[data-zoom-close]')) { closeZoom(); return; }
-        if (e.target.closest('.promo-zoom-cta'))   { return; }
+        var navBtn = e.target.closest('[data-zoom-nav]');
+        if (navBtn) { step(parseInt(navBtn.getAttribute('data-zoom-nav'), 10) || 0); return; }
+        if (e.target.closest('.promo-zoom-cta')) { return; }
         var tile = e.target.closest('.promo-tile[data-zoom-src]');
         if (!tile) return;
         e.preventDefault();
-        openZoom(
-            tile.getAttribute('data-zoom-src'),
-            tile.getAttribute('data-zoom-alt'),
-            tile.getAttribute('data-zoom-caption')
-        );
+        openZoom(tile);
     });
 
     document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && !modal.hidden) closeZoom();
+        if (modal.hidden) return;
+        if (e.key === 'Escape')     { closeZoom(); }
+        else if (e.key === 'ArrowLeft')  { step(-1); }
+        else if (e.key === 'ArrowRight') { step(1); }
     });
 })();
 </script>
