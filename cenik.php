@@ -161,10 +161,9 @@ $openAmount = function(int $i) use ($s) {
 <?php
 $individ = [];
 for ($i = 1; $i <= 3; $i++) {
-    $titleOverride  = trim((string)($s['cenik_individ_' . $i . '_title']  ?? ''));
-    $amountOverride = trim((string)($s['cenik_individ_' . $i . '_amount'] ?? ''));
+    $amountOverride = trim((string)($s['individ_prices_' . $i . '_amount'] ?? ''));
     $individ[$i] = [
-        'title'  => $titleOverride  !== '' ? $titleOverride  : t('cenik.individ.' . $i . '.title'),
+        'title'  => t('cenik.individ.' . $i . '.title'),
         'amount' => $amountOverride !== '' ? $amountOverride : t('cenik.individ.' . $i . '.amount'),
     ];
 }

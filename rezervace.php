@@ -175,7 +175,7 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
                             <button class="btn btn-ghost btn-sm" type="submit"><?= e(t('rezervace.btn.cancel')) ?></button>
                         </form>
                     <?php elseif ($user && $left > 0): ?>
-                        <form method="post" action="reserve.php" class="inline" data-recaptcha="reserve">
+                        <form method="post" action="reserve.php" class="inline">
                             <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
                             <input type="hidden" name="class_id" value="<?= (int)$c['id'] ?>">
                             <input type="hidden" name="class_date" value="<?= e($dateStr) ?>">

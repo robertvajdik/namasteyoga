@@ -91,17 +91,6 @@ $fields = [
             'cenik_open_3_amount' => ['label' => 'Neomezený měsíc · cena',    'type' => 'text', 'hint' => 'Např. „4 000 Kč".'],
         ],
     ],
-    'cenik_individ' => [
-        'title' => 'Ceník – individuální lekce',
-        'items' => [
-            'cenik_individ_1_title'  => ['label' => 'Varianta 1 · název',  'type' => 'text', 'hint' => 'Např. „60 minut · 1 osoba". Nechte prázdné pro výchozí hodnotu z překladu.'],
-            'cenik_individ_1_amount' => ['label' => 'Varianta 1 · cena',   'type' => 'text', 'hint' => 'Např. „900 Kč".'],
-            'cenik_individ_2_title'  => ['label' => 'Varianta 2 · název',  'type' => 'text'],
-            'cenik_individ_2_amount' => ['label' => 'Varianta 2 · cena',   'type' => 'text'],
-            'cenik_individ_3_title'  => ['label' => 'Varianta 3 · název',  'type' => 'text'],
-            'cenik_individ_3_amount' => ['label' => 'Varianta 3 · cena',   'type' => 'text'],
-        ],
-    ],
     'cenik_massage' => [
         'title' => 'Ceník – masáže',
         'items' => [
@@ -122,9 +111,9 @@ $fields = [
         ],
     ],
     'individ_prices' => [
-        'title' => 'Individuální lekce – ceny na stránce individualni.php',
+        'title' => 'Individuální lekce – ceny',
         'items' => [
-            'individ_prices_1_amount' => ['label' => 'Karta 1 · cena', 'type' => 'text', 'hint' => 'Např. „900 Kč". Nechte prázdné pro výchozí hodnotu z překladu.'],
+            'individ_prices_1_amount' => ['label' => 'Karta 1 · cena', 'type' => 'text', 'hint' => 'Zobrazí se na individualni.php i v ceníku. Nechte prázdné pro výchozí hodnotu z překladu.'],
             'individ_prices_2_amount' => ['label' => 'Karta 2 · cena', 'type' => 'text'],
             'individ_prices_3_amount' => ['label' => 'Karta 3 · cena', 'type' => 'text'],
         ],

@@ -5,6 +5,9 @@
     RewriteRule ^sitemap\.xml$ sitemap.php [L]
 
     # Redirect direct .php requests to extensionless URL (canonical).
+    # Only on safe methods — a 301 drops the request body and converts POST
+    # to GET, which would silently break form submissions (reserve, cancel…).
+    RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
     RewriteCond %{THE_REQUEST} \s/+([^\s?]*?)\.php[\s?] [NC]
     RewriteRule ^ /%1 [R=301,L,NE]
 

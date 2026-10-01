@@ -7,10 +7,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     ny_redirect('rezervace.php');
 }
 ny_csrf_check($_POST['csrf'] ?? null);
-if (!ny_recaptcha_verify($_POST['g-recaptcha-response'] ?? null, 'reserve')) {
-    ny_flash_set('err', t('reserve.err.recaptcha'));
-    ny_redirect('rezervace.php');
-}
 
 $user = ny_current_user();
 if (!$user) {

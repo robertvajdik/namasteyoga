@@ -5,25 +5,21 @@ require __DIR__ . '/src/layout.php';
 
 ny_render_header(t('index.title'), 'home', ['description' => t('index.meta.description')]);
 ?>
-<section class="home-hero home-hero--media">
-    <div class="home-hero-body">
-        <div class="eyebrow"><?= e(t('index.hero.eyebrow')) ?></div>
-        <h1 class="page-title home-hero-title"><?= e(t('index.hero.title')) ?></h1>
-    </div>
-    <div class="home-hero-media">
-        <img src="assets/namasteyoga.cz_joga2.jpg" alt="<?= e(t('index.hero.image.alt')) ?>" loading="eager" decoding="async">
-    </div>
-</section>
-
-<section class="home-video">
-    <div class="home-video-frame">
-        <iframe
-            src="https://www.youtube-nocookie.com/embed/PaXYm4M_Ivo?rel=0"
-            title="<?= e(t('index.video.title')) ?>"
-            loading="lazy"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen
-            referrerpolicy="strict-origin-when-cross-origin"></iframe>
+<section class="home-hero home-hero--bg" style="background-image: url('assets/namasteyoga.cz_joga2.jpg');">
+    <div class="home-hero-bg-inner">
+        <div class="home-hero-body">
+            <div class="eyebrow"><?= e(t('index.hero.eyebrow')) ?></div>
+            <h1 class="page-title home-hero-title"><?= e(t('index.hero.title')) ?></h1>
+        </div>
+        <div class="home-hero-video">
+            <iframe
+                src="https://www.youtube-nocookie.com/embed/PaXYm4M_Ivo?rel=0"
+                title="<?= e(t('index.video.title')) ?>"
+                loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen
+                referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        </div>
     </div>
 </section>
 

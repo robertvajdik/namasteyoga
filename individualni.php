@@ -9,10 +9,7 @@ $individPrice = function(int $i) use ($s) {
 };
 ny_render_header(t('individ.title'), 'individ', ['description' => t('individ.meta.description')]);
 ?>
-<section class="page-hero-media">
-    <div class="page-hero-media-img">
-        <img src="assets/57F8EEC2-42C9-4945-B5C9-CDC3312B5D5F.png" alt="<?= e(t('individ.hero.image.alt')) ?>" loading="eager" decoding="async">
-    </div>
+<section class="page-hero-media page-hero-media--bg" style="background-image: url('assets/57F8EEC2-42C9-4945-B5C9-CDC3312B5D5F.png');" aria-label="<?= e(t('individ.hero.image.alt')) ?>">
     <div class="page-hero-media-body">
         <div class="eyebrow"><?= e(t('individ.hero.eyebrow')) ?></div>
         <h1 class="page-title"><?= e(t('individ.hero.title')) ?></h1>
