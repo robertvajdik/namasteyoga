@@ -31,6 +31,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ny_flash_set('ok', 'Stav poukazu byl upraven.');
         ny_redirect('vouchers.php' . ($_POST['back'] ?? ''));
     }
+    if ($action === 'send_email' && $id) {
+        try {
+            $override = trim((string)($_POST['send_to'] ?? '')) ?: null;
+            ny_voucher_send_email($id, $override);
+            ny_flash_set('ok', 'Poukaz byl odeslán e-mailem.');
+        } catch (Throwable $e) {
+            ny_flash_set('err', $e->getMessage());
+        }
+        ny_redirect('vouchers.php');
+    }
     if ($action === 'save' && $id) {
         $buyerName  = trim((string)($_POST['buyer_name'] ?? ''));
         $buyerEmail = trim((string)($_POST['buyer_email'] ?? ''));
@@ -74,11 +84,91 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $filter = (string)($_GET['f'] ?? 'active');
+$export = (string)($_GET['export'] ?? '');
 $where = '';
 if ($filter === 'pending')  $where = "WHERE status = 'pending'";
 elseif ($filter === 'active')   $where = "WHERE status IN ('pending','paid','issued')";
 elseif ($filter === 'redeemed') $where = "WHERE status = 'redeemed'";
 elseif ($filter === 'cancelled')$where = "WHERE status = 'cancelled'";
+
+if ($export === 'csv' || $export === 'xls') {
+    $stmt = $pdo->query("SELECT * FROM ny_vouchers $where ORDER BY created_at DESC");
+
+    $baseName = 'poukazy-' . ($filter ?: 'vse') . '-' . date('Y-m-d');
+    $headers  = [
+        'Kód', 'Stav', 'Objednatel', 'E-mail objednatele', 'Pro koho',
+        'Částka (Kč)', 'Popis částky', 'Vytvořeno', 'Platnost do', 'Odesláno', 'Poznámka',
+    ];
+    $statusLabel = static function (string $s) use ($statuses): string {
+        return isset($statuses[$s]) ? (string)$statuses[$s]['label'] : $s;
+    };
+    $rowFor = function (array $r) use ($statusLabel) {
+        $created = $r['created_at'] ? (new DateTimeImmutable((string)$r['created_at']))->format('Y-m-d H:i') : '';
+        $valid   = $r['valid_until'] ? (new DateTimeImmutable((string)$r['valid_until']))->format('Y-m-d') : '';
+        $issued  = !empty($r['issued_at']) ? (new DateTimeImmutable((string)$r['issued_at']))->format('Y-m-d H:i') : '';
+        return [
+            (string)$r['code'],
+            $statusLabel((string)$r['status']),
+            (string)$r['buyer_name'],
+            (string)$r['buyer_email'],
+            (string)$r['for_whom'],
+            (int)$r['amount_czk'],
+            (string)$r['amount_raw'],
+            $created,
+            $valid,
+            $issued,
+            (string)($r['note'] ?? ''),
+        ];
+    };
+
+    while (ob_get_level() > 0) ob_end_clean();
+
+    if ($export === 'csv') {
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename="' . $baseName . '.csv"');
+        header('Cache-Control: no-store, no-cache, must-revalidate');
+        header('Pragma: no-cache');
+        $out = fopen('php://output', 'w');
+        fwrite($out, "\xEF\xBB\xBF");
+        fputcsv($out, $headers, ';');
+        while ($r = $stmt->fetch()) fputcsv($out, $rowFor($r), ';');
+        fclose($out);
+        exit;
+    }
+
+    header('Content-Type: application/vnd.ms-excel; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $baseName . '.xls"');
+    header('Cache-Control: no-store, no-cache, must-revalidate');
+    header('Pragma: no-cache');
+
+    $xmlCell = function ($v): string {
+        if (is_int($v) || (is_string($v) && $v !== '' && ctype_digit($v))) {
+            return '<Cell><Data ss:Type="Number">' . htmlspecialchars((string)$v, ENT_QUOTES | ENT_XML1, 'UTF-8') . '</Data></Cell>';
+        }
+        return '<Cell><Data ss:Type="String">' . htmlspecialchars((string)$v, ENT_QUOTES | ENT_XML1, 'UTF-8') . '</Data></Cell>';
+    };
+
+    echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+    echo '<?mso-application progid="Excel.Sheet"?>' . "\n";
+    echo '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"'
+       . ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">' . "\n";
+    echo '<Styles>'
+       . '<Style ss:ID="hdr"><Font ss:Bold="1"/><Interior ss:Color="#ECDCCB" ss:Pattern="Solid"/></Style>'
+       . '</Styles>' . "\n";
+    echo '<Worksheet ss:Name="Poukazy"><Table>' . "\n";
+    echo '<Row>';
+    foreach ($headers as $h) {
+        echo '<Cell ss:StyleID="hdr"><Data ss:Type="String">' . htmlspecialchars($h, ENT_QUOTES | ENT_XML1, 'UTF-8') . '</Data></Cell>';
+    }
+    echo "</Row>\n";
+    while ($r = $stmt->fetch()) {
+        echo '<Row>';
+        foreach ($rowFor($r) as $cell) echo $xmlCell($cell);
+        echo "</Row>\n";
+    }
+    echo '</Table></Worksheet></Workbook>' . "\n";
+    exit;
+}
 
 $rows = $pdo->query(
     "SELECT * FROM ny_vouchers $where ORDER BY created_at DESC LIMIT 500"
@@ -160,8 +250,34 @@ ny_admin_render_header('Dárkové poukazy', 'vouchers');
         <div class="row form-actions">
             <button class="btn btn-primary" type="submit"><?= $editing ? 'Uložit' : 'Vytvořit poukaz' ?></button>
             <a class="btn btn-ghost" href="vouchers.php">Zrušit</a>
+            <?php if ($editing): ?>
+                <a class="btn btn-secondary" href="../voucher.php?code=<?= e(rawurlencode((string)$v['code'])) ?>" target="_blank" rel="noopener">Náhled k tisku</a>
+            <?php endif; ?>
         </div>
     </form>
+    <?php if ($editing): ?>
+        <form method="post" class="admin-form voucher-send">
+            <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+            <input type="hidden" name="action" value="send_email">
+            <input type="hidden" name="id" value="<?= (int)$v['id'] ?>">
+            <div class="admin-form-row">
+                <label>Odeslat poukaz na e-mail
+                    <input type="email" name="send_to" value="<?= e((string)$v['buyer_email']) ?>" placeholder="např. objednatel@email.cz">
+                    <small class="hint hint-inline">
+                        <?php if (!empty($v['issued_at'])):
+                            $sent = new DateTimeImmutable($v['issued_at']); ?>
+                            Naposledy odesláno <?= e($sent->format('j. n. Y H:i')) ?>.
+                        <?php else: ?>
+                            Zatím neodesláno.
+                        <?php endif; ?>
+                    </small>
+                </label>
+            </div>
+            <div class="row form-actions">
+                <button class="btn btn-secondary" type="submit">Odeslat e-mailem</button>
+            </div>
+        </form>
+    <?php endif; ?>
 </div>
 <?php endif; ?>
 
@@ -175,6 +291,13 @@ ny_admin_render_header('Dárkové poukazy', 'vouchers');
             <a href="vouchers.php?f=all"       class="<?= $filter === 'all'       ? 'is-active' : '' ?>">Vše <small>(<?= (int)$counts['total'] ?>)</small></a>
         </div>
         <span class="spacer"></span>
+        <?php
+            $exportQs = ['f' => $filter];
+            $csvUrl = 'vouchers.php?' . http_build_query($exportQs + ['export' => 'csv']);
+            $xlsUrl = 'vouchers.php?' . http_build_query($exportQs + ['export' => 'xls']);
+        ?>
+        <a class="btn btn-ghost" href="<?= e($xlsUrl) ?>">Export do Excelu</a>
+        <a class="btn btn-ghost" href="<?= e($csvUrl) ?>">Export CSV</a>
         <a class="btn btn-primary" href="?action=new">+ Nový poukaz</a>
     </form>
 </div>
@@ -223,9 +346,22 @@ ny_admin_render_header('Dárkové poukazy', 'vouchers');
                     <td data-label="Platnost do"><?= $valid ? e($valid->format('j. n. Y')) : '—' ?></td>
                     <td data-label="Stav">
                         <span class="badge <?= e((string)$status['badge']) ?>"><?= e((string)$status['label']) ?></span>
+                        <?php if (!empty($r['issued_at'])):
+                            $sent = new DateTimeImmutable($r['issued_at']); ?>
+                            <br><small class="hint">Odesláno <?= e($sent->format('j. n. Y')) ?></small>
+                        <?php endif; ?>
                     </td>
                     <td class="actions">
                         <a class="btn btn-secondary" href="?action=edit&id=<?= (int)$r['id'] ?>">Upravit</a>
+                        <a class="btn btn-ghost" href="../voucher.php?code=<?= e(rawurlencode((string)$r['code'])) ?>" target="_blank" rel="noopener">Náhled</a>
+                        <?php if (!empty($r['buyer_email'])): ?>
+                            <form method="post" class="inline" onsubmit="return confirm('Odeslat poukaz na <?= e(addslashes((string)$r['buyer_email'])) ?>?');">
+                                <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+                                <input type="hidden" name="action" value="send_email">
+                                <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
+                                <button class="btn btn-secondary" type="submit"><?= !empty($r['issued_at']) ? 'Odeslat znovu' : 'Odeslat e-mailem' ?></button>
+                            </form>
+                        <?php endif; ?>
                         <?php if ($r['status'] === 'pending'): ?>
                             <form method="post" class="inline">
                                 <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">

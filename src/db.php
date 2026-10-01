@@ -256,11 +256,21 @@ function ny_ensure_content_tables(): void {
             note         TEXT NULL,
             created_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            issued_at    DATETIME NULL,
             PRIMARY KEY (id),
             UNIQUE KEY code (code),
             KEY status (status)
          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
     );
+    $hasIssuedAt = (int)$pdo->query(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME   = 'ny_vouchers'
+            AND COLUMN_NAME  = 'issued_at'"
+    )->fetchColumn();
+    if ($hasIssuedAt === 0) {
+        $pdo->exec('ALTER TABLE ny_vouchers ADD COLUMN issued_at DATETIME NULL AFTER updated_at');
+    }
     $pdo->exec(
         'CREATE TABLE IF NOT EXISTS ny_gallery (
             id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -501,6 +511,77 @@ function ny_voucher_create_from_order(array $data): int {
     return (int)$pdo->lastInsertId();
 }
 
+/**
+ * Send a dárkový poukaz by e-mail. Returns true on success and stamps
+ * ny_vouchers.issued_at. If the voucher is pending/paid it is promoted
+ * to "issued" so the admin list reflects it.
+ */
+function ny_voucher_send_email(int $voucherId, ?string $overrideEmail = null): bool {
+    ny_ensure_content_tables();
+    $pdo  = ny_db();
+    $stmt = $pdo->prepare('SELECT * FROM ny_vouchers WHERE id = ? LIMIT 1');
+    $stmt->execute([$voucherId]);
+    $v = $stmt->fetch();
+    if (!$v) {
+        throw new RuntimeException('Poukaz nenalezen.');
+    }
+    $to = trim((string)($overrideEmail ?? $v['buyer_email']));
+    if ($to === '' || !filter_var($to, FILTER_VALIDATE_EMAIL)) {
+        throw new RuntimeException('Objednatel nemá vyplněný platný e-mail.');
+    }
+
+    $s        = ny_settings_all();
+    $siteName = $s['site_name'] ?: 'Studio Namasté';
+    $base     = ny_base_url();
+    $greeting = trim((string)$v['buyer_name']) !== ''
+        ? 'Dobrý den ' . $v['buyer_name'] . ','
+        : 'Dobrý den,';
+    $amount   = (int)$v['amount_czk'] > 0
+        ? number_format((int)$v['amount_czk'], 0, ',', ' ') . ' Kč'
+        : (string)$v['amount_raw'];
+    $valid    = $v['valid_until']
+        ? (new DateTimeImmutable($v['valid_until']))->format('j. n. Y')
+        : '';
+
+    $lines = [];
+    $lines[] = $greeting;
+    $lines[] = '';
+    $lines[] = 'posíláme Vám dárkový poukaz do studia ' . $siteName . '.';
+    $lines[] = '';
+    $lines[] = 'Kód poukazu: ' . $v['code'];
+    if ($amount !== '')  $lines[] = 'Hodnota: ' . $amount;
+    if ($v['for_whom'])  $lines[] = 'Pro: ' . $v['for_whom'];
+    if ($valid !== '')   $lines[] = 'Platnost do: ' . $valid;
+    if (trim((string)($v['message'] ?? '')) !== '') {
+        $lines[] = '';
+        $lines[] = 'Vzkaz: ' . $v['message'];
+    }
+    $lines[] = '';
+    $lines[] = 'Náhled poukazu k vytištění:';
+    $lines[] = $base . '/voucher.php?code=' . rawurlencode((string)$v['code']);
+    $lines[] = '';
+    $lines[] = 'Poukaz uplatníte na recepci studia nebo při rezervaci lekce –';
+    $lines[] = 'stačí uvést kód poukazu výše.';
+    $lines[] = '';
+    $lines[] = 'Děkujeme a budeme se těšit na Vaši návštěvu.';
+    $lines[] = '';
+    $lines[] = $siteName;
+    if (!empty($s['phone'])) $lines[] = $s['phone'];
+    if (!empty($s['email'])) $lines[] = $s['email'];
+
+    $subject = 'Dárkový poukaz ' . $siteName . ' – ' . $v['code'];
+    $body    = implode("\r\n", $lines) . "\r\n";
+
+    $ok = ny_mail($to, $subject, $body);
+    if (!$ok) {
+        throw new RuntimeException('E-mail se nepodařilo odeslat (zkontrolujte SMTP nastavení).');
+    }
+    $newStatus = in_array((string)$v['status'], ['pending', 'paid'], true) ? 'issued' : (string)$v['status'];
+    $pdo->prepare('UPDATE ny_vouchers SET issued_at = NOW(), status = ? WHERE id = ?')
+        ->execute([$newStatus, $voucherId]);
+    return true;
+}
+
 function ny_teachers_active(): array {
     ny_ensure_content_tables();
     return ny_db()->query('SELECT * FROM ny_teachers WHERE active = 1 ORDER BY sort_order, name')->fetchAll();
@@ -653,13 +734,26 @@ function ny_newsletter_is_subscribed(string $email): bool {
  * inside outgoing e-mails, where relative URLs would be useless.
  */
 function ny_base_url(): string {
+    // Prefer the admin-configured site URL — bulletproof against shared hosts
+    // that expose a filesystem path in SCRIPT_NAME (e.g. /domains/site/novy/...).
+    $cfg = trim((string)ny_setting('site_url', ''));
+    if ($cfg !== '') {
+        return rtrim($cfg, '/');
+    }
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
         || (($_SERVER['SERVER_PORT'] ?? '') == 443)
         || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https')
         ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    $script = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? ''));
-    if ($script === '/' || $script === '.' || $script === '') $script = '';
+    // Derive the site root from REQUEST_URI (what the browser requested)
+    // rather than SCRIPT_NAME (which can be a filesystem path on some hosts).
+    $uri = strtok((string)($_SERVER['REQUEST_URI'] ?? ''), '?') ?: '';
+    $script = rtrim(str_replace('\\', '/', dirname($uri)), '/');
+    // When called from /admin/*.php, strip the trailing /admin so public links resolve.
+    if (preg_match('#^(.*)/admin$#', $script, $m)) {
+        $script = $m[1];
+    }
+    if ($script === '/' || $script === '.') $script = '';
     return $scheme . '://' . $host . $script;
 }
 

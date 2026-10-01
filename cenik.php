@@ -52,6 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ny_flash_set('err', t('poukaz.flash.err.fields'));
     } else {
         $amountCzk = (int)preg_replace('/[^0-9]/', '', $amount);
+        $voucherId = 0;
+        $voucherRow = null;
         try {
             $voucherId = ny_voucher_create_from_order([
                 'buyer_name'  => $name,
@@ -61,16 +63,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'amount_raw'  => $amount,
                 'message'     => $msg,
             ]);
+            if ($voucherId) {
+                $vq = ny_db()->prepare('SELECT * FROM ny_vouchers WHERE id = ? LIMIT 1');
+                $vq->execute([$voucherId]);
+                $voucherRow = $vq->fetch() ?: null;
+            }
         } catch (Throwable $e) {
             $voucherId = 0;
         }
-        $subject = 'Dárkový poukaz – objednávka od ' . $name;
-        $body    = "Objednatel: $name\r\nE-mail: $from\r\n"
-                 . 'Hodnota poukazu: ' . $amount . "\r\n"
-                 . ($forWhom !== '' ? "Poukaz pro: $forWhom\r\n" : '')
-                 . ($voucherId ? 'Interní ID: #' . $voucherId . "\r\n" : '')
-                 . "\r\nZpráva:\r\n" . ($msg !== '' ? $msg : '(bez zprávy)') . "\r\n";
-        ny_mail($email, $subject, $body, ['reply_to' => $from]);
+
+        $adminTo  = ny_admin_notify_email() ?: $email;
+        $siteName = $s['site_name'] ?: 'Studio Namasté';
+        $base     = ny_base_url();
+        $validTxt = $voucherRow && !empty($voucherRow['valid_until'])
+            ? (new DateTimeImmutable($voucherRow['valid_until']))->format('j. n. Y')
+            : '';
+        $vCode    = $voucherRow['code'] ?? '';
+
+        $subject = 'Dárkový poukaz – nová objednávka od ' . $name;
+        $lines = [
+            'V administraci přistála nová objednávka dárkového poukazu.',
+            '',
+            'Objednatel:   ' . $name,
+            'E-mail:       ' . $from,
+            'Hodnota:      ' . $amount . ($amountCzk > 0 ? ' (' . $amountCzk . ' Kč)' : ''),
+        ];
+        if ($forWhom !== '') $lines[] = 'Poukaz pro:   ' . $forWhom;
+        if ($vCode !== '')   $lines[] = 'Kód poukazu:  ' . $vCode;
+        if ($validTxt !== '')$lines[] = 'Platnost do:  ' . $validTxt;
+        $lines[] = 'Čas:          ' . date('j. n. Y H:i');
+        $lines[] = '';
+        $lines[] = 'Zpráva od objednatele:';
+        $lines[] = $msg !== '' ? $msg : '(bez zprávy)';
+        if ($voucherId) {
+            $lines[] = '';
+            $lines[] = 'Správa v adminu:';
+            $lines[] = $base . '/admin/vouchers.php?action=edit&id=' . $voucherId;
+            if ($vCode !== '') {
+                $lines[] = 'Náhled poukazu k tisku:';
+                $lines[] = $base . '/voucher.php?code=' . rawurlencode((string)$vCode);
+            }
+        }
+        $lines[] = '';
+        $lines[] = '-- ';
+        $lines[] = $siteName;
+        $body = implode("\r\n", $lines) . "\r\n";
+
+        if ($adminTo !== '') {
+            ny_mail($adminTo, $subject, $body, ['reply_to' => $from]);
+        }
         ny_flash_set('ok', t('poukaz.flash.ok'));
     }
     ny_redirect('cenik.php#objednavka');
