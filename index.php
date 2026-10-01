@@ -166,25 +166,6 @@ $hasPromo    = $homeClasses || $homeEvents;
 </script>
 <?php endif; ?>
 
-<section class="home-features">
-    <div class="home-feature">
-        <div class="home-feature-num">01</div>
-        <h3><?= t('index.feat.1') ?></h3>
-    </div>
-    <div class="home-feature">
-        <div class="home-feature-num">02</div>
-        <h3><?= e(t('index.feat.2')) ?></h3>
-    </div>
-    <div class="home-feature">
-        <div class="home-feature-num">03</div>
-        <h3><?= e(t('index.feat.3')) ?></h3>
-    </div>
-    <div class="home-feature">
-        <div class="home-feature-num">04</div>
-        <h3><?= e(t('index.feat.4')) ?></h3>
-    </div>
-</section>
-
 <section class="home-about">
     <div class="home-about-head">
         <div class="eyebrow"><?= e(t('index.about.eyebrow')) ?></div>
@@ -209,6 +190,25 @@ $hasPromo    = $homeClasses || $homeEvents;
     </div>
 </section>
 
+<section class="home-features">
+    <div class="home-feature">
+        <div class="home-feature-num">01</div>
+        <h3><?= t('index.feat.1') ?></h3>
+    </div>
+    <div class="home-feature">
+        <div class="home-feature-num">02</div>
+        <h3><?= e(t('index.feat.2')) ?></h3>
+    </div>
+    <div class="home-feature">
+        <div class="home-feature-num">03</div>
+        <h3><?= e(t('index.feat.3')) ?></h3>
+    </div>
+    <div class="home-feature">
+        <div class="home-feature-num">04</div>
+        <h3><?= e(t('index.feat.4')) ?></h3>
+    </div>
+</section>
+
 <section class="home-stats">
     <div class="home-stat">
         <div class="home-stat-num">10</div>
@@ -224,14 +224,6 @@ $hasPromo    = $homeClasses || $homeEvents;
     </div>
 </section>
 
-<section class="home-tagline">
-    <p class="home-tagline-lead"><?= e(t('index.tagline.lead')) ?></p>
-    <p class="home-tagline-main">
-        <span class="home-tagline-bar">|</span>
-        <?= e(t('index.tagline.main')) ?>
-        <span class="home-tagline-bar">|</span>
-    </p>
-</section>
 
 <section class="home-final-quote">
     <blockquote><?= e(t('index.final.quote')) ?></blockquote>

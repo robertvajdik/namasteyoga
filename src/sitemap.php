@@ -38,6 +38,7 @@ function ny_sitemap_urls(): array {
         ['index.php',        '1.0', 'weekly'],
         ['rezervace.php',    '0.9', 'daily'],
         ['lekce.php',        '0.9', 'weekly'],
+        ['styly.php',        '0.7', 'monthly'],
         ['individualni.php', '0.7', 'monthly'],
         ['masaze.php',       '0.7', 'monthly'],
         ['lektori.php',      '0.7', 'monthly'],

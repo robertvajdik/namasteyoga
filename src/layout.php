@@ -363,7 +363,12 @@ gtag('config', <?= json_encode($gaId) ?>, { anonymize_ip: true });
         <nav id="site-nav">
             <a href="index.php"        class="<?= $active === 'home'       ? 'is-active' : '' ?>"><?= e(t('nav.home')) ?></a>
             <a href="rezervace.php"    class="<?= $active === 'schedule'   ? 'is-active' : '' ?>"><?= e(t('nav.schedule')) ?></a>
-            <a href="lekce.php"        class="<?= $active === 'lekce'      ? 'is-active' : '' ?>"><?= e(t('nav.lekce')) ?></a>
+            <div class="nav-item has-submenu">
+                <a href="lekce.php" class="<?= in_array($active, ['lekce','styly'], true) ? 'is-active' : '' ?>"><?= e(t('nav.lekce')) ?></a>
+                <div class="nav-submenu">
+                    <a href="styly.php" class="<?= $active === 'styly' ? 'is-active' : '' ?>"><?= e(t('nav.lekce.styly')) ?></a>
+                </div>
+            </div>
             <a href="individualni.php" class="<?= $active === 'individ'    ? 'is-active' : '' ?>"><?= e(t('nav.individ')) ?></a>
             <a href="masaze.php"       class="<?= $active === 'masaze'     ? 'is-active' : '' ?>"><?= e(t('nav.masaze')) ?></a>
             <a href="akce.php"         class="<?= $active === 'akce'       ? 'is-active' : '' ?>"><?= e(t('nav.akce')) ?></a>
