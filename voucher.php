@@ -83,7 +83,7 @@ $bgVer    = (string)(@filemtime(__DIR__ . '/assets/darkovy-poukaz.jpg') ?: time(
     .vo-status {
         position: absolute;
         top: 18px;
-        right: 20px;
+        left: 20px;
         padding: 5px 12px;
         border-radius: 999px;
         background: rgba(255, 255, 255, .18);
@@ -95,6 +95,36 @@ $bgVer    = (string)(@filemtime(__DIR__ . '/assets/darkovy-poukaz.jpg') ?: time(
     }
     .vo-status.redeemed { background: rgba(63, 111, 102, .55); }
     .vo-status.cancelled { background: rgba(165, 58, 58, .55); }
+    .vo-price {
+        position: absolute;
+        top: 22px;
+        right: 24px;
+        padding: 10px 18px 11px;
+        border-radius: 14px;
+        background: rgba(243, 227, 204, .18);
+        border: 1.4px solid rgba(243, 227, 204, .55);
+        backdrop-filter: blur(4px);
+        text-align: center;
+        min-width: 110px;
+        box-shadow: 0 6px 18px rgba(99, 54, 36, .18);
+    }
+    .vo-price small {
+        display: block;
+        font-size: 9px;
+        letter-spacing: .3em;
+        text-transform: uppercase;
+        opacity: .8;
+        margin-bottom: 2px;
+    }
+    .vo-price strong {
+        display: block;
+        font-family: 'Playfair Display', serif;
+        font-weight: 700;
+        font-size: clamp(22px, 2.6vw, 30px);
+        letter-spacing: .03em;
+        line-height: 1;
+        text-shadow: 0 1px 2px rgba(99, 54, 36, .25);
+    }
     .vo-middle {
         position: absolute;
         top: 61%;
@@ -143,15 +173,6 @@ $bgVer    = (string)(@filemtime(__DIR__ . '/assets/darkovy-poukaz.jpg') ?: time(
         font-family: 'Playfair Display', serif;
         font-size: clamp(16px, 2.1vw, 22px);
         letter-spacing: .22em;
-    }
-    .vo-amount {
-        font-family: 'Playfair Display', serif;
-        font-weight: 700;
-        font-size: clamp(20px, 3vw, 30px);
-        letter-spacing: .04em;
-        line-height: 1;
-        margin-top: 8px;
-        text-shadow: 0 1px 2px rgba(99, 54, 36, .25);
     }
     .vo-valid {
         margin-top: 6px;
@@ -213,6 +234,13 @@ $bgVer    = (string)(@filemtime(__DIR__ . '/assets/darkovy-poukaz.jpg') ?: time(
         <span class="vo-status <?= e((string)$v['status']) ?>"><?= e($sLabel) ?></span>
     <?php endif; ?>
 
+    <?php if ($amount !== ''): ?>
+        <div class="vo-price">
+            <small>Hodnota</small>
+            <strong><?= e($amount) ?></strong>
+        </div>
+    <?php endif; ?>
+
     <div class="vo-middle">
         <?php if (!empty($v['for_whom'])): ?>
             <div class="vo-for">pro <strong><?= e((string)$v['for_whom']) ?></strong></div>
@@ -224,9 +252,6 @@ $bgVer    = (string)(@filemtime(__DIR__ . '/assets/darkovy-poukaz.jpg') ?: time(
             <small>Kód poukazu</small>
             <strong><?= e((string)$v['code']) ?></strong>
         </div>
-        <?php if ($amount !== ''): ?>
-            <div class="vo-amount"><?= e($amount) ?></div>
-        <?php endif; ?>
         <?php if ($valid !== ''): ?>
             <div class="vo-valid">Platnost do <?= e($valid) ?></div>
         <?php endif; ?>
