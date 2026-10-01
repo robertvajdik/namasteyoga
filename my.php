@@ -21,6 +21,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ny_csrf_check($_POST['csrf'] ?? null);
     $act = (string)($_POST['action'] ?? '');
     try {
+        if ($act === 'update_profile') {
+            $name  = trim((string)($_POST['name'] ?? ''));
+            $email = strtolower(trim((string)($_POST['email'] ?? '')));
+            $phone = trim((string)($_POST['phone'] ?? ''));
+            if ($name === '') {
+                throw new RuntimeException(t('my.err.name_required'));
+            }
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                throw new RuntimeException(t('my.err.email_invalid'));
+            }
+            $dupe = $pdo->prepare('SELECT id FROM ny_users WHERE email = ? AND id <> ? LIMIT 1');
+            $dupe->execute([$email, $user['id']]);
+            if ($dupe->fetch()) {
+                throw new RuntimeException(t('my.err.email_taken'));
+            }
+            $pdo->prepare('UPDATE ny_users SET display_name = ?, email = ?, phone = ? WHERE id = ?')
+                ->execute([$name, $email, $phone ?: null, $user['id']]);
+            ny_flash_set('ok', t('my.flash.profile_saved'));
+            ny_redirect('my.php');
+        }
+        if ($act === 'change_password') {
+            $current = (string)($_POST['current_password'] ?? '');
+            $new1    = (string)($_POST['new_password'] ?? '');
+            $new2    = (string)($_POST['new_password2'] ?? '');
+            if (empty($user['password_hash']) || !ny_verify_password($current, (string)$user['password_hash'])) {
+                throw new RuntimeException(t('my.err.password_current'));
+            }
+            if (strlen($new1) < 8) {
+                throw new RuntimeException(t('my.err.password_short'));
+            }
+            if ($new1 !== $new2) {
+                throw new RuntimeException(t('my.err.password_mismatch'));
+            }
+            $hash = password_hash($new1, PASSWORD_DEFAULT);
+            $pdo->prepare('UPDATE ny_users SET password_hash = ? WHERE id = ?')
+                ->execute([$hash, $user['id']]);
+            ny_flash_set('ok', t('my.flash.password_changed'));
+            ny_redirect('my.php');
+        }
         if ($act === 'remove_avatar' && !empty($user['avatar'])) {
             @unlink($avatarDir . '/' . basename((string)$user['avatar']));
             $pdo->prepare('UPDATE ny_users SET avatar = "" WHERE id = ?')->execute([$user['id']]);
@@ -123,6 +162,69 @@ if (!empty($user['created_at'])) {
     $since = new DateTimeImmutable($myStats['first_at']);
 }
 
+// Last 12 months of attendance (status=booked, class_date in [first-of-month-11-months-ago, today]).
+$twelveStart = (new DateTimeImmutable('first day of this month'))->modify('-11 months')->format('Y-m-d');
+$monthlyStmt = $pdo->prepare(
+    "SELECT DATE_FORMAT(class_date, '%Y-%m') AS ym, COUNT(*) AS n
+       FROM ny_reservations
+      WHERE user_id = ? AND status = 'booked'
+        AND class_date >= ? AND class_date <= ?
+      GROUP BY ym"
+);
+$monthlyStmt->execute([$user['id'], $twelveStart, $today]);
+$monthlyRaw = [];
+foreach ($monthlyStmt->fetchAll() as $r) $monthlyRaw[$r['ym']] = (int)$r['n'];
+$monthly = [];
+$cursor = new DateTimeImmutable($twelveStart);
+for ($i = 0; $i < 12; $i++) {
+    $key = $cursor->format('Y-m');
+    $monthly[] = [
+        'ym'    => $key,
+        'label' => $cursor->format('n/y'),
+        'count' => $monthlyRaw[$key] ?? 0,
+    ];
+    $cursor = $cursor->modify('+1 month');
+}
+$monthlyMax   = max(array_column($monthly, 'count'));
+$monthlyTotal = array_sum(array_column($monthly, 'count'));
+
+// Top 5 classes and teachers by attendance count (all time, booked).
+$topClassesStmt = $pdo->prepare(
+    "SELECT c.name, COUNT(*) AS n
+       FROM ny_reservations r
+       JOIN ny_classes c ON c.id = r.class_id
+      WHERE r.user_id = ? AND r.status = 'booked'
+      GROUP BY c.id, c.name
+      ORDER BY n DESC, c.name
+      LIMIT 5"
+);
+$topClassesStmt->execute([$user['id']]);
+$topClasses = $topClassesStmt->fetchAll();
+
+$topTeachersStmt = $pdo->prepare(
+    "SELECT c.teacher, COUNT(*) AS n
+       FROM ny_reservations r
+       JOIN ny_classes c ON c.id = r.class_id
+      WHERE r.user_id = ? AND r.status = 'booked' AND c.teacher <> ''
+      GROUP BY c.teacher
+      ORDER BY n DESC, c.teacher
+      LIMIT 5"
+);
+$topTeachersStmt->execute([$user['id']]);
+$topTeachers = $topTeachersStmt->fetchAll();
+
+$attendedTotal  = (int)$myStats['attended'];
+$cancelledTotal = (int)$myStats['cancelled'];
+$bookedTotal    = $attendedTotal + (int)$myStats['upcoming'] + $cancelledTotal;
+$cancelRate     = $bookedTotal > 0 ? (int)round(($cancelledTotal / $bookedTotal) * 100) : 0;
+if ($since) {
+    $diff = (new DateTimeImmutable('today'))->diff($since);
+    $monthsActive = max(1, $diff->m + $diff->y * 12 + 1);
+} else {
+    $monthsActive = 1;
+}
+$avgPerMonth = round($attendedTotal / $monthsActive, 1);
+
 $isSubscribed = ny_newsletter_is_subscribed((string)$user['email']);
 
 $daysShort = [
@@ -180,6 +282,128 @@ ny_render_header(t('my.title'), 'my', ['description' => t('my.meta.description')
         <div class="num num-text"><?= $since ? e($since->format('n / Y')) : '—' ?></div>
         <div class="lbl"><?= e(t('my.stat.member_since')) ?></div>
     </div>
+</div>
+
+<?php if ($attendedTotal > 0 || $cancelledTotal > 0): ?>
+<section class="stats-card">
+    <div class="stats-head">
+        <h3><?= e(t('my.stats.h')) ?></h3>
+        <div class="stats-head-meta">
+            <?= sprintf(e(t('my.stats.summary')), (int)$monthlyTotal, number_format($avgPerMonth, 1, ',', ' '), (int)$cancelRate) ?>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stats-block stats-block--chart">
+            <h4><?= e(t('my.stats.monthly.h')) ?></h4>
+            <?php if ($monthlyMax === 0): ?>
+                <p class="hint"><?= e(t('my.stats.monthly.empty')) ?></p>
+            <?php else: ?>
+                <div class="attend-chart" role="list">
+                    <?php foreach ($monthly as $m):
+                        $h = $monthlyMax > 0 ? max(4, (int)round(($m['count'] / $monthlyMax) * 100)) : 0;
+                    ?>
+                        <div class="attend-bar" role="listitem" title="<?= e($m['label']) ?>: <?= (int)$m['count'] ?>">
+                            <div class="attend-bar-num"><?= $m['count'] > 0 ? (int)$m['count'] : '' ?></div>
+                            <div class="attend-bar-track">
+                                <div class="attend-bar-fill" style="height: <?= $h ?>%"></div>
+                            </div>
+                            <div class="attend-bar-lbl"><?= e($m['label']) ?></div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <div class="stats-block">
+            <h4><?= e(t('my.stats.top_classes.h')) ?></h4>
+            <?php if (!$topClasses): ?>
+                <p class="hint"><?= e(t('my.stats.top.empty')) ?></p>
+            <?php else:
+                $maxN = (int)$topClasses[0]['n'];
+            ?>
+                <ul class="stats-list">
+                    <?php foreach ($topClasses as $tc):
+                        $w = $maxN > 0 ? (int)round(((int)$tc['n'] / $maxN) * 100) : 0;
+                    ?>
+                        <li>
+                            <div class="stats-list-row">
+                                <span class="stats-list-name"><?= e($tc['name']) ?></span>
+                                <span class="stats-list-num"><?= (int)$tc['n'] ?>×</span>
+                            </div>
+                            <div class="stats-list-track"><div class="stats-list-fill" style="width: <?= $w ?>%"></div></div>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+        </div>
+
+        <div class="stats-block">
+            <h4><?= e(t('my.stats.top_teachers.h')) ?></h4>
+            <?php if (!$topTeachers): ?>
+                <p class="hint"><?= e(t('my.stats.top.empty')) ?></p>
+            <?php else:
+                $maxN = (int)$topTeachers[0]['n'];
+            ?>
+                <ul class="stats-list">
+                    <?php foreach ($topTeachers as $tt):
+                        $w = $maxN > 0 ? (int)round(((int)$tt['n'] / $maxN) * 100) : 0;
+                    ?>
+                        <li>
+                            <div class="stats-list-row">
+                                <span class="stats-list-name"><?= e($tt['teacher']) ?></span>
+                                <span class="stats-list-num"><?= (int)$tt['n'] ?>×</span>
+                            </div>
+                            <div class="stats-list-track"><div class="stats-list-fill" style="width: <?= $w ?>%"></div></div>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+        </div>
+    </div>
+</section>
+<?php endif; ?>
+
+<div class="pref-card">
+    <div class="pref-card-info">
+        <h3><?= e(t('my.profile.h')) ?></h3>
+        <p class="muted"><?= e(t('my.profile.desc')) ?></p>
+    </div>
+    <form method="post" class="pref-card-form profile-edit-form">
+        <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+        <input type="hidden" name="action" value="update_profile">
+        <label class="profile-field"><span><?= e(t('my.profile.name')) ?></span>
+            <input type="text" name="name" value="<?= e((string)$user['display_name']) ?>" required maxlength="190">
+        </label>
+        <label class="profile-field"><span><?= e(t('my.profile.email')) ?></span>
+            <input type="email" name="email" value="<?= e((string)$user['email']) ?>" required maxlength="190" autocomplete="email">
+        </label>
+        <label class="profile-field"><span><?= e(t('my.profile.phone')) ?></span>
+            <input type="tel" name="phone" value="<?= e((string)($user['phone'] ?? '')) ?>" maxlength="30" autocomplete="tel">
+        </label>
+        <button class="btn btn-primary btn-sm" type="submit"><?= e(t('my.profile.save')) ?></button>
+    </form>
+</div>
+
+<div class="pref-card">
+    <div class="pref-card-info">
+        <h3><?= e(t('my.password.h')) ?></h3>
+        <p class="muted"><?= e(t('my.password.desc')) ?></p>
+    </div>
+    <form method="post" class="pref-card-form profile-edit-form">
+        <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+        <input type="hidden" name="action" value="change_password">
+        <label class="profile-field"><span><?= e(t('my.password.current')) ?></span>
+            <input type="password" name="current_password" required autocomplete="current-password">
+        </label>
+        <label class="profile-field"><span><?= e(t('my.password.new')) ?></span>
+            <input type="password" name="new_password" required autocomplete="new-password" minlength="8">
+        </label>
+        <label class="profile-field"><span><?= e(t('my.password.new2')) ?></span>
+            <input type="password" name="new_password2" required autocomplete="new-password" minlength="8">
+        </label>
+        <button class="btn btn-primary btn-sm" type="submit"><?= e(t('my.password.save')) ?></button>
+    </form>
 </div>
 
 <div class="pref-card">

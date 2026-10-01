@@ -275,6 +275,54 @@ function ny_ensure_content_tables(): void {
             KEY section (section, sort_order)
          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
     );
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS ny_gallery_albums (
+            slug        VARCHAR(40)  NOT NULL,
+            label       VARCHAR(120) NOT NULL,
+            description TEXT NULL,
+            sort_order  INT NOT NULL DEFAULT 100,
+            is_public   TINYINT(1) NOT NULL DEFAULT 1,
+            PRIMARY KEY (slug)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS ny_events (
+            id            INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            slug          VARCHAR(80)  NOT NULL,
+            title         VARCHAR(190) NOT NULL,
+            subtitle      VARCHAR(255) NOT NULL DEFAULT "",
+            summary       TEXT NULL,
+            body          LONGTEXT NULL,
+            image         VARCHAR(190) NOT NULL DEFAULT "",
+            event_date    DATE NULL,
+            event_time    VARCHAR(60)  NOT NULL DEFAULT "",
+            location      VARCHAR(190) NOT NULL DEFAULT "",
+            price         VARCHAR(80)  NOT NULL DEFAULT "",
+            cta_label     VARCHAR(80)  NOT NULL DEFAULT "",
+            cta_url       VARCHAR(255) NOT NULL DEFAULT "",
+            sort_order    INT NOT NULL DEFAULT 100,
+            is_published  TINYINT(1) NOT NULL DEFAULT 1,
+            created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY slug (slug),
+            KEY event_date (event_date)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+    $c = (int)$pdo->query('SELECT COUNT(*) FROM ny_gallery_albums')->fetchColumn();
+    if ($c === 0) {
+        $ins = $pdo->prepare(
+            'INSERT INTO ny_gallery_albums (slug, label, description, sort_order, is_public) VALUES (?, ?, ?, ?, ?)'
+        );
+        $seed = [
+            ['studio',       'Studio',                  'Zákoutí studia Namasté – prostory, kde probíhá naše praxe.',             10, 1],
+            ['lekce',        'Lekce a akce',            'Momentky z lekcí jógy, pilates a doprovodných akcí.',                    20, 1],
+            ['festivaly',    'Jóga festivaly',          'Vzpomínky na festivaly, retreaty a workshopy, kterých jsme se účastnili.', 30, 1],
+            ['home_classes', 'Domů – Vyberte si lekci', '',                                                                       80, 0],
+            ['home_events',  'Domů – Nenechte si ujít', '',                                                                       90, 0],
+        ];
+        foreach ($seed as $r) $ins->execute($r);
+    }
 
     // Seed defaults only when tables are empty (first run).
     $c = (int)$pdo->query('SELECT COUNT(*) FROM ny_teachers')->fetchColumn();
@@ -314,6 +362,44 @@ function ny_ensure_content_tables(): void {
             ['massage',    'Masáže',            'Regenerace po pohybu.',                         50],
         ];
         foreach ($seed as $r) $ins->execute($r);
+    }
+
+    // First-run seed for Akce (events) – migrates the former puppyvibe page.
+    if (ny_setting('events_seeded', '') !== '1') {
+        $evDir = __DIR__ . '/../assets/events';
+        if (!is_dir($evDir)) @mkdir($evDir, 0755, true);
+        $puppySrc = __DIR__ . '/../assets/puppy.png';
+        $puppyDst = $evDir . '/puppy.png';
+        if (is_file($puppySrc) && !is_file($puppyDst)) @copy($puppySrc, $puppyDst);
+
+        $exists = (int)$pdo->query("SELECT COUNT(*) FROM ny_events WHERE slug = 'puppy-vibe'")->fetchColumn();
+        if ($exists === 0) {
+            $body = "<p>Puppy &amp; štěněcí vibe jsou lekce jógy a pilates, které kombinují klidný pohyb, dech a nekonečnou dávku roztomilé přítomnosti čtyřnohých parťáků. Cvičíte v příjemné atmosféře studia, mezi sériemi se protahujete se štěňátky, koťátky nebo vlastními mazlíčky a odcházíte s úsměvem od ucha k uchu.</p>"
+                 . "<p>Není potřeba žádná předchozí zkušenost – lekce vedeme pro začátečníky i pokročilé a přizpůsobujeme je náladě skupiny i zvířat. Chováme se k nim ohleduplně: pauzy, pití a mazlení jsou přirozenou součástí každé lekce.</p>"
+                 . "<h3>Proč si lekce zamilujete</h3>"
+                 . "<ul>"
+                 . "<li><strong>Uvolnění stresu</strong> – mazlení a přítomnost zvířat prokazatelně snižují hladinu kortizolu.</li>"
+                 . "<li><strong>Pohyb bez tlaku</strong> – lekce jsou vedeny s citem, s prostorem pro smích i pauzy na hlazení.</li>"
+                 . "<li><strong>Setkání s podobně naladěnými lidmi</strong> – sejde se parta, která má ráda zvířata i chvíli pro sebe.</li>"
+                 . "<li><strong>Zážitek, ne jen lekce</strong> – odnesete si fotky, vzpomínky a pocit, že jste udělali něco jen pro sebe.</li>"
+                 . "</ul>";
+            $pdo->prepare(
+                'INSERT INTO ny_events (slug, title, subtitle, summary, body, image, event_time, cta_label, cta_url, sort_order, is_published)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)'
+            )->execute([
+                'puppy-vibe',
+                'Puppy & štěněcí vibe',
+                'Místo, kde stres končí a skutečná radost začíná',
+                'Lekce jógy a pilates se štěňátky, koťátky a vlastními mazlíčky ve studiu Namasté v Uherském Brodě.',
+                $body,
+                'puppy.png',
+                'Dle rozpisu, 60–75 min',
+                'Mám zájem',
+                'kontakt.php',
+                10,
+            ]);
+        }
+        ny_settings_save(['events_seeded' => '1']);
     }
 
     // First-run seed for homepage promo tiles (Vyberte si lekci / Nenechte si ujít).
@@ -431,13 +517,54 @@ function ny_categories_active(): array {
 }
 
 function ny_gallery_sections(): array {
-    return [
-        'studio'       => 'Studio',
-        'lekce'        => 'Foto z lekcí, akcí ad.',
-        'festivaly'    => 'Jóga festivaly',
-        'home_classes' => 'Domů – Vyberte si lekci',
-        'home_events'  => 'Domů – Nenechte si ujít',
-    ];
+    ny_ensure_content_tables();
+    $rows = ny_db()->query(
+        'SELECT slug, label FROM ny_gallery_albums ORDER BY sort_order, label'
+    )->fetchAll();
+    $out = [];
+    foreach ($rows as $r) $out[(string)$r['slug']] = (string)$r['label'];
+    return $out;
+}
+
+/**
+ * Public gallery "albums" with descriptions, in display order.
+ * Only sections marked as public (is_public=1) appear in the public gallery page.
+ */
+function ny_gallery_albums(): array {
+    ny_ensure_content_tables();
+    $rows = ny_db()->query(
+        'SELECT slug, label, description FROM ny_gallery_albums
+          WHERE is_public = 1
+          ORDER BY sort_order, label'
+    )->fetchAll();
+    $out = [];
+    foreach ($rows as $r) {
+        $out[(string)$r['slug']] = [
+            'label'       => (string)$r['label'],
+            'description' => (string)($r['description'] ?? ''),
+        ];
+    }
+    return $out;
+}
+
+function ny_events_published(): array {
+    ny_ensure_content_tables();
+    return ny_db()->query(
+        'SELECT * FROM ny_events
+          WHERE is_published = 1
+          ORDER BY (event_date IS NULL),
+                   CASE WHEN event_date IS NULL OR event_date >= CURDATE() THEN 0 ELSE 1 END,
+                   CASE WHEN event_date >= CURDATE() THEN event_date END ASC,
+                   CASE WHEN event_date <  CURDATE() THEN event_date END DESC,
+                   sort_order, id'
+    )->fetchAll();
+}
+
+function ny_event_by_slug(string $slug): ?array {
+    ny_ensure_content_tables();
+    $stmt = ny_db()->prepare('SELECT * FROM ny_events WHERE slug = ? AND is_published = 1 LIMIT 1');
+    $stmt->execute([$slug]);
+    return $stmt->fetch() ?: null;
 }
 
 function ny_gallery_by_section(string $slug): array {

@@ -6,13 +6,84 @@ require __DIR__ . '/src/layout.php';
 $s      = ny_settings_all();
 $fbUrl  = $s['facebook_url'];
 $igUrl  = $s['instagram_url'];
-$groups = ny_gallery_active_grouped();
+$albums = ny_gallery_albums();
 
-ny_render_header(t('galerie.title'), 'galerie', [
-    'description' => t('galerie.meta.description'),
+$albumSlug = isset($_GET['album']) ? (string)$_GET['album'] : '';
+$currentAlbum = null;
+$albumItems   = [];
+if ($albumSlug !== '' && isset($albums[$albumSlug])) {
+    $currentAlbum = $albums[$albumSlug];
+    $albumItems   = ny_gallery_by_section($albumSlug);
+} elseif ($albumSlug !== '') {
+    http_response_code(404);
+}
+
+$albumCounts = [];
+$albumCovers = [];
+foreach ($albums as $slug => $_meta) {
+    $items = ny_gallery_by_section($slug);
+    $albumCounts[$slug] = count($items);
+    $albumCovers[$slug] = $items[0] ?? null;
+}
+
+$photoLabel = static function (int $n): string {
+    if ($n === 1) return t('galerie.album.photo_count_one');
+    if ($n >= 2 && $n <= 4) return t('galerie.album.photo_count_few', $n);
+    return t('galerie.album.photo_count', $n);
+};
+
+$pageTitle = $currentAlbum
+    ? $currentAlbum['label'] . ' · ' . t('galerie.title')
+    : t('galerie.title');
+
+ny_render_header($pageTitle, 'galerie', [
+    'description' => $currentAlbum ? $currentAlbum['description'] : t('galerie.meta.description'),
 ]);
 ?>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
+
+<?php if ($currentAlbum): ?>
+<section class="section-title-block reveal">
+    <div class="eyebrow"><a href="galerie.php" class="album-back-link">&larr; <?= e(t('galerie.album.back')) ?></a></div>
+    <h1 class="page-title"><?= e($currentAlbum['label']) ?></h1>
+    <?php if ($currentAlbum['description'] !== ''): ?>
+        <p class="page-lead"><?= e($currentAlbum['description']) ?></p>
+    <?php endif; ?>
+</section>
+
+<?php if (!$albumItems): ?>
+    <div class="card muted reveal" style="text-align:center">
+        <p><?= e(t('galerie.album.empty')) ?></p>
+    </div>
+<?php else: ?>
+    <section class="reveal gallery-section">
+        <div class="gallery-grid">
+            <?php foreach ($albumItems as $item):
+                $src     = 'assets/gallery/' . rawurlencode($item['file']);
+                $caption = $item['title'] !== '' ? $item['title'] : ($item['alt'] ?? '');
+            ?>
+                <div class="gallery-item-wrap">
+                    <a class="gallery-item"
+                       href="<?= e($src) ?>"
+                       data-fancybox="album-<?= e($albumSlug) ?>"
+                       data-caption="<?= e($caption) ?>"
+                       data-download-src="<?= e($src) ?>">
+                        <img src="<?= e($src) ?>" alt="<?= e($item['alt'] ?: $item['title']) ?>" loading="lazy">
+                        <?php if ($item['title'] !== ''): ?>
+                            <span class="gallery-caption"><?= e($item['title']) ?></span>
+                        <?php endif; ?>
+                    </a>
+                    <a class="gallery-download" href="<?= e($src) ?>" download title="<?= e(t('galerie.photo.download_all')) ?>">
+                        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        <span><?= e(t('galerie.photo.download')) ?></span>
+                    </a>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </section>
+<?php endif; ?>
+
+<?php else: ?>
 <section class="section-title-block reveal">
     <div class="eyebrow"><?= e(t('galerie.hero.eyebrow')) ?></div>
     <h1 class="page-title"><?= e(t('galerie.hero.title')) ?></h1>
@@ -29,47 +100,66 @@ ny_render_header(t('galerie.title'), 'galerie', [
 
 <?php
 $hasAny = false;
-foreach ($groups as $g) { if ($g['items']) { $hasAny = true; break; } }
+foreach ($albumCounts as $n) { if ($n > 0) { $hasAny = true; break; } }
 ?>
-
 <?php if (!$hasAny): ?>
     <div class="card muted reveal" style="text-align:center">
         <p><?= e(t('galerie.empty')) ?></p>
     </div>
 <?php else: ?>
-    <?php foreach ($groups as $slug => $g): if (!$g['items']) continue; ?>
-        <section class="reveal gallery-section">
-            <h2 class="section-h section-h-gap"><?= e($g['label']) ?></h2>
-            <div class="gallery-grid">
-                <?php foreach ($g['items'] as $item):
-                    $src     = 'assets/gallery/' . rawurlencode($item['file']);
-                    $caption = $item['title'] !== '' ? $item['title'] : ($item['alt'] ?? '');
-                ?>
-                    <a class="gallery-item"
-                       href="<?= e($src) ?>"
-                       data-fancybox="gallery-<?= e($slug) ?>"
-                       data-caption="<?= e($caption) ?>">
-                        <img src="<?= e($src) ?>" alt="<?= e($item['alt'] ?: $item['title']) ?>" loading="lazy">
-                        <?php if ($item['title'] !== ''): ?>
-                            <span class="gallery-caption"><?= e($item['title']) ?></span>
+    <section class="reveal">
+        <div class="album-grid">
+            <?php foreach ($albums as $slug => $meta):
+                $cover = $albumCovers[$slug];
+                $count = (int)$albumCounts[$slug];
+            ?>
+                <a class="album-card <?= $count === 0 ? 'is-empty' : '' ?>" href="<?= $count ? 'galerie.php?album=' . e(rawurlencode($slug)) : '#' ?>">
+                    <div class="album-cover">
+                        <?php if ($cover): ?>
+                            <img src="assets/gallery/<?= e(rawurlencode($cover['file'])) ?>" alt="<?= e($meta['label']) ?>" loading="lazy">
+                        <?php else: ?>
+                            <div class="album-cover-empty"></div>
                         <?php endif; ?>
-                    </a>
-                <?php endforeach; ?>
-            </div>
-        </section>
-    <?php endforeach; ?>
+                        <?php if ($count > 0): ?>
+                            <span class="album-count"><?= e($photoLabel($count)) ?></span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="album-body">
+                        <h2 class="album-title"><?= e($meta['label']) ?></h2>
+                        <?php if ($meta['description'] !== ''): ?>
+                            <p class="album-desc"><?= e($meta['description']) ?></p>
+                        <?php endif; ?>
+                        <?php if ($count > 0): ?>
+                            <span class="album-cta"><?= e(t('galerie.album.open')) ?> &rarr;</span>
+                        <?php else: ?>
+                            <span class="album-cta album-cta-empty"><?= e(t('galerie.album.empty')) ?></span>
+                        <?php endif; ?>
+                    </div>
+                </a>
+            <?php endforeach; ?>
+        </div>
+    </section>
+<?php endif; ?>
 <?php endif; ?>
 
+<?php if ($currentAlbum && $albumItems): ?>
 <script src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
 <script>
 (function () {
     if (typeof Fancybox === 'undefined') return;
-    Fancybox.bind('[data-fancybox^="gallery-"]', {
-        Toolbar: { display: { left: ['infobar'], middle: [], right: ['slideshow', 'thumbs', 'close'] } },
+    Fancybox.bind('[data-fancybox^="album-"]', {
+        Toolbar: {
+            display: {
+                left: ['infobar'],
+                middle: [],
+                right: ['download', 'slideshow', 'thumbs', 'close']
+            }
+        },
         Thumbs: { type: 'classic' },
-        Images: { zoom: true },
+        Images: { zoom: true }
     });
 })();
 </script>
+<?php endif; ?>
 
 <?php ny_render_footer();

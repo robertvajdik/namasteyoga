@@ -178,6 +178,9 @@ function ny_icon(string $name, int $size = 18): string {
         'menu'      => '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>',
         'close'     => '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
         'download'  => '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+        'clock'     => '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+        'map-pin'   => '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
+        'tag'       => '<path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',
     ];
     $p = $paths[$name] ?? '';
     return '<svg class="icon" width="' . $size . '" height="' . $size . '" viewBox="0 0 24 24" aria-hidden="true">' . $p . '</svg>';
@@ -363,11 +366,10 @@ gtag('config', <?= json_encode($gaId) ?>, { anonymize_ip: true });
             <a href="lekce.php"        class="<?= $active === 'lekce'      ? 'is-active' : '' ?>"><?= e(t('nav.lekce')) ?></a>
             <a href="individualni.php" class="<?= $active === 'individ'    ? 'is-active' : '' ?>"><?= e(t('nav.individ')) ?></a>
             <a href="masaze.php"       class="<?= $active === 'masaze'     ? 'is-active' : '' ?>"><?= e(t('nav.masaze')) ?></a>
-            <a href="puppyvibe.php"    class="<?= $active === 'puppyvibe'  ? 'is-active' : '' ?>"><?= e(t('nav.puppyvibe')) ?></a>
+            <a href="akce.php"         class="<?= $active === 'akce'       ? 'is-active' : '' ?>"><?= e(t('nav.akce')) ?></a>
             <a href="lektori.php"      class="<?= $active === 'lektori'    ? 'is-active' : '' ?>"><?= e(t('nav.lektori')) ?></a>
             <a href="galerie.php"      class="<?= $active === 'galerie'    ? 'is-active' : '' ?>"><?= e(t('nav.galerie')) ?></a>
             <a href="cenik.php"        class="<?= $active === 'cenik'      ? 'is-active' : '' ?>"><?= e(t('nav.cenik')) ?></a>
-            <a href="poukaz.php"       class="<?= $active === 'poukaz'     ? 'is-active' : '' ?>"><?= e(t('nav.poukaz')) ?></a>
             <a href="kontakt.php"      class="<?= $active === 'kontakt'    ? 'is-active' : '' ?>"><?= e(t('nav.kontakt')) ?></a>
             <?php if ($user): ?>
                 <a href="my.php" class="<?= $active === 'my' ? 'is-active' : '' ?>"><?= e(t('nav.my')) ?></a>
@@ -406,13 +408,14 @@ function ny_render_footer(bool $bare = false): void {
             <a href="lekce.php"><?= e(t('nav.lekce')) ?></a>
             <a href="individualni.php"><?= e(t('nav.individ')) ?></a>
             <a href="masaze.php"><?= e(t('nav.masaze')) ?></a>
+            <a href="akce.php"><?= e(t('nav.akce')) ?></a>
             <a href="lektori.php"><?= e(t('nav.lektori')) ?></a>
             <a href="galerie.php"><?= e(t('nav.galerie')) ?></a>
         </div>
         <div class="foot-col">
             <h4><?= e(t('footer.info')) ?></h4>
             <a href="cenik.php"><?= e(t('nav.cenik')) ?></a>
-            <a href="poukaz.php"><?= e(t('nav.poukaz')) ?></a>
+            <a href="cenik.php#poukaz"><?= e(t('nav.poukaz')) ?></a>
             <a href="rezervace.php"><?= e(t('nav.schedule')) ?></a>
             <a href="kontakt.php"><?= e(t('nav.kontakt')) ?></a>
             <a href="podminky.php"><?= e(t('footer.terms')) ?></a>
