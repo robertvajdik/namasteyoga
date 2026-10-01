@@ -16,6 +16,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ny_csrf_check($_POST['csrf'] ?? null);
     $name    = trim((string)($_POST['name'] ?? ''));
     $from    = strtolower(trim((string)($_POST['email'] ?? '')));
+    $prefDate = trim((string)($_POST['pref_date'] ?? ''));
+    $prefTime = trim((string)($_POST['pref_time'] ?? ''));
     $msg     = trim((string)($_POST['message'] ?? ''));
     $captcha = trim((string)($_POST['captcha'] ?? ''));
     $hp      = trim((string)($_POST['website'] ?? '')); // honeypot — bots fill this
@@ -35,7 +37,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ny_flash_set('err', t('kontakt.flash.err.fields'));
     } else {
         $subject = '=?UTF-8?B?' . base64_encode('Zpráva z webu – ' . $name) . '?=';
-        $body    = "Od: $name <$from>\r\n\r\n" . $msg;
+        $prefLine = '';
+        $calLine  = '';
+        if ($prefDate !== '' || $prefTime !== '') {
+            $parts = [];
+            if ($prefDate !== '') { $parts[] = $prefDate; }
+            if ($prefTime !== '') { $parts[] = $prefTime; }
+            $prefLine = "Preferovaný termín: " . implode(' ', $parts) . "\r\n\r\n";
+        }
+        if ($prefDate !== '' && $prefTime !== ''
+            && preg_match('/^\d{4}-\d{2}-\d{2}$/', $prefDate)
+            && preg_match('/^\d{2}:\d{2}(:\d{2})?$/', $prefTime)
+        ) {
+            $startHms = strlen($prefTime) === 5 ? $prefTime . ':00' : $prefTime;
+            $endHms   = date('H:i:s', strtotime($startHms) + 3600);
+            $gcalUrl  = ny_gcal_url(
+                $prefDate, $startHms, $endHms,
+                'Zájem o lekci – ' . $name,
+                "Od: $name <$from>\n\n" . $msg,
+                $address
+            );
+            if ($gcalUrl !== '') {
+                $calLine = "Přidat do kalendáře: $gcalUrl\r\n\r\n";
+            }
+        }
+        $body    = "Od: $name <$from>\r\n\r\n" . $prefLine . $calLine . $msg;
         $headers = 'From: ' . $email . "\r\n"
                  . 'Reply-To: ' . $from . "\r\n"
                  . "Content-Type: text/plain; charset=UTF-8\r\n";
@@ -88,6 +114,14 @@ ny_render_header(t('kontakt.title'), 'kontakt', ['description' => t('kontakt.met
             <label><?= e(t('kontakt.form.email')) ?>
                 <input type="email" name="email" required>
             </label>
+            <div class="form-row">
+                <label><?= e(t('kontakt.form.date')) ?>
+                    <input type="date" name="pref_date" min="<?= e(date('Y-m-d')) ?>">
+                </label>
+                <label><?= e(t('kontakt.form.time')) ?>
+                    <input type="time" name="pref_time" step="900">
+                </label>
+            </div>
             <label><?= e(t('kontakt.form.message')) ?>
                 <textarea name="message" rows="4" required></textarea>
             </label>

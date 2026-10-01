@@ -2,6 +2,11 @@
 declare(strict_types=1);
 
 require __DIR__ . '/src/layout.php';
+$s = ny_settings_all();
+$individPrice = function(int $i) use ($s) {
+    $o = trim((string)($s['individ_prices_' . $i . '_amount'] ?? ''));
+    return $o !== '' ? $o : t('individ.prices.' . $i . '.amount');
+};
 ny_render_header(t('individ.title'), 'individ', ['description' => t('individ.meta.description')]);
 ?>
 <section class="page-hero-media">
@@ -45,19 +50,19 @@ ny_render_header(t('individ.title'), 'individ', ['description' => t('individ.met
     <article class="price-card">
         <div class="price-eyebrow"><?= e(t('individ.prices.1.eyebrow')) ?></div>
         <h3><?= e(t('individ.prices.1.title')) ?></h3>
-        <div class="price-amount"><?= e(t('individ.prices.1.amount')) ?></div>
+        <div class="price-amount"><?= e($individPrice(1)) ?></div>
         <p><?= e(t('individ.prices.1.desc')) ?></p>
     </article>
     <article class="price-card featured">
         <div class="price-eyebrow"><?= e(t('individ.prices.2.eyebrow')) ?></div>
         <h3><?= e(t('individ.prices.2.title')) ?></h3>
-        <div class="price-amount"><?= e(t('individ.prices.2.amount')) ?></div>
+        <div class="price-amount"><?= e($individPrice(2)) ?></div>
         <p><?= e(t('individ.prices.2.desc')) ?></p>
     </article>
     <article class="price-card">
         <div class="price-eyebrow"><?= e(t('individ.prices.3.eyebrow')) ?></div>
         <h3><?= e(t('individ.prices.3.title')) ?></h3>
-        <div class="price-amount"><?= e(t('individ.prices.3.amount')) ?></div>
+        <div class="price-amount"><?= e($individPrice(3)) ?></div>
         <p><?= e(t('individ.prices.3.desc')) ?></p>
     </article>
 </div>

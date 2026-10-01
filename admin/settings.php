@@ -83,6 +83,52 @@ $fields = [
             ],
         ],
     ],
+    'cenik_open' => [
+        'title' => 'Ceník – otevřené lekce',
+        'items' => [
+            'cenik_open_1_amount' => ['label' => 'Jednorázová lekce · cena', 'type' => 'text', 'hint' => 'Např. „250 Kč". Nechte prázdné pro výchozí hodnotu z překladu.'],
+            'cenik_open_2_amount' => ['label' => '10× permanentka · cena',   'type' => 'text', 'hint' => 'Např. „2 200 Kč".'],
+            'cenik_open_3_amount' => ['label' => 'Neomezený měsíc · cena',    'type' => 'text', 'hint' => 'Např. „4 000 Kč".'],
+        ],
+    ],
+    'cenik_individ' => [
+        'title' => 'Ceník – individuální lekce',
+        'items' => [
+            'cenik_individ_1_title'  => ['label' => 'Varianta 1 · název',  'type' => 'text', 'hint' => 'Např. „60 minut · 1 osoba". Nechte prázdné pro výchozí hodnotu z překladu.'],
+            'cenik_individ_1_amount' => ['label' => 'Varianta 1 · cena',   'type' => 'text', 'hint' => 'Např. „900 Kč".'],
+            'cenik_individ_2_title'  => ['label' => 'Varianta 2 · název',  'type' => 'text'],
+            'cenik_individ_2_amount' => ['label' => 'Varianta 2 · cena',   'type' => 'text'],
+            'cenik_individ_3_title'  => ['label' => 'Varianta 3 · název',  'type' => 'text'],
+            'cenik_individ_3_amount' => ['label' => 'Varianta 3 · cena',   'type' => 'text'],
+        ],
+    ],
+    'cenik_massage' => [
+        'title' => 'Ceník – masáže',
+        'items' => [
+            'cenik_massage_1_price' => ['label' => 'Masáž 1 · cena', 'type' => 'text', 'hint' => 'Pořadí odpovídá tabulce v ceníku. Nechte prázdné pro výchozí hodnotu z překladu.'],
+            'cenik_massage_2_price' => ['label' => 'Masáž 2 · cena', 'type' => 'text'],
+            'cenik_massage_3_price' => ['label' => 'Masáž 3 · cena', 'type' => 'text'],
+            'cenik_massage_4_price' => ['label' => 'Masáž 4 · cena', 'type' => 'text'],
+            'cenik_massage_5_price' => ['label' => 'Masáž 5 · cena', 'type' => 'text'],
+        ],
+    ],
+    'poukaz_variants' => [
+        'title' => 'Ceník – dárkové poukazy (varianty)',
+        'items' => [
+            'poukaz_variant_1_price' => ['label' => 'Varianta 1 · cena', 'type' => 'text', 'hint' => 'HTML entity jsou povoleny (např. 1&amp;nbsp;500 Kč). Nechte prázdné pro výchozí hodnotu z překladu.'],
+            'poukaz_variant_2_price' => ['label' => 'Varianta 2 · cena', 'type' => 'text'],
+            'poukaz_variant_3_price' => ['label' => 'Varianta 3 · cena', 'type' => 'text'],
+            'poukaz_variant_4_price' => ['label' => 'Varianta 4 · cena', 'type' => 'text', 'hint' => 'Volitelná částka – obvykle „? Kč".'],
+        ],
+    ],
+    'individ_prices' => [
+        'title' => 'Individuální lekce – ceny na stránce individualni.php',
+        'items' => [
+            'individ_prices_1_amount' => ['label' => 'Karta 1 · cena', 'type' => 'text', 'hint' => 'Např. „900 Kč". Nechte prázdné pro výchozí hodnotu z překladu.'],
+            'individ_prices_2_amount' => ['label' => 'Karta 2 · cena', 'type' => 'text'],
+            'individ_prices_3_amount' => ['label' => 'Karta 3 · cena', 'type' => 'text'],
+        ],
+    ],
     'reminders' => [
         'title' => 'Připomínky lekcí',
         'items' => [

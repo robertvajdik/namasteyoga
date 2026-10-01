@@ -297,8 +297,21 @@ gtag('config', <?= json_encode($gaId) ?>, { anonymize_ip: true });
             if (form.dataset.recaptchaReady === '1') return;
             e.preventDefault();
             if (typeof grecaptcha === 'undefined') { form.dataset.recaptchaReady = '1'; form.submit(); return; }
+            // Safety net: if reCAPTCHA hangs or rejects (bad key, domain mismatch,
+            // network block), submit the form anyway so the user sees a real
+            // server-side error instead of a dead button.
+            var submitted = false;
+            var fallback = setTimeout(function () {
+                if (submitted) return;
+                submitted = true;
+                form.dataset.recaptchaReady = '1';
+                form.submit();
+            }, 4000);
             grecaptcha.ready(function () {
                 grecaptcha.execute(siteKey, { action: action }).then(function (token) {
+                    if (submitted) return;
+                    submitted = true;
+                    clearTimeout(fallback);
                     var input = form.querySelector('input[name="g-recaptcha-response"]');
                     if (!input) {
                         input = document.createElement('input');
@@ -307,6 +320,12 @@ gtag('config', <?= json_encode($gaId) ?>, { anonymize_ip: true });
                         form.appendChild(input);
                     }
                     input.value = token;
+                    form.dataset.recaptchaReady = '1';
+                    form.submit();
+                }).catch(function () {
+                    if (submitted) return;
+                    submitted = true;
+                    clearTimeout(fallback);
                     form.dataset.recaptchaReady = '1';
                     form.submit();
                 });
@@ -360,7 +379,9 @@ gtag('config', <?= json_encode($gaId) ?>, { anonymize_ip: true });
             <span class="nav-toggle-open"><?= ny_icon('menu', 22) ?></span>
             <span class="nav-toggle-close"><?= ny_icon('close', 22) ?></span>
         </label>
+        <label for="nav-toggle" class="nav-backdrop" aria-hidden="true" tabindex="-1"></label>
         <nav id="site-nav">
+            <label for="nav-toggle" class="nav-panel-close" aria-label="<?= e(t('nav.close') ?: 'Zavřít') ?>" tabindex="0"><?= ny_icon('close', 20) ?></label>
             <a href="index.php"        class="<?= $active === 'home'       ? 'is-active' : '' ?>"><?= e(t('nav.home')) ?></a>
             <a href="rezervace.php"    class="<?= $active === 'schedule'   ? 'is-active' : '' ?>"><?= e(t('nav.schedule')) ?></a>
             <div class="nav-item has-submenu">
