@@ -4346,16 +4346,16 @@ body.has-promo-zoom-open { overflow: hidden; }
    Scoped under .landing-* so it coexists with the original styles.
    ================================================================= */
 :root {
-    --landing-ink:        #24332f;
-    --landing-cream:      #f4efe6;
-    --landing-cream-soft: #d9d2c4;
-    --landing-cream-dim:  #b9b2a4;
-    --landing-sage:       #5F9187;
-    --landing-sage-soft:  #a9c7c0;
-    --landing-forest:     #3f6b62;
-    --landing-sand:       #e9e2d5;
-    --landing-border:     #3a4b46;
-    --landing-rule:       #cfc6b5;
+    --landing-ink:        #2b1f17;   /* deep espresso-brown — hero bg + headings */
+    --landing-cream:      #f5ead5;   /* warm cream — on dark + lekce section bg */
+    --landing-cream-soft: #e9d9b8;   /* body copy on dark */
+    --landing-cream-dim:  #c6b291;   /* small labels on dark */
+    --landing-sage:       #c67a5c;   /* terracotta — primary CTA & accent */
+    --landing-sage-soft:  #e9b89b;   /* peach — italic emphasis in hero title */
+    --landing-forest:     #8b4a2c;   /* deep clay — hover + strong accent */
+    --landing-sand:       #f3dcbf;   /* soft peach — reasons section bg */
+    --landing-border:     #4a3528;   /* divider on dark hero */
+    --landing-rule:       #d9bf99;   /* hairline rules on cream */
     --landing-max:        1200px;
 }
 
@@ -4439,6 +4439,11 @@ body.has-promo-zoom-open { overflow: hidden; }
     margin-right: calc(50% - 50vw);
     box-sizing: border-box;
 }
+
+/* Kill the container's top/bottom padding on the landing page so the dark
+   hero and CTA band sit flush against the header and footer (no cream strips). */
+.container.page:has(> .landing-hero) { padding-top: 0; }
+.container.page:has(> .landing-cta-band:last-child) { padding-bottom: 0; }
 
 /* -- Hero ---------------------------------------------------------- */
 .landing-hero {
