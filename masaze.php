@@ -7,7 +7,10 @@ $massages = ny_massages_active();
 
 ny_render_header(t('masaze.title'), 'masaze', ['description' => t('masaze.meta.description')]);
 ?>
-<section class="page-hero-media page-hero-media--bg" style="background-image: url('assets/BBCD1984-7232-4B46-9362-401E0D682EA4.png');" aria-label="<?= e(t('masaze.hero.image.alt')) ?>">
+<section class="page-hero-media">
+    <div class="page-hero-media-img">
+        <img src="assets/BBCD1984-7232-4B46-9362-401E0D682EA4.png" alt="<?= e(t('masaze.hero.image.alt')) ?>" loading="eager" decoding="async">
+    </div>
     <div class="page-hero-media-body">
         <div class="eyebrow"><?= e(t('masaze.hero.eyebrow')) ?></div>
         <h1 class="page-title"><?= e(t('masaze.hero.title')) ?></h1>

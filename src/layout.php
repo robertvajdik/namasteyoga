@@ -382,6 +382,7 @@ gtag('config', <?= json_encode($gaId) ?>, { anonymize_ip: true });
         <label for="nav-toggle" class="nav-backdrop" aria-hidden="true" tabindex="-1"></label>
         <nav id="site-nav">
             <label for="nav-toggle" class="nav-panel-close" aria-label="<?= e(t('nav.close') ?: 'Zavřít') ?>" tabindex="0"><?= ny_icon('close', 20) ?></label>
+            <a href="index.php" class="nav-panel-logo" aria-label="<?= e($siteName) ?>"><img src="assets/logoCream.png" alt=""></a>
             <a href="index.php"        class="<?= $active === 'home'       ? 'is-active' : '' ?>"><?= e(t('nav.home')) ?></a>
             <a href="rezervace.php"    class="<?= $active === 'schedule'   ? 'is-active' : '' ?>"><?= e(t('nav.schedule')) ?></a>
             <div class="nav-item has-submenu">

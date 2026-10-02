@@ -82,6 +82,30 @@ ny_render_header(t('index.title'), 'home', ['description' => t('index.meta.descr
 </section>
 <?php endif; ?>
 
+<section class="landing-pick" style="--pick-img: url('assets/namasteyoga.cz_joga2.jpg');">
+    <div class="landing-pick-inner">
+        <div class="landing-pick-head">
+            <div class="landing-eyebrow landing-eyebrow-sage"><?= e(t('index.pick.eyebrow')) ?></div>
+        </div>
+        <div class="landing-pick-grid">
+            <a class="landing-pick-card landing-pick-card--massage" href="masaze.php">
+                <div class="landing-pick-card-body">
+                    <h3 class="landing-pick-card-title"><?= e(t('index.pick.1.title')) ?></h3>
+                    <p class="landing-pick-card-desc"><?= e(t('index.pick.1.desc')) ?></p>
+                </div>
+                <span class="landing-pick-card-cta"><?= e(t('index.pick.1.cta')) ?> →</span>
+            </a>
+            <a class="landing-pick-card landing-pick-card--individ" href="individualni.php">
+                <div class="landing-pick-card-body">
+                    <h3 class="landing-pick-card-title"><?= e(t('index.pick.2.title')) ?></h3>
+                    <p class="landing-pick-card-desc"><?= e(t('index.pick.2.desc')) ?></p>
+                </div>
+                <span class="landing-pick-card-cta"><?= e(t('index.pick.2.cta')) ?> →</span>
+            </a>
+        </div>
+    </div>
+</section>
+
 <section class="landing-reasons">
     <div class="landing-reasons-inner">
         <div class="landing-reasons-copy">
