@@ -32,9 +32,19 @@ ny_render_header(t('masaze.title'), 'masaze', ['description' => t('masaze.meta.d
             <?php if (!empty($m['description'])): ?>
                 <p><?= e((string)$m['description']) ?></p>
             <?php endif; ?>
+            <?php
+                $bookQuery = ['masaz' => (string)$m['name']];
+                if (!empty($m['duration'])) {
+                    $bookQuery['delka'] = (string)$m['duration'];
+                }
+                if (!empty($m['price'])) {
+                    $bookQuery['cena'] = (string)$m['price'];
+                }
+                $bookHref = 'kontakt.php?' . http_build_query($bookQuery, '', '&', PHP_QUERY_RFC3986) . '#kontakt-form';
+            ?>
             <div class="massage-foot">
                 <div class="price-amount price-sm"><?= e((string)$m['price']) ?></div>
-                <a class="btn btn-secondary btn-sm" href="kontakt.php"><?= e(t('masaze.card.book')) ?></a>
+                <a class="btn btn-secondary btn-sm" href="<?= e($bookHref) ?>"><?= e(t('masaze.card.book')) ?></a>
             </div>
         </article>
     <?php endforeach; ?>

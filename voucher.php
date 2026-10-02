@@ -208,8 +208,88 @@ $bgVer    = (string)(@filemtime(__DIR__ . '/assets/darkovy-poukaz.jpg') ?: time(
         }
         .vo-status { display: none; }
     }
-    @media (max-width: 540px) {
-        .vo-code { min-width: 180px; padding: 8px 16px; }
+    @media (max-width: 640px) {
+        body.voucher-page { padding: 14px 10px 20px; }
+        .voucher-toolbar { margin-bottom: 12px; gap: 8px; flex-wrap: wrap; }
+        .voucher-toolbar .btn { flex: 1 1 auto; min-width: 0; }
+
+        /* Drop absolute positioning and let the content flow — the background
+           image still covers the sheet, but the text sits in a readable column. */
+        .voucher-sheet {
+            aspect-ratio: auto;
+            min-height: 520px;
+            padding: 70px 20px 32px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            text-align: center;
+            background-position: center;
+            background-size: cover;
+        }
+        .voucher-sheet::before {
+            /* Soft overlay so text stays legible over the busy illustration. */
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg,
+                rgba(99,54,36,.28) 0%,
+                rgba(99,54,36,.08) 40%,
+                rgba(99,54,36,.55) 100%);
+            pointer-events: none;
+        }
+        .vo-status,
+        .vo-price,
+        .vo-middle {
+            position: relative;
+            top: auto;
+            left: auto;
+            right: auto;
+            transform: none;
+        }
+        .vo-status {
+            align-self: flex-start;
+            margin-bottom: 14px;
+            font-size: 10px;
+        }
+        .vo-price {
+            align-self: center;
+            margin: 0 0 22px;
+            padding: 12px 22px;
+            min-width: 140px;
+        }
+        .vo-price small { font-size: 10px; }
+        .vo-price strong { font-size: 28px; }
+        .vo-middle {
+            width: 100%;
+            max-width: 100%;
+            margin-top: auto;
+        }
+        .vo-for { font-size: 17px; line-height: 1.3; }
+        .vo-msg {
+            font-size: 13px;
+            max-width: 100%;
+            margin-top: 10px;
+            max-height: none;
+            line-height: 1.45;
+        }
+        .vo-code {
+            margin-top: 18px;
+            min-width: 0;
+            width: 100%;
+            max-width: 280px;
+            padding: 10px 18px;
+        }
+        .vo-code small { font-size: 10px; }
+        .vo-code strong { font-size: 20px; letter-spacing: .18em; margin-top: 4px; }
+        .vo-valid { margin-top: 10px; font-size: 12px; }
+        .voucher-caption { font-size: 12px; padding: 0 6px; }
+    }
+    @media (max-width: 380px) {
+        .voucher-sheet { padding: 60px 14px 26px; min-height: 480px; }
+        .vo-price strong { font-size: 24px; }
+        .vo-for { font-size: 16px; }
+        .vo-code strong { font-size: 18px; letter-spacing: .14em; }
     }
 </style>
 </head>

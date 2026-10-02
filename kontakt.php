@@ -73,6 +73,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $captcha = ny_captcha_generate('kontakt');
 
+$prefillMessage = '';
+$prefillMassage = trim((string)($_GET['masaz'] ?? ''));
+if ($prefillMassage !== '') {
+    $prefillLen   = trim((string)($_GET['delka'] ?? ''));
+    $prefillPrice = trim((string)($_GET['cena'] ?? ''));
+    $details = [];
+    if ($prefillLen   !== '') { $details[] = $prefillLen; }
+    if ($prefillPrice !== '') { $details[] = $prefillPrice; }
+    $suffix = $details ? ' (' . implode(', ', $details) . ')' : '';
+    $prefillMessage = sprintf(
+        "Dobrý den, mám zájem o masáž „%s\"%s. Prosím o navržení termínu. Děkuji.",
+        $prefillMassage,
+        $suffix
+    );
+}
+
 ny_render_header(t('kontakt.title'), 'kontakt', ['description' => t('kontakt.meta.description')]);
 ?>
 <section class="section-title-block reveal">
@@ -103,7 +119,7 @@ ny_render_header(t('kontakt.title'), 'kontakt', ['description' => t('kontakt.met
                 referrerpolicy="no-referrer-when-downgrade"></iframe>
         </div>
     </section>
-    <section class="card muted reveal">
+    <section id="kontakt-form" class="card muted reveal">
         <h2><?= e(t('kontakt.form.title')) ?></h2>
         <p class="card-lead"><?= t('kontakt.form.lead') ?></p>
         <form method="post" novalidate data-recaptcha="kontakt">
@@ -123,7 +139,7 @@ ny_render_header(t('kontakt.title'), 'kontakt', ['description' => t('kontakt.met
                 </label>
             </div>
             <label><?= e(t('kontakt.form.message')) ?>
-                <textarea name="message" rows="4" required></textarea>
+                <textarea name="message" rows="4" required><?= e($prefillMessage) ?></textarea>
             </label>
             <div class="hp-field" aria-hidden="true">
                 <label><?= e(t('kontakt.form.hp')) ?>

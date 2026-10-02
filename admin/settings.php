@@ -86,9 +86,11 @@ $fields = [
     'cenik_open' => [
         'title' => 'Ceník – otevřené lekce',
         'items' => [
-            'cenik_open_1_amount' => ['label' => 'Jednorázová lekce · cena', 'type' => 'text', 'hint' => 'Např. „250 Kč". Nechte prázdné pro výchozí hodnotu z překladu.'],
-            'cenik_open_2_amount' => ['label' => '10× permanentka · cena',   'type' => 'text', 'hint' => 'Např. „2 200 Kč".'],
-            'cenik_open_3_amount' => ['label' => 'Neomezený měsíc · cena',    'type' => 'text', 'hint' => 'Např. „4 000 Kč".'],
+            'cenik_open_1_amount'   => ['label' => 'Jednorázová lekce · cena', 'type' => 'text', 'hint' => 'Např. „250 Kč". Nechte prázdné pro výchozí hodnotu z překladu.'],
+            'cenik_open_2_amount'   => ['label' => '10× permanentka · cena',   'type' => 'text', 'hint' => 'Např. „2 200 Kč".'],
+            'cenik_open_2_attempts' => ['label' => '10× permanentka · počet vstupů', 'type' => 'text', 'hint' => 'Pro automatický výpočet ceny za lekci (cena ÷ počet vstupů).'],
+            'cenik_open_3_amount'   => ['label' => '20× permanentka · cena',   'type' => 'text', 'hint' => 'Např. „4 000 Kč".'],
+            'cenik_open_3_attempts' => ['label' => '20× permanentka · počet vstupů', 'type' => 'text', 'hint' => 'Pro automatický výpočet ceny za lekci.'],
         ],
     ],
     'cenik_massage' => [

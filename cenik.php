@@ -135,6 +135,22 @@ $openAmount = function(int $i) use ($s) {
     $o = trim((string)($s['cenik_open_' . $i . '_amount'] ?? ''));
     return $o !== '' ? $o : t('cenik.open.' . $i . '.amount');
 };
+/**
+ * Build the card description. For passes (cards 2/3) with an "attempts" setting,
+ * the per-lesson price is derived from amount ÷ attempts and appended to the
+ * validity sentence; otherwise falls back to the raw .desc translation.
+ */
+$openDesc = function(int $i) use ($s, $openAmount) {
+    $attempts = (int) preg_replace('/[^0-9]/', '', (string)($s['cenik_open_' . $i . '_attempts'] ?? ''));
+    $amountN  = (int) preg_replace('/[^0-9]/', '', $openAmount($i));
+    if ($attempts > 0 && $amountN > 0) {
+        $perLesson = (int) round($amountN / $attempts);
+        $validity  = trim(t('cenik.open.' . $i . '.validity'));
+        $suffix    = sprintf(t('cenik.open.per_lesson'), number_format($perLesson, 0, ',', ' '));
+        return trim($validity . ' ' . $suffix);
+    }
+    return t('cenik.open.' . $i . '.desc');
+};
 ?>
 <h2 class="section-h"><?= e(t('cenik.open.title')) ?></h2>
 <div class="price-grid">
@@ -142,19 +158,19 @@ $openAmount = function(int $i) use ($s) {
         <div class="price-eyebrow"><?= e(t('cenik.open.1.eyebrow')) ?></div>
         <h3><?= e(t('cenik.open.1.title')) ?></h3>
         <div class="price-amount"><?= e($openAmount(1)) ?></div>
-        <p><?= e(t('cenik.open.1.desc')) ?></p>
+        <p><?= e($openDesc(1)) ?></p>
     </article>
     <article class="price-card featured">
         <div class="price-eyebrow"><?= e(t('cenik.open.2.eyebrow')) ?></div>
         <h3><?= e(t('cenik.open.2.title')) ?></h3>
         <div class="price-amount"><?= e($openAmount(2)) ?></div>
-        <p><?= e(t('cenik.open.2.desc')) ?></p>
+        <p><?= e($openDesc(2)) ?></p>
     </article>
     <article class="price-card">
         <div class="price-eyebrow"><?= e(t('cenik.open.3.eyebrow')) ?></div>
         <h3><?= e(t('cenik.open.3.title')) ?></h3>
         <div class="price-amount"><?= e($openAmount(3)) ?></div>
-        <p><?= e(t('cenik.open.3.desc')) ?></p>
+        <p><?= e($openDesc(3)) ?></p>
     </article>
 </div>
 
