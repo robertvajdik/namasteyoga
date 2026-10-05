@@ -61,6 +61,7 @@ STRUKTURA
     newsletter.php ........... POST endpoint pro přihlášení k odběru
     unsubscribe.php .......... odhlašovací stránka s tokenem
     sitemap.php + robots.txt . dynamický sitemap.xml pro roboty
+    404.php .................. vlastní stránka pro chybu 404 (noindex)
     admin_setup.php .......... prvotní vytvoření admin účtu (po použití smazat)
     migrate.php .............. jednorázová migrace uživatelů ze staré WP DB
     debug_login.php .......... vývojářský nástroj pro ověření hashů (smazat!)
@@ -91,6 +92,7 @@ STRUKTURA
 
     style.css ................ jednotné styly (design tokens + komponenty)
     .htaccess ................ mod_rewrite pro sitemap + bezvýpisové URL
+                                + ErrorDocument 404 → /404.php
 
 --------------------------------------------------------------------------------
 DATABÁZOVÉ TABULKY (auto-provisioning)
