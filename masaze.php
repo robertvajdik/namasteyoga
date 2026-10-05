@@ -54,6 +54,22 @@ ny_render_header(t('masaze.title'), 'masaze', ['description' => t('masaze.meta.d
 </div>
 <?php endif; ?>
 
+<section class="section-title-block section-h-gap">
+    <div class="eyebrow"><?= e(t('masaze.therapist.eyebrow')) ?></div>
+    <h2 class="page-title"><?= e(t('masaze.therapist.title')) ?></h2>
+    <p class="page-lead"><?= e(t('masaze.therapist.lead')) ?></p>
+</section>
+<div class="teacher-grid teacher-grid--single">
+    <article class="teacher-card">
+        <div class="teacher-avatar" aria-hidden="true">P</div>
+        <h3 class="teacher-name">Petr Klika, Ing. arch. et Bc.</h3>
+        <div class="teacher-role"><?= e(t('masaze.therapist.role')) ?></div>
+        <p class="teacher-bio">
+            <?= ny_phone_obf('+420 724 943 284', ny_icon('phone', 14) . ' ') ?>
+        </p>
+    </article>
+</div>
+
 <section class="cta-band">
     <div class="cta-inner">
         <h2><?= e(t('masaze.cta.title')) ?></h2>

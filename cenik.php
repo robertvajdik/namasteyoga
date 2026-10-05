@@ -131,85 +131,60 @@ ny_render_header(t('cenik.title'), 'cenik', ['description' => t('cenik.meta.desc
 </section>
 
 <?php
-$openAmount = function(int $i) use ($s) {
-    $o = trim((string)($s['cenik_open_' . $i . '_amount'] ?? ''));
-    return $o !== '' ? $o : t('cenik.open.' . $i . '.amount');
+$openField = function(int $i, string $field) use ($s) {
+    $o = trim((string)($s['cenik_open_' . $i . '_' . $field] ?? ''));
+    return $o !== '' ? $o : t('cenik.open.' . $i . '.' . $field);
 };
 /**
  * Build the card description. For passes (cards 2/3) with an "attempts" setting,
  * the per-lesson price is derived from amount ÷ attempts and appended to the
- * validity sentence; otherwise falls back to the raw .desc translation.
+ * validity sentence; otherwise falls back to the admin override or the raw .desc translation.
  */
-$openDesc = function(int $i) use ($s, $openAmount) {
+$openDesc = function(int $i) use ($s, $openField) {
     $attempts = (int) preg_replace('/[^0-9]/', '', (string)($s['cenik_open_' . $i . '_attempts'] ?? ''));
-    $amountN  = (int) preg_replace('/[^0-9]/', '', $openAmount($i));
+    $amountN  = (int) preg_replace('/[^0-9]/', '', $openField($i, 'amount'));
     if ($attempts > 0 && $amountN > 0) {
         $perLesson = (int) round($amountN / $attempts);
         $validity  = trim(t('cenik.open.' . $i . '.validity'));
         $suffix    = sprintf(t('cenik.open.per_lesson'), number_format($perLesson, 0, ',', ' '));
         return trim($validity . ' ' . $suffix);
     }
-    return t('cenik.open.' . $i . '.desc');
+    return $openField($i, 'desc');
 };
 ?>
 <h2 class="section-h"><?= e(t('cenik.open.title')) ?></h2>
 <div class="price-grid price-grid-4">
-    <article class="price-card">
-        <div class="price-eyebrow"><?= e(t('cenik.open.1.eyebrow')) ?></div>
-        <h3><?= e(t('cenik.open.1.title')) ?></h3>
-        <div class="price-amount"><?= e($openAmount(1)) ?></div>
-        <p><?= e($openDesc(1)) ?></p>
-    </article>
-    <article class="price-card featured">
-        <div class="price-eyebrow"><?= e(t('cenik.open.2.eyebrow')) ?></div>
-        <h3><?= e(t('cenik.open.2.title')) ?></h3>
-        <div class="price-amount"><?= e($openAmount(2)) ?></div>
-        <p><?= e($openDesc(2)) ?></p>
-    </article>
-    <article class="price-card">
-        <div class="price-eyebrow"><?= e(t('cenik.open.3.eyebrow')) ?></div>
-        <h3><?= e(t('cenik.open.3.title')) ?></h3>
-        <div class="price-amount"><?= e($openAmount(3)) ?></div>
-        <p><?= e($openDesc(3)) ?></p>
-    </article>
-    <article class="price-card">
-        <div class="price-eyebrow"><?= e(t('cenik.open.4.eyebrow')) ?></div>
-        <h3><?= e(t('cenik.open.4.title')) ?></h3>
-        <div class="price-amount"><?= e($openAmount(4)) ?></div>
-        <p><?= e($openDesc(4)) ?></p>
-    </article>
+    <?php for ($i = 1; $i <= 6; $i++): ?>
+        <article class="price-card<?= $i === 2 ? ' featured' : '' ?>">
+            <div class="price-eyebrow"><?= e($openField($i, 'eyebrow')) ?></div>
+            <h3><?= e($openField($i, 'title')) ?></h3>
+            <div class="price-amount"><?= e($openField($i, 'amount')) ?></div>
+            <p><?= e($openDesc($i)) ?></p>
+        </article>
+    <?php endfor; ?>
 </div>
 
 <?php
-$individ = [];
-for ($i = 1; $i <= 3; $i++) {
-    $amountOverride = trim((string)($s['individ_prices_' . $i . '_amount'] ?? ''));
-    $individ[$i] = [
-        'title'  => t('cenik.individ.' . $i . '.title'),
-        'amount' => $amountOverride !== '' ? $amountOverride : t('cenik.individ.' . $i . '.amount'),
-    ];
-}
+$individField = function(int $i, string $field) use ($s) {
+    $o = trim((string)($s['individ_prices_' . $i . '_' . $field] ?? ''));
+    return $o !== '' ? $o : t('cenik.individ.' . $i . '.' . $field);
+};
 ?>
 <h2 class="section-h section-h-gap"><?= e(t('cenik.individ.title')) ?></h2>
 <div class="price-grid">
-    <article class="price-card">
-        <h3><?= e($individ[1]['title']) ?></h3>
-        <div class="price-amount"><?= e($individ[1]['amount']) ?></div>
-    </article>
-    <article class="price-card">
-        <h3><?= e($individ[2]['title']) ?></h3>
-        <div class="price-amount"><?= e($individ[2]['amount']) ?></div>
-    </article>
-    <article class="price-card">
-        <h3><?= e($individ[3]['title']) ?></h3>
-        <div class="price-amount"><?= e($individ[3]['amount']) ?></div>
-    </article>
+    <?php for ($i = 1; $i <= 3; $i++): ?>
+        <article class="price-card">
+            <h3><?= e($individField($i, 'title')) ?></h3>
+            <div class="price-amount"><?= e($individField($i, 'amount')) ?></div>
+        </article>
+    <?php endfor; ?>
 </div>
 
 <?php
-$massagePrice = function(int $i) use ($s) {
-    $o = trim((string)($s['cenik_massage_' . $i . '_price'] ?? ''));
-    return $o !== '' ? $o : t('cenik.massage.' . $i . '.price');
+$massageField = function(int $i, string $field) use ($s) {
+    $settingKey = 'cenik_massage_' . $i . '_' . ($field === 'price' ? 'price' : $field);
+    $o = trim((string)($s[$settingKey] ?? ''));
+    return $o !== '' ? $o : t('cenik.massage.' . $i . '.' . $field);
 };
 ?>
 <h2 class="section-h section-h-gap"><?= e(t('cenik.massage.title')) ?></h2>
@@ -217,11 +192,13 @@ $massagePrice = function(int $i) use ($s) {
     <table class="tbl">
         <thead><tr><th><?= e(t('cenik.massage.th.name')) ?></th><th><?= e(t('cenik.massage.th.duration')) ?></th><th><?= e(t('cenik.massage.th.price')) ?></th></tr></thead>
         <tbody>
-            <tr><td data-label="<?= e(t('cenik.massage.th.name')) ?>"><?= e(t('cenik.massage.1.name')) ?></td><td data-label="<?= e(t('cenik.massage.th.duration')) ?>"><?= e(t('cenik.massage.1.duration')) ?></td><td data-label="<?= e(t('cenik.massage.th.price')) ?>"><?= e($massagePrice(1)) ?></td></tr>
-            <tr><td data-label="<?= e(t('cenik.massage.th.name')) ?>"><?= e(t('cenik.massage.2.name')) ?></td><td data-label="<?= e(t('cenik.massage.th.duration')) ?>"><?= e(t('cenik.massage.2.duration')) ?></td><td data-label="<?= e(t('cenik.massage.th.price')) ?>"><?= e($massagePrice(2)) ?></td></tr>
-            <tr><td data-label="<?= e(t('cenik.massage.th.name')) ?>"><?= e(t('cenik.massage.3.name')) ?></td><td data-label="<?= e(t('cenik.massage.th.duration')) ?>"><?= e(t('cenik.massage.3.duration')) ?></td><td data-label="<?= e(t('cenik.massage.th.price')) ?>"><?= e($massagePrice(3)) ?></td></tr>
-            <tr><td data-label="<?= e(t('cenik.massage.th.name')) ?>"><?= e(t('cenik.massage.4.name')) ?></td><td data-label="<?= e(t('cenik.massage.th.duration')) ?>"><?= e(t('cenik.massage.4.duration')) ?></td><td data-label="<?= e(t('cenik.massage.th.price')) ?>"><?= e($massagePrice(4)) ?></td></tr>
-            <tr><td data-label="<?= e(t('cenik.massage.th.name')) ?>"><?= e(t('cenik.massage.5.name')) ?></td><td data-label="<?= e(t('cenik.massage.th.duration')) ?>"><?= e(t('cenik.massage.5.duration')) ?></td><td data-label="<?= e(t('cenik.massage.th.price')) ?>"><?= e($massagePrice(5)) ?></td></tr>
+            <?php for ($i = 1; $i <= 5; $i++): ?>
+                <tr>
+                    <td data-label="<?= e(t('cenik.massage.th.name')) ?>"><?= e($massageField($i, 'name')) ?></td>
+                    <td data-label="<?= e(t('cenik.massage.th.duration')) ?>"><?= e($massageField($i, 'duration')) ?></td>
+                    <td data-label="<?= e(t('cenik.massage.th.price')) ?>"><?= e($massageField($i, 'price')) ?></td>
+                </tr>
+            <?php endfor; ?>
         </tbody>
     </table>
 </div>

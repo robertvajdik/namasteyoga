@@ -12,6 +12,19 @@ if ($slug !== '' && !$event) {
 
 $events = ny_events_published();
 
+$prevEvent = null;
+$nextEvent = null;
+if ($event) {
+    $idx = -1;
+    foreach ($events as $i => $ev) {
+        if ((string)$ev['slug'] === (string)$event['slug']) { $idx = $i; break; }
+    }
+    if ($idx >= 0) {
+        if (isset($events[$idx - 1])) $prevEvent = $events[$idx - 1];
+        if (isset($events[$idx + 1])) $nextEvent = $events[$idx + 1];
+    }
+}
+
 ny_render_header(
     $event ? ($event['title'] . ' · ' . t('akce.title')) : t('akce.title'),
     'akce',
@@ -68,6 +81,24 @@ $isPast = static function (?string $d): bool {
                     <?= e((string)($event['cta_label'] ?: t('akce.cta.default'))) ?>
                 </a>
             </div>
+        <?php endif; ?>
+        <?php if ($prevEvent || $nextEvent): ?>
+        <nav class="event-pager" aria-label="<?= e(t('akce.title')) ?>">
+            <?php if ($prevEvent): ?>
+                <a class="event-pager-link event-pager-prev" href="akce.php?slug=<?= e(rawurlencode((string)$prevEvent['slug'])) ?>">
+                    <?= ny_icon('chevron-left', 16) ?>
+                    <span class="event-pager-dir"><?= e(t('akce.prev')) ?></span>
+                    <span class="event-pager-title"><?= e((string)$prevEvent['title']) ?></span>
+                </a>
+            <?php else: ?><span></span><?php endif; ?>
+            <?php if ($nextEvent): ?>
+                <a class="event-pager-link event-pager-next" href="akce.php?slug=<?= e(rawurlencode((string)$nextEvent['slug'])) ?>">
+                    <span class="event-pager-dir"><?= e(t('akce.next')) ?></span>
+                    <span class="event-pager-title"><?= e((string)$nextEvent['title']) ?></span>
+                    <?= ny_icon('chevron-right', 16) ?>
+                </a>
+            <?php else: ?><span></span><?php endif; ?>
+        </nav>
         <?php endif; ?>
     </div>
 </section>

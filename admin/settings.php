@@ -94,21 +94,61 @@ $fields = [
     'cenik_open' => [
         'title' => 'Ceník – otevřené lekce',
         'items' => [
-            'cenik_open_1_amount'   => ['label' => 'Jednorázová lekce · cena', 'type' => 'text', 'hint' => 'Např. „250 Kč". Nechte prázdné pro výchozí hodnotu z překladu.'],
-            'cenik_open_2_amount'   => ['label' => '10× permanentka · cena',   'type' => 'text', 'hint' => 'Např. „2 200 Kč".'],
-            'cenik_open_2_attempts' => ['label' => '10× permanentka · počet vstupů', 'type' => 'text', 'hint' => 'Pro automatický výpočet ceny za lekci (cena ÷ počet vstupů).'],
-            'cenik_open_3_amount'   => ['label' => '20× permanentka · cena',   'type' => 'text', 'hint' => 'Např. „4 000 Kč".'],
-            'cenik_open_3_attempts' => ['label' => '20× permanentka · počet vstupů', 'type' => 'text', 'hint' => 'Pro automatický výpočet ceny za lekci.'],
+            'cenik_open_1_eyebrow'  => ['label' => 'Karta 1 · badge',   'type' => 'text', 'hint' => 'Štítek nad názvem (např. „Jednorázově"). Nechte prázdné pro výchozí hodnotu z překladu.'],
+            'cenik_open_1_title'    => ['label' => 'Karta 1 · název',   'type' => 'text', 'hint' => 'Např. „1 vstup".'],
+            'cenik_open_1_amount'   => ['label' => 'Karta 1 · cena',    'type' => 'text', 'hint' => 'Např. „250 Kč".'],
+            'cenik_open_1_desc'     => ['label' => 'Karta 1 · popis',   'type' => 'text'],
+
+            'cenik_open_2_eyebrow'  => ['label' => 'Karta 2 · badge',   'type' => 'text', 'hint' => 'Např. „Doporučujeme".'],
+            'cenik_open_2_title'    => ['label' => 'Karta 2 · název',   'type' => 'text', 'hint' => 'Např. „Permanentka 10×".'],
+            'cenik_open_2_amount'   => ['label' => 'Karta 2 · cena',    'type' => 'text', 'hint' => 'Např. „2 200 Kč".'],
+            'cenik_open_2_attempts' => ['label' => 'Karta 2 · počet vstupů', 'type' => 'text', 'hint' => 'Pro automatický výpočet ceny za lekci (cena ÷ počet vstupů). Pokud je vyplněno, nahradí popis.'],
+            'cenik_open_2_desc'     => ['label' => 'Karta 2 · popis',   'type' => 'text', 'hint' => 'Použije se, pokud není vyplněn „počet vstupů".'],
+
+            'cenik_open_3_eyebrow'  => ['label' => 'Karta 3 · badge',   'type' => 'text'],
+            'cenik_open_3_title'    => ['label' => 'Karta 3 · název',   'type' => 'text'],
+            'cenik_open_3_amount'   => ['label' => 'Karta 3 · cena',    'type' => 'text', 'hint' => 'Např. „4 000 Kč".'],
+            'cenik_open_3_attempts' => ['label' => 'Karta 3 · počet vstupů', 'type' => 'text', 'hint' => 'Pro automatický výpočet ceny za lekci.'],
+            'cenik_open_3_desc'     => ['label' => 'Karta 3 · popis',   'type' => 'text'],
+
+            'cenik_open_4_eyebrow'  => ['label' => 'Karta 4 · badge',   'type' => 'text'],
+            'cenik_open_4_title'    => ['label' => 'Karta 4 · název',   'type' => 'text'],
+            'cenik_open_4_amount'   => ['label' => 'Karta 4 · cena',    'type' => 'text', 'hint' => 'Např. „160 Kč".'],
+            'cenik_open_4_desc'     => ['label' => 'Karta 4 · popis',   'type' => 'text'],
+
+            'cenik_open_5_eyebrow'  => ['label' => 'Karta 5 · badge',   'type' => 'text'],
+            'cenik_open_5_title'    => ['label' => 'Karta 5 · název',   'type' => 'text', 'hint' => 'Např. „Fly jóga".'],
+            'cenik_open_5_amount'   => ['label' => 'Karta 5 · cena',    'type' => 'text', 'hint' => 'Např. „350 Kč".'],
+            'cenik_open_5_desc'     => ['label' => 'Karta 5 · popis',   'type' => 'text'],
+
+            'cenik_open_6_eyebrow'  => ['label' => 'Karta 6 · badge',   'type' => 'text'],
+            'cenik_open_6_title'    => ['label' => 'Karta 6 · název',   'type' => 'text', 'hint' => 'Např. „Wall jóga".'],
+            'cenik_open_6_amount'   => ['label' => 'Karta 6 · cena',    'type' => 'text', 'hint' => 'Např. „300 Kč".'],
+            'cenik_open_6_desc'     => ['label' => 'Karta 6 · popis',   'type' => 'text'],
         ],
     ],
     'cenik_massage' => [
         'title' => 'Ceník – masáže',
         'items' => [
-            'cenik_massage_1_price' => ['label' => 'Masáž 1 · cena', 'type' => 'text', 'hint' => 'Pořadí odpovídá tabulce v ceníku. Nechte prázdné pro výchozí hodnotu z překladu.'],
-            'cenik_massage_2_price' => ['label' => 'Masáž 2 · cena', 'type' => 'text'],
-            'cenik_massage_3_price' => ['label' => 'Masáž 3 · cena', 'type' => 'text'],
-            'cenik_massage_4_price' => ['label' => 'Masáž 4 · cena', 'type' => 'text'],
-            'cenik_massage_5_price' => ['label' => 'Masáž 5 · cena', 'type' => 'text'],
+            'cenik_massage_1_name'     => ['label' => 'Masáž 1 · název',    'type' => 'text', 'hint' => 'Pořadí odpovídá tabulce v ceníku. Nechte prázdné pro výchozí hodnotu z překladu.'],
+            'cenik_massage_1_duration' => ['label' => 'Masáž 1 · trvání',   'type' => 'text', 'hint' => 'Např. „60 min".'],
+            'cenik_massage_1_price'    => ['label' => 'Masáž 1 · cena',     'type' => 'text', 'hint' => 'Např. „850 Kč".'],
+
+            'cenik_massage_2_name'     => ['label' => 'Masáž 2 · název',    'type' => 'text'],
+            'cenik_massage_2_duration' => ['label' => 'Masáž 2 · trvání',   'type' => 'text'],
+            'cenik_massage_2_price'    => ['label' => 'Masáž 2 · cena',     'type' => 'text'],
+
+            'cenik_massage_3_name'     => ['label' => 'Masáž 3 · název',    'type' => 'text'],
+            'cenik_massage_3_duration' => ['label' => 'Masáž 3 · trvání',   'type' => 'text'],
+            'cenik_massage_3_price'    => ['label' => 'Masáž 3 · cena',     'type' => 'text'],
+
+            'cenik_massage_4_name'     => ['label' => 'Masáž 4 · název',    'type' => 'text'],
+            'cenik_massage_4_duration' => ['label' => 'Masáž 4 · trvání',   'type' => 'text'],
+            'cenik_massage_4_price'    => ['label' => 'Masáž 4 · cena',     'type' => 'text'],
+
+            'cenik_massage_5_name'     => ['label' => 'Masáž 5 · název',    'type' => 'text'],
+            'cenik_massage_5_duration' => ['label' => 'Masáž 5 · trvání',   'type' => 'text'],
+            'cenik_massage_5_price'    => ['label' => 'Masáž 5 · cena',     'type' => 'text'],
         ],
     ],
     'poukaz_variants' => [
@@ -123,9 +163,12 @@ $fields = [
     'individ_prices' => [
         'title' => 'Individuální lekce – ceny',
         'items' => [
-            'individ_prices_1_amount' => ['label' => 'Karta 1 · cena', 'type' => 'text', 'hint' => 'Zobrazí se na individualni.php i v ceníku. Nechte prázdné pro výchozí hodnotu z překladu.'],
-            'individ_prices_2_amount' => ['label' => 'Karta 2 · cena', 'type' => 'text'],
-            'individ_prices_3_amount' => ['label' => 'Karta 3 · cena', 'type' => 'text'],
+            'individ_prices_1_title'  => ['label' => 'Karta 1 · název', 'type' => 'text', 'hint' => 'Zobrazí se v ceníku. Nechte prázdné pro výchozí hodnotu z překladu.'],
+            'individ_prices_1_amount' => ['label' => 'Karta 1 · cena',  'type' => 'text'],
+            'individ_prices_2_title'  => ['label' => 'Karta 2 · název', 'type' => 'text'],
+            'individ_prices_2_amount' => ['label' => 'Karta 2 · cena',  'type' => 'text'],
+            'individ_prices_3_title'  => ['label' => 'Karta 3 · název', 'type' => 'text'],
+            'individ_prices_3_amount' => ['label' => 'Karta 3 · cena',  'type' => 'text'],
         ],
     ],
     'reminders' => [
