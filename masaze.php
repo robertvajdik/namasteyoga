@@ -14,7 +14,7 @@ ny_render_header(t('masaze.title'), 'masaze', ['description' => t('masaze.meta.d
     <div class="page-hero-media-body">
         <div class="eyebrow"><?= e(t('masaze.hero.eyebrow')) ?></div>
         <h1 class="page-title"><?= e(t('masaze.hero.title')) ?></h1>
-        <p class="page-lead">
+        <p class="page-lead" style="text-align:left; margin-left:0;">
             <?= e(t('masaze.hero.lead')) ?>
         </p>
     </div>

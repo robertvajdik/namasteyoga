@@ -153,7 +153,7 @@ $openDesc = function(int $i) use ($s, $openAmount) {
 };
 ?>
 <h2 class="section-h"><?= e(t('cenik.open.title')) ?></h2>
-<div class="price-grid">
+<div class="price-grid price-grid-4">
     <article class="price-card">
         <div class="price-eyebrow"><?= e(t('cenik.open.1.eyebrow')) ?></div>
         <h3><?= e(t('cenik.open.1.title')) ?></h3>
@@ -171,6 +171,12 @@ $openDesc = function(int $i) use ($s, $openAmount) {
         <h3><?= e(t('cenik.open.3.title')) ?></h3>
         <div class="price-amount"><?= e($openAmount(3)) ?></div>
         <p><?= e($openDesc(3)) ?></p>
+    </article>
+    <article class="price-card">
+        <div class="price-eyebrow"><?= e(t('cenik.open.4.eyebrow')) ?></div>
+        <h3><?= e(t('cenik.open.4.title')) ?></h3>
+        <div class="price-amount"><?= e($openAmount(4)) ?></div>
+        <p><?= e($openDesc(4)) ?></p>
     </article>
 </div>
 
@@ -221,7 +227,7 @@ $massagePrice = function(int $i) use ($s) {
 </div>
 
 <p class="hint hint-form">
-    <?= e(t('cenik.discount.note')) ?>
+    <?= t('cenik.discount.note') ?>
 </p>
 
 <section class="poukaz-hero" id="poukaz">

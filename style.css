@@ -1051,6 +1051,9 @@ body.has-overlay-header .site-header {
 
 /* Price cards */
 .price-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.price-grid-4 { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 1024px) { .price-grid-4 { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px)  { .price-grid-4 { grid-template-columns: 1fr; } }
 .price-card {
     background: var(--surface-card); border: 1px solid var(--border-subtle);
     border-radius: var(--radius-lg); padding: 28px; box-shadow: var(--shadow-soft);
@@ -3636,7 +3639,6 @@ img, iframe, video { max-width: 100%; }
     max-width: var(--container);
     margin: 0 auto var(--space-8);
     padding: var(--space-7) 0;
-    border-top: 1px solid var(--border-subtle);
     border-bottom: 1px solid var(--border-subtle);
     scroll-margin-top: 100px;
 }
@@ -4715,7 +4717,7 @@ body:has(.landing-cta-band) .site-footer { margin-top: 0; }
 }
 .landing-pick-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
     gap: clamp(20px, 2.4vw, 28px);
 }
 .landing-pick-card {
@@ -4743,6 +4745,10 @@ body:has(.landing-cta-band) .site-footer { margin-top: 0; }
 .landing-pick-card--individ {
     background: #ffffff;
     color: var(--landing-ink);
+}
+.landing-pick-card--akce {
+    background: var(--landing-forest);
+    color: #fff;
 }
 .landing-pick-card-body {
     display: flex;

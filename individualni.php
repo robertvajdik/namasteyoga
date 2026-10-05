@@ -16,7 +16,7 @@ ny_render_header(t('individ.title'), 'individ', ['description' => t('individ.met
     <div class="page-hero-media-body">
         <div class="eyebrow"><?= e(t('individ.hero.eyebrow')) ?></div>
         <h1 class="page-title"><?= e(t('individ.hero.title')) ?></h1>
-        <p class="page-lead">
+        <p class="page-lead" style="text-align:left; margin-left:0;">
             <?= e(t('individ.hero.lead')) ?>
         </p>
     </div>

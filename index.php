@@ -102,6 +102,13 @@ ny_render_header(t('index.title'), 'home', ['description' => t('index.meta.descr
                 </div>
                 <span class="landing-pick-card-cta"><?= e(t('index.pick.2.cta')) ?> →</span>
             </a>
+            <a class="landing-pick-card landing-pick-card--akce" href="akce.php">
+                <div class="landing-pick-card-body">
+                    <h3 class="landing-pick-card-title"><?= e(t('index.pick.3.title')) ?></h3>
+                    <p class="landing-pick-card-desc"><?= e(t('index.pick.3.desc')) ?></p>
+                </div>
+                <span class="landing-pick-card-cta"><?= e(t('index.pick.3.cta')) ?> →</span>
+            </a>
         </div>
     </div>
 </section>
