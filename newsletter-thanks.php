@@ -6,7 +6,7 @@ require __DIR__ . '/src/layout.php';
 $email = trim((string)($_GET['e'] ?? ''));
 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $email = '';
 
-ny_render_header(t('nl_thx.title'), '', ['description' => t('nl_thx.meta.description')]);
+ny_render_header(t('nl_thx.title'), '', ['description' => t('nl_thx.meta.description'), 'noindex' => true]);
 ?>
 <section class="section-title-block">
     <div class="eyebrow"><?= e(t('nl_thx.eyebrow')) ?></div>

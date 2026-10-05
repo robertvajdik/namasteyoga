@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-ny_render_header(t('forgot.title'), 'login', ['description' => t('forgot.meta.description')]);
+ny_render_header(t('forgot.title'), 'login', ['description' => t('forgot.meta.description'), 'noindex' => true]);
 ?>
 <section class="section-title-block">
     <div class="eyebrow"><?= e(t('forgot.eyebrow')) ?></div>

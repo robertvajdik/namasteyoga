@@ -52,7 +52,7 @@ ny_render_header($pageTitle, 'galerie', [
 </section>
 
 <?php if (!$albumItems): ?>
-    <div class="card muted reveal" style="text-align:center">
+    <div class="card muted reveal card--centered">
         <p><?= e(t('galerie.album.empty')) ?></p>
     </div>
 <?php else: ?>
@@ -103,7 +103,7 @@ $hasAny = false;
 foreach ($albumCounts as $n) { if ($n > 0) { $hasAny = true; break; } }
 ?>
 <?php if (!$hasAny): ?>
-    <div class="card muted reveal" style="text-align:center">
+    <div class="card muted reveal card--centered">
         <p><?= e(t('galerie.empty')) ?></p>
     </div>
 <?php else: ?>

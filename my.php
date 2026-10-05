@@ -237,7 +237,7 @@ $daysShort = [
     7 => t('my.dow.7'),
 ];
 
-ny_render_header(t('my.title'), 'my', ['description' => t('my.meta.description')]);
+ny_render_header(t('my.title'), 'my', ['description' => t('my.meta.description'), 'noindex' => true]);
 ?>
 <section class="section-title-block">
     <div class="eyebrow"><?= e(t('my.eyebrow')) ?></div>
@@ -306,7 +306,7 @@ ny_render_header(t('my.title'), 'my', ['description' => t('my.meta.description')
                         <div class="attend-bar" role="listitem" title="<?= e($m['label']) ?>: <?= (int)$m['count'] ?>">
                             <div class="attend-bar-num"><?= $m['count'] > 0 ? (int)$m['count'] : '' ?></div>
                             <div class="attend-bar-track">
-                                <div class="attend-bar-fill" style="height: <?= $h ?>%"></div>
+                                <div class="attend-bar-fill" style="--bar-h: <?= $h ?>%"></div>
                             </div>
                             <div class="attend-bar-lbl"><?= e($m['label']) ?></div>
                         </div>
@@ -331,7 +331,7 @@ ny_render_header(t('my.title'), 'my', ['description' => t('my.meta.description')
                                 <span class="stats-list-name"><?= e($tc['name']) ?></span>
                                 <span class="stats-list-num"><?= (int)$tc['n'] ?>×</span>
                             </div>
-                            <div class="stats-list-track"><div class="stats-list-fill" style="width: <?= $w ?>%"></div></div>
+                            <div class="stats-list-track"><div class="stats-list-fill" style="--bar-w: <?= $w ?>%"></div></div>
                         </li>
                     <?php endforeach; ?>
                 </ul>
@@ -354,7 +354,7 @@ ny_render_header(t('my.title'), 'my', ['description' => t('my.meta.description')
                                 <span class="stats-list-name"><?= e($tt['teacher']) ?></span>
                                 <span class="stats-list-num"><?= (int)$tt['n'] ?>×</span>
                             </div>
-                            <div class="stats-list-track"><div class="stats-list-fill" style="width: <?= $w ?>%"></div></div>
+                            <div class="stats-list-track"><div class="stats-list-fill" style="--bar-w: <?= $w ?>%"></div></div>
                         </li>
                     <?php endforeach; ?>
                 </ul>

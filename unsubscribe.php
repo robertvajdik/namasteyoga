@@ -6,7 +6,7 @@ require __DIR__ . '/src/layout.php';
 $token = (string)($_GET['t'] ?? '');
 $done  = $token !== '' && ny_newsletter_unsubscribe_by_token($token);
 
-ny_render_header(t('unsub.title'), '', ['description' => t('unsub.meta.description')]);
+ny_render_header(t('unsub.title'), '', ['description' => t('unsub.meta.description'), 'noindex' => true]);
 ?>
 <section class="section-title-block">
     <div class="eyebrow"><?= e(t('unsub.eyebrow')) ?></div>

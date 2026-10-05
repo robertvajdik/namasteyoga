@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-ny_render_header(t('register.title'), 'register', ['description' => t('register.meta.description')]);
+ny_render_header(t('register.title'), 'register', ['description' => t('register.meta.description'), 'noindex' => true]);
 ?>
 <section class="section-title-block">
     <div class="eyebrow"><?= e(t('register.eyebrow')) ?></div>

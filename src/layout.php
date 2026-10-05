@@ -226,7 +226,7 @@ function ny_render_header(string $title, string $active = '', array $opts = []):
     $user       = ny_current_user();
     $bare       = !empty($opts['bare']);
     $overlayHdr = !empty($opts['overlay']);
-    $desc       = $opts['description'] ?? 'Studio Namasté Yoga v Uherském Brodě – jóga, pilates, masáže a individuální lekce pro začátečníky i pokročilé.';
+    $noindex    = !empty($opts['noindex']);
 
     $s        = ny_settings_all();
     $siteName = $s['site_name'] ?: 'Studio Namasté';
@@ -240,6 +240,20 @@ function ny_render_header(string $title, string $active = '', array $opts = []):
     $mapLat   = $s['map_lat'];
     $mapLon   = $s['map_lon'];
     $lang = ny_lang();
+
+    $defaultDesc = trim((string)($s['meta_description'] ?? ''))
+        ?: 'Studio Namasté Yoga v Uherském Brodě – jóga, pilates, masáže a individuální lekce pro začátečníky i pokročilé.';
+    $desc    = trim((string)($opts['description'] ?? '')) ?: $defaultDesc;
+    $kw      = trim((string)($s['meta_keywords'] ?? ''));
+    $ogImg   = trim((string)($s['og_image'] ?? '')) ?: 'assets/logoCream.png';
+
+    $baseUrl = rtrim(ny_base_url(), '/');
+    $reqPath = strtok((string)($_SERVER['REQUEST_URI'] ?? '/'), '?') ?: '/';
+    $canonical = $opts['canonical'] ?? ($baseUrl . $reqPath);
+    $ogImageAbs = preg_match('#^https?://#i', $ogImg) ? $ogImg : ($baseUrl . '/' . ltrim($ogImg, '/'));
+    $ogLocale = ($lang === 'cs') ? 'cs_CZ' : (($lang === 'en') ? 'en_US' : $lang);
+
+    $langs = function_exists('ny_langs') ? array_keys(ny_langs()) : [$lang];
     ?><!doctype html>
 <html lang="<?= e($lang) ?>">
 <head>
@@ -247,14 +261,36 @@ function ny_render_header(string $title, string $active = '', array $opts = []):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e($title) ?> · <?= e($siteName) ?></title>
 <meta name="description" content="<?= e($desc) ?>">
+<?php if ($kw !== ''): ?>
+<meta name="keywords" content="<?= e($kw) ?>">
+<?php endif; ?>
 <meta name="theme-color" content="#5F9187">
+<?php if ($noindex): ?>
+<meta name="robots" content="noindex, nofollow">
+<?php else: ?>
+<meta name="robots" content="index, follow, max-image-preview:large">
+<?php endif; ?>
+
+<link rel="canonical" href="<?= e($canonical) ?>">
+<?php foreach ($langs as $lc):
+    $sep  = str_contains($canonical, '?') ? '&' : '?';
+    $altH = $canonical . $sep . 'lang=' . $lc;
+?>
+<link rel="alternate" hreflang="<?= e($lc) ?>" href="<?= e($altH) ?>">
+<?php endforeach; ?>
+<link rel="alternate" hreflang="x-default" href="<?= e($canonical) ?>">
 
 <meta property="og:title"       content="<?= e($title) ?> · <?= e($siteName) ?>">
 <meta property="og:description" content="<?= e($desc) ?>">
 <meta property="og:type"        content="website">
 <meta property="og:site_name"   content="<?= e($siteName) ?>">
-<meta property="og:image"       content="assets/logoCream.png">
-<meta name="twitter:card"       content="summary_large_image">
+<meta property="og:url"         content="<?= e($canonical) ?>">
+<meta property="og:locale"      content="<?= e($ogLocale) ?>">
+<meta property="og:image"       content="<?= e($ogImageAbs) ?>">
+<meta name="twitter:card"        content="summary_large_image">
+<meta name="twitter:title"       content="<?= e($title) ?> · <?= e($siteName) ?>">
+<meta name="twitter:description" content="<?= e($desc) ?>">
+<meta name="twitter:image"       content="<?= e($ogImageAbs) ?>">
 
 <link rel="icon" href="assets/logoCream.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -262,17 +298,32 @@ function ny_render_header(string $title, string $active = '', array $opts = []):
 <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,400;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css?v=<?= e((string)(@filemtime(__DIR__ . '/../style.css') ?: time())) ?>">
 
+<?php
+$sameAs = array_values(array_filter([$fbUrl, $igUrl, $ytUrl], static fn($u) => trim((string)$u) !== ''));
+$ldOpening = trim((string)($s['opening'] ?? '')) ?: 'Mo-Su';
+$jsonLd = [
+    '@context'  => 'https://schema.org',
+    '@type'     => 'HealthAndBeautyBusiness',
+    'name'      => $siteName,
+    'url'       => $baseUrl . '/',
+    'image'     => $ogImageAbs,
+    'telephone' => $phone,
+    'email'     => $email,
+    'address'   => [
+        '@type'          => 'PostalAddress',
+        'streetAddress'  => $address,
+        'addressLocality'=> 'Uherský Brod',
+        'addressCountry' => 'CZ',
+    ],
+    'geo' => ['@type' => 'GeoCoordinates', 'latitude' => $mapLat, 'longitude' => $mapLon],
+    'openingHours' => $ldOpening,
+    'priceRange'   => '$$',
+    'areaServed'   => 'Uherský Brod',
+];
+if ($sameAs) { $jsonLd['sameAs'] = $sameAs; }
+?>
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "HealthAndBeautyBusiness",
-  "name": "<?= e($siteName) ?>",
-  "telephone": "<?= e($phone) ?>",
-  "email": "<?= e($email) ?>",
-  "address": "<?= e($address) ?>",
-  "geo": { "@type": "GeoCoordinates", "latitude": "<?= e($mapLat) ?>", "longitude": "<?= e($mapLon) ?>" },
-  "openingHours": "Mo-Su"
-}
+<?= json_encode($jsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) ?>
 </script>
 
 <?php if ($gaId !== '' && preg_match('/^G-[A-Z0-9]+$/i', $gaId)): ?>

@@ -12,6 +12,14 @@ $fields = [
             'site_url'  => ['label' => 'Veřejná URL webu', 'type' => 'url', 'hint' => 'Např. https://namasteyoga.cz – používá se pro sitemap.xml. Pokud je prázdné, odvodí se z aktuálního požadavku.'],
         ],
     ],
+    'seo' => [
+        'title' => 'SEO – výchozí meta tagy',
+        'items' => [
+            'meta_description' => ['label' => 'Výchozí meta description', 'type' => 'textarea', 'hint' => 'Použije se jako výchozí popis stránek pro vyhledávače a sociální sítě (doporučeno 140–160 znaků). Jednotlivé stránky mohou mít svůj vlastní popis.'],
+            'meta_keywords'    => ['label' => 'Meta keywords (volitelné)', 'type' => 'text', 'hint' => 'Čárkami oddělená klíčová slova. Většina vyhledávačů dnes ignoruje, ponechte prázdné pokud nepotřebujete.'],
+            'og_image'         => ['label' => 'OG image – URL nebo cesta', 'type' => 'text', 'hint' => 'Náhledový obrázek pro sdílení na sociálních sítích (doporučeno 1200×630 px). Např. „assets/namasteyoga.cz_og.jpg" nebo absolutní URL.'],
+        ],
+    ],
     'contacts' => [
         'title' => 'Kontakty',
         'items' => [
@@ -223,11 +231,18 @@ ny_admin_render_header('Nastavení webu', 'settings');
                 <?php foreach ($g['items'] as $key => $meta): ?>
                     <label>
                         <?= e($meta['label']) ?>
-                        <input
-                            type="<?= e($meta['type']) ?>"
-                            name="<?= e($key) ?>"
-                            value="<?= e((string)($current[$key] ?? '')) ?>"
-                            <?= $meta['type'] === 'number' ? 'step="' . e((string)($meta['step'] ?? '1')) . '" min="' . e((string)($meta['min'] ?? '1')) . '"' : '' ?>>
+                        <?php if (($meta['type'] ?? '') === 'textarea'): ?>
+                            <textarea
+                                name="<?= e($key) ?>"
+                                rows="<?= (int)($meta['rows'] ?? 3) ?>"
+                                maxlength="<?= (int)($meta['maxlength'] ?? 300) ?>"><?= e((string)($current[$key] ?? '')) ?></textarea>
+                        <?php else: ?>
+                            <input
+                                type="<?= e($meta['type']) ?>"
+                                name="<?= e($key) ?>"
+                                value="<?= e((string)($current[$key] ?? '')) ?>"
+                                <?= $meta['type'] === 'number' ? 'step="' . e((string)($meta['step'] ?? '1')) . '" min="' . e((string)($meta['min'] ?? '1')) . '"' : '' ?>>
+                        <?php endif; ?>
                         <?php if (!empty($meta['hint'])): ?>
                             <small class="hint hint-inline">
                                 <?= e($meta['hint']) ?>

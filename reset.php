@@ -9,7 +9,7 @@ $error = null;
 $done  = false;
 
 if (!$row) {
-    ny_render_header(t('reset.title'), 'login', ['description' => t('reset.meta.description')]);
+    ny_render_header(t('reset.title'), 'login', ['description' => t('reset.meta.description'), 'noindex' => true]);
     ?>
     <section class="section-title-block">
         <div class="eyebrow"><?= e(t('reset.eyebrow')) ?></div>
@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-ny_render_header(t('reset.title'), 'login', ['description' => t('reset.meta.description')]);
+ny_render_header(t('reset.title'), 'login', ['description' => t('reset.meta.description'), 'noindex' => true]);
 ?>
 <section class="section-title-block">
     <div class="eyebrow"><?= e(t('reset.eyebrow')) ?></div>

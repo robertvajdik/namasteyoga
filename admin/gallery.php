@@ -346,7 +346,7 @@ ny_admin_render_header('Galerie', 'gallery');
             </div>
         </form>
 
-        <form id="gal-action-form" method="post" style="display:none">
+        <form id="gal-action-form" method="post" hidden>
             <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
             <input type="hidden" name="action" value="">
             <input type="hidden" name="id"     value="">

@@ -163,7 +163,7 @@ ny_admin_render_header('Dashboard', 'dashboard');
             $h = (int)round(($b['count'] / $maxBar) * 100); ?>
             <div class="mini-chart-col" title="<?= e($b['date']->format('j. n.')) ?>: <?= $b['count'] ?>">
                 <div class="mini-chart-bar-wrap">
-                    <div class="mini-chart-bar" style="height: <?= max(2, $h) ?>%"></div>
+                    <div class="mini-chart-bar" style="--bar-h: <?= max(2, $h) ?>%"></div>
                 </div>
                 <div class="mini-chart-num"><?= $b['count'] ?></div>
                 <div class="mini-chart-lbl"><?= e($b['date']->format('j.n.')) ?></div>

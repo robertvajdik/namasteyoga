@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $returnClassDate = (string)($_GET['class_date'] ?? '');
 $returnClassId   = (int)($_GET['class_id'] ?? 0);
 
-ny_render_header(t('login.title'), 'login', ['description' => t('login.meta.description')]);
+ny_render_header(t('login.title'), 'login', ['description' => t('login.meta.description'), 'noindex' => true]);
 ?>
 <section class="section-title-block">
     <div class="eyebrow"><?= e(t('login.eyebrow')) ?></div>
