@@ -4468,7 +4468,10 @@ body:has(.landing-cta-band) .site-footer { margin-top: 0; }
 
 /* -- Hero ---------------------------------------------------------- */
 .landing-hero {
-    background: var(--landing-ink);
+    background:
+        linear-gradient(rgba(43, 31, 23, .78), rgba(43, 31, 23, .78)),
+        url('assets/namasteyoga.cz_joga2.jpg') center / cover no-repeat,
+        var(--landing-ink);
     color: var(--landing-cream);
     padding: clamp(56px, 7vw, 96px) 24px clamp(72px, 8vw, 112px);
     overflow: hidden;
@@ -4671,9 +4674,9 @@ body:has(.landing-cta-band) .site-footer { margin-top: 0; }
             rgba(243, 220, 191, .78) 100%
         ),
         var(--pick-img);
-    background-position: center top;
-    background-repeat: no-repeat;
-    background-size: cover;
+    background-position: center top, center center;
+    background-repeat: no-repeat, no-repeat;
+    background-size: cover, 100% auto;
     padding: clamp(72px, 8vw, 120px) 24px;
     overflow: hidden;
 }

@@ -82,7 +82,7 @@ ny_render_header(t('index.title'), 'home', ['description' => t('index.meta.descr
 </section>
 <?php endif; ?>
 
-<section class="landing-pick" style="--pick-img: url('assets/namasteyoga.cz_joga2.jpg');">
+<section class="landing-pick" style="--pick-img: url('assets/masaz.png');">
     <div class="landing-pick-inner">
         <div class="landing-pick-head">
             <div class="landing-eyebrow landing-eyebrow-sage"><?= e(t('index.pick.eyebrow')) ?></div>
