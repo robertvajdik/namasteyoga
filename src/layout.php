@@ -51,6 +51,39 @@ function ny_email_obf(?string $email, string $iconHtml = '', array $attrs = []):
 }
 
 /**
+ * Bot-resistant phone rendering. Emits <a class="phone-obf" data-p="{base64}"> whose
+ * href gets rewritten to tel: by JS on load. Decoy letters are interleaved into the
+ * visible digits inside display:none spans so a scraper reading innerHTML/textContent
+ * sees garbled text, while humans and copy-paste still see the original formatted number.
+ */
+function ny_phone_obf(?string $phone, string $iconHtml = '', array $attrs = []): string {
+    $phone = trim((string)$phone);
+    if ($phone === '') return '';
+    $compact = preg_replace('/\s+/', '', $phone);
+    if ($compact === '') return '';
+    $decoy = ['xq', 'wv', 'fz', 'bp', 'jm', 'kg', 'nh', 'ry', 'ct', 'ld'];
+    $visible = '';
+    $len = mb_strlen($phone);
+    for ($i = 0; $i < $len; $i++) {
+        $visible .= e(mb_substr($phone, $i, 1));
+        if ($i < $len - 1) {
+            $visible .= '<span class="phone-noise" aria-hidden="true">' . e($decoy[$i % count($decoy)]) . '</span>';
+        }
+    }
+    $data      = base64_encode($compact);
+    $extraClass = '';
+    $extra      = '';
+    foreach ($attrs as $k => $v) {
+        if ($k === 'class') { $extraClass = ' ' . (string)$v; continue; }
+        $extra .= ' ' . e((string)$k) . '="' . e((string)$v) . '"';
+    }
+    return '<a href="#" class="phone-obf' . e($extraClass) . '" data-p="' . e($data) . '" rel="nofollow"' . $extra . '>'
+         . $iconHtml
+         . '<span class="phone-text">' . $visible . '</span>'
+         . '</a>';
+}
+
+/**
  * reCAPTCHA v3 – returns true when disabled (no keys), or verified with a good score.
  * Fails closed (returns false) if the API cannot be reached and keys ARE configured.
  */
@@ -471,7 +504,7 @@ gtag('config', <?= json_encode($gaId) ?>, { anonymize_ip: true });
 <body<?= $overlayHdr ? ' class="has-overlay-header"' : '' ?>>
 <header class="site-header<?= $overlayHdr ? ' overlay' : '' ?>">
     <div class="topbar">
-        <a href="tel:<?= e(preg_replace('/\s+/', '', $phone)) ?>"><?= ny_icon('phone', 14) ?> <?= e($phone) ?></a>
+        <?= ny_phone_obf($phone, ny_icon('phone', 14) . ' ') ?>
         <?= ny_email_obf($email, ny_icon('mail', 14) . ' ', ['class' => 'topbar-mail']) ?>
         <span class="spacer"></span>
         <?php if ($fbUrl): ?><a href="<?= e($fbUrl) ?>" aria-label="Facebook" target="_blank" rel="noopener"><?= ny_icon('facebook', 15) ?></a><?php endif; ?>
@@ -579,7 +612,7 @@ function ny_render_footer(bool $bare = false): void {
         </div>
         <div class="foot-col">
             <h4><?= e(t('footer.contact')) ?></h4>
-            <a href="tel:<?= e(preg_replace('/\s+/', '', $s['phone'])) ?>"><?= ny_icon('phone', 14) ?> <?= e($s['phone']) ?></a>
+            <?= ny_phone_obf($s['phone'], ny_icon('phone', 14) . ' ') ?>
             <?= ny_email_obf($s['email'], ny_icon('mail', 14) . ' ') ?>
             <div class="social">
                 <?php if ($s['instagram_url']): ?><a href="<?= e($s['instagram_url']) ?>" aria-label="Instagram" target="_blank" rel="noopener"><?= ny_icon('instagram', 22) ?></a><?php endif; ?>
@@ -640,6 +673,14 @@ function ny_render_footer(bool $bare = false): void {
             a.setAttribute('href', 'mailto:' + addr);
             var t = a.querySelector('.email-text');
             if (t) t.textContent = addr;
+        } catch (e) {}
+    });
+
+    // Deobfuscate phone links – strip the decoy noise nodes after setting tel: href.
+    document.querySelectorAll('a.phone-obf[data-p]').forEach(function (a) {
+        try {
+            a.setAttribute('href', 'tel:' + atob(a.getAttribute('data-p')));
+            a.querySelectorAll('.phone-noise').forEach(function (n) { n.remove(); });
         } catch (e) {}
     });
 

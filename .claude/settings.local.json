@@ -20,7 +20,8 @@
       "PowerShell($files = @\\('kontakt.php', 'podminky.php', 'gdpr.php', 'puppyvibe.php', 'poukaz.php'\\); foreach \\($f in $files\\) { $path = \"e:\\\\Work\\\\www\\\\namasteyoga_rezervace\\\\$f\"; & php -l $path })",
       "Bash(python *)",
       "Bash(awk -F'=' '{print $1}')",
-      "PowerShell(php -l e:\\\\Work\\\\www\\\\namasteyoga_rezervace\\\\styly.php)"
+      "PowerShell(php -l e:\\\\Work\\\\www\\\\namasteyoga_rezervace\\\\styly.php)",
+      "Bash(xxd)"
     ]
   }
 }

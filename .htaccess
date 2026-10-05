@@ -36,4 +36,8 @@
     DirectoryIndex index.php
 </IfModule>
 
+# Serve plain-text files as UTF-8 so Czech diacritics render correctly
+# instead of being decoded with the server's default (often ISO-8859-1).
+AddCharset UTF-8 .txt
+
 ErrorDocument 404 /404.php

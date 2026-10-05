@@ -28,7 +28,7 @@ ny_render_header(t('gdpr.title'), 'gdpr', [
     <h2><?= e(t('gdpr.contact.title')) ?></h2>
     <p>
         <?= t('gdpr.contact.intro') ?>
-        <a href="tel:<?= e(preg_replace('/\s+/', '', $phone)) ?>"><?= e($phone) ?></a>
+        <?= ny_phone_obf($phone) ?>
         <?= t('gdpr.contact.or.email') ?> <?= ny_email_obf($email) ?>.
     </p>
     <p>

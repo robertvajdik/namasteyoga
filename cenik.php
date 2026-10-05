@@ -400,7 +400,7 @@ $massagePrice = function(int $i) use ($s) {
         <button class="btn btn-primary btn-form" type="submit"><?= e(t('poukaz.form.submit')) ?></button>
     </form>
     <p class="poukaz-order-contact">
-        <?= t('poukaz.order.contact') ?> <a href="tel:<?= e(preg_replace('/\s+/', '', $phone)) ?>"><?= e($phone) ?></a>
+        <?= t('poukaz.order.contact') ?> <?= ny_phone_obf($phone) ?>
         <?= t('poukaz.order.contact.or') ?> <?= ny_email_obf($email) ?>.
     </p>
 </section>

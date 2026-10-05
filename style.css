@@ -1158,6 +1158,7 @@ form textarea:focus { outline: none; border-color: var(--sage-400); box-shadow: 
 }
 .email-obf { unicode-bidi: bidi-override; }
 .email-obf .email-at, .email-obf .email-dot { font-style: normal; }
+.phone-noise { display: none; }
 .foot-legal {
     max-width: var(--container); margin: 24px auto 0; padding-top: 20px;
     border-top: 1px solid rgba(255,249,241,.12); font-size: 12px; color: rgba(255,249,241,.55);
@@ -2865,14 +2866,6 @@ img, iframe, video { max-width: 100%; }
 /* -- Styly jógy page ----------------------------------------- */
 .styly-bar { color: var(--accent); margin: 0 6px; font-weight: 400; display: inline-block; transform: translateY(-1px); }
 
-.styly-intro {
-    max-width: 780px;
-    margin: 0 auto var(--space-7);
-    text-align: center;
-}
-.styly-intro .section-h { margin-bottom: 16px; }
-.styly-intro p { color: var(--text-muted); line-height: 1.75; margin: 0 0 14px; }
-.styly-intro p:last-child { margin-bottom: 0; }
 .styly-namaste {
     font-family: var(--font-display);
     font-style: italic;

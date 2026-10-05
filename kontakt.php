@@ -108,7 +108,7 @@ ny_render_header(t('kontakt.title'), 'kontakt', ['description' => t('kontakt.met
         <p><?= t('kontakt.where.p2') ?></p>
         <p><?= e(t('kontakt.where.p3')) ?></p>
         <p class="contact-line"><?= ny_icon('calendar', 16) ?> <?= e($opening) ?></p>
-        <p class="contact-line"><?= ny_icon('phone', 16) ?> <a href="tel:<?= e(preg_replace('/\s+/', '', $phone)) ?>"><?= e($phone) ?></a></p>
+        <p class="contact-line"><?= ny_phone_obf($phone, ny_icon('phone', 16) . ' ') ?></p>
         <p class="contact-line"><?= ny_email_obf($email, ny_icon('mail', 16) . ' ') ?></p>
         <p class="contact-line"><?= e(t('kontakt.where.address')) ?> <?= e($address) ?></p>
         <div class="map-embed">

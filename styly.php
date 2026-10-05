@@ -16,14 +16,6 @@ $toggleLess = e(t('styly.toggle.less'));
     <p class="page-lead"><?= t('styly.hero.lead') ?></p>
 </section>
 
-<section class="styly-intro">
-    <h2 class="section-h"><?= e(t('styly.intro.title')) ?></h2>
-    <p><?= e(t('styly.intro.p1')) ?></p>
-    <p><?= e(t('styly.intro.p2')) ?></p>
-    <p><?= e(t('styly.intro.p3')) ?></p>
-    <p class="styly-namaste"><?= e(t('styly.namaste')) ?></p>
-</section>
-
 <section class="styly-section">
     <div class="styly-section-head">
         <div class="eyebrow"><?= t('styly.sec1.eyebrow') ?></div>
