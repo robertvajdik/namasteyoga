@@ -248,12 +248,35 @@ function ny_render_header(string $title, string $active = '', array $opts = []):
     $ogImg   = trim((string)($s['og_image'] ?? '')) ?: 'assets/logoCream.png';
 
     $baseUrl = rtrim(ny_base_url(), '/');
-    $reqPath = strtok((string)($_SERVER['REQUEST_URI'] ?? '/'), '?') ?: '/';
-    $canonical = $opts['canonical'] ?? ($baseUrl . $reqPath);
+    // Canonical URL: strip tracking + session params so crawlers consolidate
+    // signals under one URL regardless of how visitors arrived.
+    $reqUri   = (string)($_SERVER['REQUEST_URI'] ?? '/');
+    $reqPath  = strtok($reqUri, '?') ?: '/';
+    $queryIn  = (string)parse_url($reqUri, PHP_URL_QUERY);
+    $cleanQS  = '';
+    if ($queryIn !== '') {
+        parse_str($queryIn, $qs);
+        $drop = ['lang','utm_source','utm_medium','utm_campaign','utm_term','utm_content','fbclid','gclid','mc_cid','mc_eid','ref','ref_src'];
+        foreach ($drop as $k) unset($qs[$k]);
+        if ($qs) $cleanQS = '?' . http_build_query($qs);
+    }
+    $canonical = $opts['canonical'] ?? ($baseUrl . $reqPath . $cleanQS);
     $ogImageAbs = preg_match('#^https?://#i', $ogImg) ? $ogImg : ($baseUrl . '/' . ltrim($ogImg, '/'));
+    $ogImageType = match (strtolower((string)pathinfo($ogImg, PATHINFO_EXTENSION))) {
+        'jpg','jpeg' => 'image/jpeg',
+        'png'        => 'image/png',
+        'webp'       => 'image/webp',
+        'gif'        => 'image/gif',
+        default      => 'image/png',
+    };
+    $ogImageAlt = trim((string)($opts['og_image_alt'] ?? ($siteName . ' – ' . $title)));
     $ogLocale = ($lang === 'cs') ? 'cs_CZ' : (($lang === 'en') ? 'en_US' : $lang);
 
     $langs = function_exists('ny_langs') ? array_keys(ny_langs()) : [$lang];
+    // Canonical base for hreflang alternates — strip any ?lang= so we can
+    // append a fresh one per language cleanly.
+    $hrefBase = $baseUrl . $reqPath . $cleanQS;
+    $preloadImg = trim((string)($opts['preload_image'] ?? ''));
     ?><!doctype html>
 <html lang="<?= e($lang) ?>">
 <head>
@@ -273,57 +296,112 @@ function ny_render_header(string $title, string $active = '', array $opts = []):
 
 <link rel="canonical" href="<?= e($canonical) ?>">
 <?php foreach ($langs as $lc):
-    $sep  = str_contains($canonical, '?') ? '&' : '?';
-    $altH = $canonical . $sep . 'lang=' . $lc;
+    $sep  = str_contains($hrefBase, '?') ? '&' : '?';
+    $altH = $hrefBase . $sep . 'lang=' . $lc;
 ?>
 <link rel="alternate" hreflang="<?= e($lc) ?>" href="<?= e($altH) ?>">
 <?php endforeach; ?>
 <link rel="alternate" hreflang="x-default" href="<?= e($canonical) ?>">
 
-<meta property="og:title"       content="<?= e($title) ?> · <?= e($siteName) ?>">
-<meta property="og:description" content="<?= e($desc) ?>">
-<meta property="og:type"        content="website">
-<meta property="og:site_name"   content="<?= e($siteName) ?>">
-<meta property="og:url"         content="<?= e($canonical) ?>">
-<meta property="og:locale"      content="<?= e($ogLocale) ?>">
-<meta property="og:image"       content="<?= e($ogImageAbs) ?>">
-<meta name="twitter:card"        content="summary_large_image">
-<meta name="twitter:title"       content="<?= e($title) ?> · <?= e($siteName) ?>">
-<meta name="twitter:description" content="<?= e($desc) ?>">
-<meta name="twitter:image"       content="<?= e($ogImageAbs) ?>">
+<meta property="og:title"            content="<?= e($title) ?> · <?= e($siteName) ?>">
+<meta property="og:description"      content="<?= e($desc) ?>">
+<meta property="og:type"             content="website">
+<meta property="og:site_name"        content="<?= e($siteName) ?>">
+<meta property="og:url"              content="<?= e($canonical) ?>">
+<meta property="og:locale"           content="<?= e($ogLocale) ?>">
+<?php foreach ($langs as $lc): if ($lc === $lang) continue; ?>
+<meta property="og:locale:alternate" content="<?= e(($lc === 'cs') ? 'cs_CZ' : (($lc === 'en') ? 'en_US' : $lc)) ?>">
+<?php endforeach; ?>
+<meta property="og:image"            content="<?= e($ogImageAbs) ?>">
+<meta property="og:image:type"       content="<?= e($ogImageType) ?>">
+<meta property="og:image:alt"        content="<?= e($ogImageAlt) ?>">
+<meta name="twitter:card"            content="summary_large_image">
+<meta name="twitter:title"           content="<?= e($title) ?> · <?= e($siteName) ?>">
+<meta name="twitter:description"     content="<?= e($desc) ?>">
+<meta name="twitter:image"           content="<?= e($ogImageAbs) ?>">
+<meta name="twitter:image:alt"       content="<?= e($ogImageAlt) ?>">
 
-<link rel="icon" href="assets/logoCream.png" type="image/png">
+<link rel="icon" href="assets/logoCream.png" type="image/png" sizes="any">
+<link rel="apple-touch-icon" href="assets/logoCream.png">
+<?php if ($preloadImg !== ''):
+    $preloadAbs = preg_match('#^https?://#i', $preloadImg) ? $preloadImg : ($baseUrl . '/' . ltrim($preloadImg, '/'));
+?>
+<link rel="preload" as="image" href="<?= e($preloadAbs) ?>" fetchpriority="high">
+<?php endif; ?>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,400;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css?v=<?= e((string)(@filemtime(__DIR__ . '/../style.css') ?: time())) ?>">
 
 <?php
-$sameAs = array_values(array_filter([$fbUrl, $igUrl, $ytUrl], static fn($u) => trim((string)$u) !== ''));
+$sameAs    = array_values(array_filter([$fbUrl, $igUrl, $ytUrl], static fn($u) => trim((string)$u) !== ''));
 $ldOpening = trim((string)($s['opening'] ?? '')) ?: 'Mo-Su';
-$jsonLd = [
-    '@context'  => 'https://schema.org',
+$logoAbs   = $baseUrl . '/assets/logoCream.png';
+$business = [
     '@type'     => 'HealthAndBeautyBusiness',
+    '@id'       => $baseUrl . '/#business',
     'name'      => $siteName,
     'url'       => $baseUrl . '/',
+    'logo'      => $logoAbs,
     'image'     => $ogImageAbs,
     'telephone' => $phone,
     'email'     => $email,
     'address'   => [
-        '@type'          => 'PostalAddress',
-        'streetAddress'  => $address,
-        'addressLocality'=> 'Uherský Brod',
-        'addressCountry' => 'CZ',
+        '@type'           => 'PostalAddress',
+        'streetAddress'   => $address,
+        'addressLocality' => 'Uherský Brod',
+        'addressCountry'  => 'CZ',
     ],
     'geo' => ['@type' => 'GeoCoordinates', 'latitude' => $mapLat, 'longitude' => $mapLon],
-    'openingHours' => $ldOpening,
-    'priceRange'   => '$$',
-    'areaServed'   => 'Uherský Brod',
+    'openingHours'       => $ldOpening,
+    'priceRange'         => '$$',
+    'areaServed'         => 'Uherský Brod',
+    'currenciesAccepted' => 'CZK',
+    'paymentAccepted'    => 'Cash, Credit Card, Bank Transfer',
+    'knowsLanguage'      => $langs,
 ];
-if ($sameAs) { $jsonLd['sameAs'] = $sameAs; }
+if ($sameAs) { $business['sameAs'] = $sameAs; }
+
+$website = [
+    '@type'    => 'WebSite',
+    '@id'      => $baseUrl . '/#website',
+    'url'      => $baseUrl . '/',
+    'name'     => $siteName,
+    'inLanguage' => $lang,
+    'publisher'  => ['@id' => $baseUrl . '/#business'],
+    'potentialAction' => [
+        '@type'       => 'SearchAction',
+        'target'      => $baseUrl . '/rezervace?q={search_term_string}',
+        'query-input' => 'required name=search_term_string',
+    ],
+];
+
+$graph = [$business, $website];
+
+if (!empty($opts['breadcrumbs']) && is_array($opts['breadcrumbs'])) {
+    $items = [];
+    foreach ($opts['breadcrumbs'] as $i => $bc) {
+        $url  = (string)($bc['url']  ?? '');
+        $name = (string)($bc['name'] ?? '');
+        if ($name === '') continue;
+        $abs = preg_match('#^https?://#i', $url) ? $url : ($baseUrl . '/' . ltrim($url, '/'));
+        $items[] = [
+            '@type'    => 'ListItem',
+            'position' => $i + 1,
+            'name'     => $name,
+            'item'     => $abs,
+        ];
+    }
+    if ($items) {
+        $graph[] = [
+            '@type'           => 'BreadcrumbList',
+            'itemListElement' => $items,
+        ];
+    }
+}
 ?>
 <script type="application/ld+json">
-<?= json_encode($jsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) ?>
+<?= json_encode(['@context' => 'https://schema.org', '@graph' => $graph], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) ?>
 </script>
 
 <?php if ($gaId !== '' && preg_match('/^G-[A-Z0-9]+$/i', $gaId)): ?>

@@ -34,6 +34,10 @@ function ny_sitemap_origin(): string {
  * @return array<int, array{path:string, priority:string, changefreq:string}>
  */
 function ny_sitemap_urls(): array {
+    // Only include indexable, public URLs. Transactional pages (login,
+    // register, newsletter, forgot/reset, my, logout, cancel/reserve) are
+    // intentionally omitted — they're marked noindex and/or disallowed in
+    // robots.txt and should not advertise themselves to crawlers.
     return [
         ['index.php',        '1.0', 'weekly'],
         ['rezervace.php',    '0.9', 'daily'],
@@ -46,32 +50,38 @@ function ny_sitemap_urls(): array {
         ['cenik.php',        '0.7', 'monthly'],
         ['akce.php',         '0.7', 'weekly'],
         ['kontakt.php',      '0.6', 'yearly'],
-        ['newsletter.php',   '0.4', 'yearly'],
         ['podminky.php',     '0.3', 'yearly'],
         ['gdpr.php',         '0.3', 'yearly'],
-        ['register.php',     '0.4', 'yearly'],
-        ['login.php',        '0.3', 'yearly'],
     ];
 }
 
 /**
  * Build the sitemap XML as a string.
+ *
+ * `<lastmod>` reflects the real filemtime of each PHP file so crawlers get
+ * accurate change signals. URLs are emitted extensionless (canonical form
+ * per .htaccess) with `index.php` collapsing to `/`.
  */
 function ny_sitemap_build(?string $origin = null): string {
-    $origin = $origin ?? ny_sitemap_origin();
-    $today  = date('Y-m-d');
-    $langs  = function_exists('ny_langs') ? array_keys(ny_langs()) : ['cs'];
+    $origin  = $origin ?? ny_sitemap_origin();
+    $today   = date('Y-m-d');
+    $langs   = function_exists('ny_langs') ? array_keys(ny_langs()) : ['cs'];
+    $rootDir = dirname(__DIR__);
 
     $xml  = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
     $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"'
           . ' xmlns:xhtml="http://www.w3.org/1999/xhtml">' . "\n";
 
     foreach (ny_sitemap_urls() as [$path, $priority, $freq]) {
-        $loc = $origin . '/' . $path;
-        $loc = str_replace('/index.php', '/', $loc);
+        $canon = ($path === 'index.php') ? '/' : '/' . preg_replace('/\.php$/', '', $path);
+        $loc   = $origin . $canon;
+        $file  = $rootDir . '/' . $path;
+        $mtime = is_file($file) ? @filemtime($file) : false;
+        $lastmod = $mtime ? date('Y-m-d', (int)$mtime) : $today;
+
         $xml .= "  <url>\n";
         $xml .= '    <loc>' . htmlspecialchars($loc, ENT_QUOTES | ENT_XML1) . "</loc>\n";
-        $xml .= '    <lastmod>' . $today . "</lastmod>\n";
+        $xml .= '    <lastmod>' . $lastmod . "</lastmod>\n";
         $xml .= '    <changefreq>' . $freq . "</changefreq>\n";
         $xml .= '    <priority>' . $priority . "</priority>\n";
         if (count($langs) > 1) {
@@ -80,6 +90,8 @@ function ny_sitemap_build(?string $origin = null): string {
                 $xml .= '    <xhtml:link rel="alternate" hreflang="' . htmlspecialchars($lc, ENT_QUOTES | ENT_XML1)
                       . '" href="' . htmlspecialchars($altUrl, ENT_QUOTES | ENT_XML1) . '"/>' . "\n";
             }
+            $xml .= '    <xhtml:link rel="alternate" hreflang="x-default" href="'
+                  . htmlspecialchars($loc, ENT_QUOTES | ENT_XML1) . '"/>' . "\n";
         }
         $xml .= "  </url>\n";
     }

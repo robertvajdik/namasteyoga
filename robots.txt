@@ -9,8 +9,15 @@ Disallow: /newsletter.php
 Disallow: /newsletter-thanks.php
 Disallow: /unsubscribe.php
 Disallow: /logout.php
+Disallow: /login.php
+Disallow: /register.php
 Disallow: /forgot.php
 Disallow: /reset.php
+Disallow: /my.php
 Disallow: /cron/
+Disallow: /src/
+Disallow: /*?utm_
+Disallow: /*?fbclid=
+Disallow: /*?gclid=
 
-Sitemap: /sitemap.xml
+Sitemap: https://namasteyoga.cz/sitemap.xml
