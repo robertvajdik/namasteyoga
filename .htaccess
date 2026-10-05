@@ -12,6 +12,13 @@
     # Sitemap alias.
     RewriteRule ^sitemap\.xml$ sitemap.php [L]
 
+    # Collapse /index and /index.php to the site root — the home page should
+    # live at "/" only, not "/index". Must run before the generic .php rule
+    # below so "/index.php" doesn't first become "/index".
+    RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
+    RewriteCond %{THE_REQUEST} \s/+index(\.php)?[\s?] [NC]
+    RewriteRule ^ / [R=301,L,NE]
+
     # Redirect direct .php requests to extensionless URL (canonical).
     # Only on safe methods — a 301 drops the request body and converts POST
     # to GET, which would silently break form submissions (reserve, cancel…).
