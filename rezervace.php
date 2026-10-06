@@ -11,7 +11,9 @@ $sunday  = $monday->modify('+6 days');
 $prevWeek = $monday->modify('-7 days')->format('Y-m-d');
 $nextWeek = $monday->modify('+7 days')->format('Y-m-d');
 
-$pdo = ny_db();
+$pdo  = ny_db();
+$s    = ny_settings_all();
+$iban = trim((string)($s['bank_iban'] ?? ''));
 $classes = $pdo->query(
     'SELECT * FROM ny_classes WHERE active = 1 ORDER BY day_of_week, start_time'
 )->fetchAll();
@@ -126,6 +128,11 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
     <?php endif; ?>
 </div>
 
+<p class="schedule-pay-hint">
+    <?= ny_icon('qr-code', 16) ?>
+    <span><?= e(t('rezervace.pay.hint')) ?></span>
+</p>
+
 <div class="week-grid">
 <?php for ($d = 1; $d <= 7; $d++):
     $date       = $monday->modify('+' . ($d - 1) . ' days');
@@ -171,8 +178,26 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
                 <div class="meta">
                     <?= e($c['teacher']) ?><?php if ($c['room']): ?> · <?= e($c['room']) ?><?php endif; ?>
                 </div>
-                <?php $price = ny_class_price((string)$c['name']); if ($price !== null): ?>
-                    <div class="class-price"><?= e($price) ?></div>
+                <?php
+                    $price       = ny_class_price((string)$c['name']);
+                    $priceAmount = $price !== null ? ny_price_amount($price) : null;
+                    $showQr      = $iban !== '' && $priceAmount !== null && $priceAmount > 0;
+                ?>
+                <?php if ($price !== null): ?>
+                    <div class="class-price">
+                        <span><?= e($price) ?></span>
+                        <?php if ($showQr): ?>
+                            <button type="button" class="class-qr-btn"
+                                    data-qr-amount="<?= (int)$priceAmount ?>"
+                                    data-qr-msg="<?= e('Lekce ' . $c['name']) ?>"
+                                    data-qr-title="<?= e($c['name']) ?>"
+                                    data-qr-date="<?= e($date->format('j. n.') . ' ' . substr($c['start_time'], 0, 5)) ?>"
+                                    aria-label="<?= e(t('rezervace.qr.open')) ?>">
+                                <?= ny_icon('qr-code', 14) ?>
+                                <span><?= e(t('rezervace.qr.btn')) ?></span>
+                            </button>
+                        <?php endif; ?>
+                    </div>
                 <?php endif; ?>
                 <div class="row">
                     <?php if ($booked): ?>
@@ -292,6 +317,99 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
         openModal(card.getAttribute('data-title'), names);
     });
 
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !modal.hidden) closeModal();
+    });
+})();
+</script>
+<?php endif; ?>
+
+<?php if ($iban !== ''): ?>
+<div id="qr-modal" class="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qr-modal-title" hidden>
+    <div class="qr-modal-backdrop" data-qr-close></div>
+    <div class="qr-modal-inner" role="document">
+        <header class="qr-modal-head">
+            <div>
+                <div class="eyebrow"><?= e(t('rezervace.qr.eyebrow')) ?></div>
+                <h3 id="qr-modal-title" class="qr-modal-title"></h3>
+                <p class="qr-modal-sub" id="qr-modal-sub"></p>
+            </div>
+            <button type="button" class="qr-modal-close" aria-label="<?= e(t('rezervace.qr.close')) ?>" data-qr-close>×</button>
+        </header>
+        <div class="qr-modal-box" id="qr-modal-box"></div>
+        <dl class="qr-modal-bank">
+            <dt><?= e(t('rezervace.qr.amount')) ?></dt>
+            <dd class="mono" id="qr-modal-amount"></dd>
+            <dt><?= e(t('rezervace.qr.iban')) ?></dt>
+            <dd class="mono"><?= e($iban) ?></dd>
+            <dt><?= e(t('rezervace.qr.msg')) ?></dt>
+            <dd class="mono" id="qr-modal-msg"></dd>
+        </dl>
+        <p class="qr-modal-hint hint"><?= e(t('rezervace.qr.hint')) ?></p>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
+<script>
+(function () {
+    var modal    = document.getElementById('qr-modal');
+    var box      = document.getElementById('qr-modal-box');
+    var titleEl  = document.getElementById('qr-modal-title');
+    var subEl    = document.getElementById('qr-modal-sub');
+    var amountEl = document.getElementById('qr-modal-amount');
+    var msgEl    = document.getElementById('qr-modal-msg');
+    if (!modal || !box) return;
+
+    var iban = <?= json_encode(preg_replace('/\s+/', '', strtoupper($iban))) ?>;
+
+    function buildSpayd(amount, msg) {
+        var parts = ['SPD*1.0*ACC:' + iban];
+        if (amount > 0) parts.push('AM:' + amount.toFixed(2));
+        parts.push('CC:CZK');
+        if (msg) parts.push('MSG:' + msg.substring(0, 60));
+        return parts.join('*');
+    }
+
+    function render(amount, msg) {
+        box.innerHTML = '';
+        if (typeof QRCode === 'undefined') {
+            box.textContent = '…';
+            return;
+        }
+        new QRCode(box, {
+            text: buildSpayd(amount, msg),
+            width: 240,
+            height: 240,
+            correctLevel: QRCode.CorrectLevel.M
+        });
+    }
+
+    function openModal(btn) {
+        var amount = parseInt(btn.getAttribute('data-qr-amount') || '0', 10) || 0;
+        var msg    = btn.getAttribute('data-qr-msg')  || '';
+        var title  = btn.getAttribute('data-qr-title') || '';
+        var when   = btn.getAttribute('data-qr-date')  || '';
+        titleEl.textContent  = title;
+        subEl.textContent    = when;
+        amountEl.textContent = amount > 0 ? amount.toLocaleString('cs-CZ') + ' Kč' : '—';
+        msgEl.textContent    = msg;
+        render(amount, msg);
+        modal.hidden = false;
+        document.body.classList.add('has-qr-open');
+    }
+    function closeModal() {
+        modal.hidden = true;
+        box.innerHTML = '';
+        document.body.classList.remove('has-qr-open');
+    }
+
+    document.addEventListener('click', function (e) {
+        if (e.target.closest('[data-qr-close]')) { closeModal(); return; }
+        var btn = e.target.closest('.class-qr-btn');
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        openModal(btn);
+    });
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && !modal.hidden) closeModal();
     });

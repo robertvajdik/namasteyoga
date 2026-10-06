@@ -84,6 +84,34 @@ function ny_phone_obf(?string $phone, string $iconHtml = '', array $attrs = []):
 }
 
 /**
+ * SPAYD (Short Payment Descriptor) – the Czech QR platba payload.
+ * Amount optional; when null the QR still works for a free-form transfer.
+ */
+function ny_spayd(string $iban, ?float $amount, string $msg): string {
+    $iban  = preg_replace('/\s+/', '', strtoupper($iban));
+    $parts = ['SPD*1.0*ACC:' . $iban];
+    if ($amount !== null && $amount > 0) {
+        $parts[] = 'AM:' . number_format($amount, 2, '.', '');
+    }
+    $parts[] = 'CC:CZK';
+    $clean = preg_replace('/[^A-Za-z0-9 ěščřžýáíéúůťďňŮÁÉÍÓÚÝŽŠČŘĎŤŇ.,\-]/u', '', $msg);
+    if ($clean !== '') {
+        $parts[] = 'MSG:' . mb_substr($clean, 0, 60);
+    }
+    return implode('*', $parts);
+}
+
+/**
+ * Extract an integer CZK amount from a free-form price string like "250 Kč" or "2 200 Kč".
+ * Returns null when there is no numeric content.
+ */
+function ny_price_amount(?string $price): ?int {
+    $digits = preg_replace('/[^0-9]/', '', (string)$price);
+    if ($digits === '' || $digits === null) return null;
+    return (int)$digits;
+}
+
+/**
  * reCAPTCHA v3 – returns true when disabled (no keys), or verified with a good score.
  * Fails closed (returns false) if the API cannot be reached and keys ARE configured.
  */
@@ -214,6 +242,7 @@ function ny_icon(string $name, int $size = 18): string {
         'clock'     => '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
         'map-pin'   => '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
         'tag'       => '<path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',
+        'qr-code'   => '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="14" x2="14" y2="17"/><line x1="17" y1="14" x2="17" y2="21"/><line x1="20" y1="17" x2="20" y2="21"/><line x1="14" y1="20" x2="17" y2="20"/>',
     ];
     $p = $paths[$name] ?? '';
     return '<svg class="icon" width="' . $size . '" height="' . $size . '" viewBox="0 0 24 24" aria-hidden="true">' . $p . '</svg>';

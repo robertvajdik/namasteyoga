@@ -7,12 +7,14 @@ $teachers = ny_teachers_active();
 
 ny_render_header(t('lektori.title'), 'lektori', ['description' => t('lektori.meta.description')]);
 ?>
-<section class="section-title-block">
-    <div class="eyebrow"><?= e(t('lektori.hero.eyebrow')) ?></div>
-    <h1 class="page-title"><?= e(t('lektori.hero.title')) ?></h1>
-    <p class="page-lead">
-        <?= e(t('lektori.hero.lead')) ?>
-    </p>
+<section class="page-hero-media page-hero-media--bg" style="background-image: url('assets/banners/lektori_namasteyoga.cz.jpeg');" role="img" aria-label="<?= e(t('lektori.hero.title')) ?>">
+    <div class="page-hero-media-body">
+        <div class="eyebrow"><?= e(t('lektori.hero.eyebrow')) ?></div>
+        <h1 class="page-title"><?= e(t('lektori.hero.title')) ?></h1>
+        <p class="page-lead page-lead--start">
+            <?= e(t('lektori.hero.lead')) ?>
+        </p>
+    </div>
 </section>
 
 <?php if (!$teachers): ?>

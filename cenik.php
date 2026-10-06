@@ -11,24 +11,6 @@ $iban     = trim((string)($s['bank_iban'] ?? ''));
 $holder   = trim((string)($s['bank_holder'] ?? '')) ?: (string)($s['site_name'] ?? '');
 $validity = max(1, (int)($s['voucher_validity_months'] ?? 2));
 
-/**
- * SPAYD (Short Payment Descriptor) – the Czech QR platba format.
- * Amount optional; when null the QR still works for a free-form transfer.
- */
-function ny_spayd(string $iban, ?float $amount, string $msg): string {
-    $iban = preg_replace('/\s+/', '', strtoupper($iban));
-    $parts = ['SPD*1.0*ACC:' . $iban];
-    if ($amount !== null && $amount > 0) {
-        $parts[] = 'AM:' . number_format($amount, 2, '.', '');
-    }
-    $parts[] = 'CC:CZK';
-    $clean = preg_replace('/[^A-Za-z0-9 ěščřžýáíéúůťďňŮÁÉÍÓÚÝŽŠČŘĎŤŇ.,\-]/u', '', $msg);
-    if ($clean !== '') {
-        $parts[] = 'MSG:' . mb_substr($clean, 0, 60);
-    }
-    return implode('*', $parts);
-}
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ny_csrf_check($_POST['csrf'] ?? null);
     $name     = trim((string)($_POST['name'] ?? ''));
