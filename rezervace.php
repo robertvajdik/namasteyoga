@@ -76,6 +76,27 @@ function ny_category(string $name): string {
     return 'yoga';
 }
 
+/**
+ * One-time entry price for a class, mapped to the matching cenik_open_* card
+ * (fly/wall/kids get their own slot; everything else is the standard single entry).
+ * Returns null for class types with no fixed drop-in price (workshops, individual
+ * lessons, massages) — those are quoted separately on the cenik page.
+ */
+function ny_class_price(string $name): ?string {
+    $cat = ny_category($name);
+    if ($cat === 'workshop' || $cat === 'individual' || $cat === 'massage') {
+        return null;
+    }
+    $n = mb_strtolower($name);
+    $i = 1;
+    if (str_contains($n, 'fly'))                                                $i = 5;
+    elseif (str_contains($n, 'wall'))                                           $i = 6;
+    elseif (str_contains($n, 'děts') || str_contains($n, 'dets') || str_contains($n, 'kids') || str_contains($n, 'child')) $i = 4;
+    $s = ny_settings_all();
+    $o = trim((string)($s['cenik_open_' . $i . '_amount'] ?? ''));
+    return $o !== '' ? $o : t('cenik.open.' . $i . '.amount');
+}
+
 $weekIsoNum = (int)$monday->format('W');
 
 ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervace.meta.description')]);
@@ -150,6 +171,9 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
                 <div class="meta">
                     <?= e($c['teacher']) ?><?php if ($c['room']): ?> · <?= e($c['room']) ?><?php endif; ?>
                 </div>
+                <?php $price = ny_class_price((string)$c['name']); if ($price !== null): ?>
+                    <div class="class-price"><?= e($price) ?></div>
+                <?php endif; ?>
                 <div class="row">
                     <?php if ($booked): ?>
                         <span class="badge badge-success"><span class="dot"></span><?= e(t('rezervace.badge.booked')) ?></span>
@@ -192,6 +216,10 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
     </section>
 <?php endfor; ?>
 </div>
+
+<p class="schedule-price-hint hint">
+    <?= t('rezervace.price.hint') ?>
+</p>
 
 <section class="room-equipment">
     <div class="room-equipment-eyebrow"><?= e(t('rezervace.equipment.eyebrow')) ?></div>

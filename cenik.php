@@ -122,12 +122,14 @@ $user    = ny_current_user();
 
 ny_render_header(t('cenik.title'), 'cenik', ['description' => t('cenik.meta.description')]);
 ?>
-<section class="section-title-block">
-    <div class="eyebrow"><?= e(t('cenik.hero.eyebrow')) ?></div>
-    <h1 class="page-title"><?= e(t('cenik.hero.title')) ?></h1>
-    <p class="page-lead">
-        <?= e(t('cenik.hero.lead')) ?>
-    </p>
+<section class="page-hero-media page-hero-media--bg" style="background-image: url('assets/banners/cenik_namasteyoga.cz.png');" role="img" aria-label="<?= e(t('cenik.hero.title')) ?>">
+    <div class="page-hero-media-body">
+        <div class="eyebrow"><?= e(t('cenik.hero.eyebrow')) ?></div>
+        <h1 class="page-title"><?= e(t('cenik.hero.title')) ?></h1>
+        <p class="page-lead page-lead--start">
+            <?= e(t('cenik.hero.lead')) ?>
+        </p>
+    </div>
 </section>
 
 <?php

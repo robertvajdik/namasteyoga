@@ -21,7 +21,8 @@
       "Bash(python *)",
       "Bash(awk -F'=' '{print $1}')",
       "PowerShell(php -l e:\\\\Work\\\\www\\\\namasteyoga_rezervace\\\\styly.php)",
-      "Bash(xxd)"
+      "Bash(xxd)",
+      "PowerShell(php -l e:\\\\Work\\\\www\\\\namasteyoga_rezervace\\\\rezervace.php)"
     ]
   }
 }

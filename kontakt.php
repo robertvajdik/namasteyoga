@@ -91,10 +91,12 @@ if ($prefillMassage !== '') {
 
 ny_render_header(t('kontakt.title'), 'kontakt', ['description' => t('kontakt.meta.description')]);
 ?>
-<section class="section-title-block reveal">
-    <div class="eyebrow"><?= e(t('kontakt.hero.eyebrow')) ?></div>
-    <h1 class="page-title"><?= e(t('kontakt.hero.title')) ?></h1>
-    <p class="page-lead"><?= e(t('kontakt.hero.lead')) ?></p>
+<section class="page-hero-media page-hero-media--bg reveal" style="background-image: url('assets/banners/kontakt_namasteyoga.cz.png');" role="img" aria-label="<?= e(t('kontakt.hero.title')) ?>">
+    <div class="page-hero-media-body">
+        <div class="eyebrow"><?= e(t('kontakt.hero.eyebrow')) ?></div>
+        <h1 class="page-title"><?= e(t('kontakt.hero.title')) ?></h1>
+        <p class="page-lead page-lead--start"><?= e(t('kontakt.hero.lead')) ?></p>
+    </div>
 </section>
 
 <div class="cols cols-2">

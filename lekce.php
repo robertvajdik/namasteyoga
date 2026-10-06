@@ -31,12 +31,14 @@ function ny_category_page(string $name): string {
 
 ny_render_header(t('lekce.title'), 'lekce', ['description' => t('lekce.meta.description')]);
 ?>
-<section class="section-title-block">
-    <div class="eyebrow"><?= e(t('lekce.hero.eyebrow')) ?></div>
-    <h1 class="page-title"><?= e(t('lekce.hero.title')) ?></h1>
-    <p class="page-lead">
-        <?= e(t('lekce.hero.lead')) ?>
-    </p>
+<section class="page-hero-media page-hero-media--bg" style="background-image: url('assets/banners/lekceakurzy_namasteyoga.cz.png');" role="img" aria-label="<?= e(t('lekce.hero.title')) ?>">
+    <div class="page-hero-media-body">
+        <div class="eyebrow"><?= e(t('lekce.hero.eyebrow')) ?></div>
+        <h1 class="page-title"><?= e(t('lekce.hero.title')) ?></h1>
+        <p class="page-lead page-lead--start">
+            <?= e(t('lekce.hero.lead')) ?>
+        </p>
+    </div>
 </section>
 
 <?php if ($categories): ?>
