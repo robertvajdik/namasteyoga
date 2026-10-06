@@ -10,7 +10,7 @@ ny_render_header(t('styly.title'), 'styly', [
 $toggleMore = e(t('styly.toggle.more'));
 $toggleLess = e(t('styly.toggle.less'));
 ?>
-<section class="page-hero-media page-hero-media--bg" style="background-image: url('assets/banners/styly_namasteyoga.cz.png');" role="img" aria-label="<?= e(t('styly.hero.title')) ?>">
+<section class="page-hero-media page-hero-media--bg" style="background-image: url('assets/banners/styly_namasteyoga.cz.jpg');" role="img" aria-label="<?= e(t('styly.hero.title')) ?>">
     <div class="page-hero-media-body">
         <div class="eyebrow"><?= e(t('styly.hero.eyebrow')) ?></div>
         <h1 class="page-title"><?= e(t('styly.hero.title')) ?></h1>

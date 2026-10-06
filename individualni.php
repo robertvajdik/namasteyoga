@@ -9,7 +9,7 @@ $individPrice = function(int $i) use ($s) {
 };
 ny_render_header(t('individ.title'), 'individ', ['description' => t('individ.meta.description')]);
 ?>
-<section class="page-hero-media page-hero-media--bg" style="background-image: url('assets/banners/individu%C3%A1lni_lekce_namasteyoga.cz.png');" role="img" aria-label="<?= e(t('individ.hero.image.alt')) ?>">
+<section class="page-hero-media page-hero-media--bg" style="background-image: url('assets/banners/individu%C3%A1lni_lekce_namasteyoga.cz.jpg');" role="img" aria-label="<?= e(t('individ.hero.image.alt')) ?>">
     <div class="page-hero-media-body">
         <div class="eyebrow"><?= e(t('individ.hero.eyebrow')) ?></div>
         <h1 class="page-title"><?= e(t('individ.hero.title')) ?></h1>
