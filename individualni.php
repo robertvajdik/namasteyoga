@@ -38,7 +38,7 @@ ny_render_header(t('individ.title'), 'individ', ['description' => t('individ.met
             <li><?= t('individ.how.3') ?></li>
             <li><?= t('individ.how.4') ?></li>
         </ol>
-        <p><a class="btn btn-primary btn-form" href="kontakt.php"><?= e(t('individ.how.button')) ?></a></p>
+        <p><a class="btn btn-primary btn-form" href="kontakt.php?zajem=individ#kontakt-form"><?= e(t('individ.how.button')) ?></a></p>
     </section>
 </div>
 

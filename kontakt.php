@@ -87,6 +87,8 @@ if ($prefillMassage !== '') {
         $prefillMassage,
         $suffix
     );
+} elseif (($_GET['zajem'] ?? '') === 'individ') {
+    $prefillMessage = t('kontakt.prefill.individ');
 }
 
 ny_render_header(t('kontakt.title'), 'kontakt', ['description' => t('kontakt.meta.description')]);

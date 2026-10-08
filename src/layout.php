@@ -242,31 +242,34 @@ function ny_reserve_class(int $userId, int $classId, string $classDate, string $
         }
         $priceKc = ny_price_amount($priceStr) ?? 0;
 
-        if ($paymentMethod === 'credits') {
+        // Only an *active* credit-paid booking counts as paid. A cancelled one
+        // was already refunded, so a re-book must pay again – otherwise
+        // book → cancel → book → cancel would mint credit on every cycle.
+        $exists = $pdo->prepare(
+            "SELECT status, payment_method, price_kc FROM ny_reservations
+              WHERE user_id = ? AND class_id = ? AND class_date = ?
+              FOR UPDATE"
+        );
+        $exists->execute([$userId, $classId, $classDate]);
+        $prev = $exists->fetch();
+        $alreadyPaid = $prev && $prev['status'] === 'booked' && $prev['payment_method'] === 'credits';
+        if ($alreadyPaid) {
+            // Keep the original payment snapshot so a later cancel refunds
+            // exactly what was charged (and a re-book can't drop the refund).
+            $paymentMethod = 'credits';
+            $priceKc       = (int)$prev['price_kc'];
+        } elseif ($paymentMethod === 'credits') {
             if ($priceKc <= 0) {
                 throw new RuntimeException(t('reserve.err.no_price'));
             }
-            // Prevent credit-paying twice for the same slot. Also means a
-            // credit-paid booking that got cancelled stays refunded – a re-book
-            // must pay again.
-            $exists = $pdo->prepare(
-                "SELECT payment_method FROM ny_reservations
-                  WHERE user_id = ? AND class_id = ? AND class_date = ?
-                  FOR UPDATE"
+            ny_credit_apply(
+                $userId,
+                -$priceKc,
+                'reservation',
+                'reservation',
+                null,
+                (string)$class['name'] . ' · ' . $classDate
             );
-            $exists->execute([$userId, $classId, $classDate]);
-            $prev = $exists->fetch();
-            $alreadyPaid = $prev && $prev['payment_method'] === 'credits';
-            if (!$alreadyPaid) {
-                ny_credit_apply(
-                    $userId,
-                    -$priceKc,
-                    'reservation',
-                    'reservation',
-                    null,
-                    (string)$class['name'] . ' · ' . $classDate
-                );
-            }
         }
 
         $ins = $pdo->prepare(

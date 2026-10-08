@@ -132,7 +132,10 @@ if ($export === 'topups' || $export === 'ledger' || $export === 'balances') {
         $out = fopen('php://output', 'w');
         fwrite($out, "\xEF\xBB\xBF");
         fputcsv($out, $headers, ';');
-        while ($r = $stmt->fetch()) fputcsv($out, $rowFor($r), ';');
+        // Neutralise spreadsheet formulas in user-supplied text (names, notes)
+        // so a value like "=HYPERLINK(...)" isn't executed when opened in Excel.
+        $csvSafe = static fn($v) => is_string($v) && $v !== '' && strpbrk($v[0], "=+-@\t\r") !== false ? "'" . $v : $v;
+        while ($r = $stmt->fetch()) fputcsv($out, array_map($csvSafe, $rowFor($r)), ';');
         fclose($out);
         exit;
     }

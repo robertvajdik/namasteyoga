@@ -236,7 +236,7 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
                         </form>
                         <?php if ($priceAmount !== null && $priceAmount > 0 && $userBalance >= $priceAmount): ?>
                         <form method="post" action="reserve.php" class="inline"
-                              onsubmit="return confirm('<?= e(sprintf(t('rezervace.credits.confirm'), $priceAmount, $c['name'])) ?>');">
+                              onsubmit="return confirm(<?= e(json_encode(sprintf(t('rezervace.credits.confirm'), $priceAmount, $c['name']), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP)) ?>);">
                             <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
                             <input type="hidden" name="class_id" value="<?= (int)$c['id'] ?>">
                             <input type="hidden" name="class_date" value="<?= e($dateStr) ?>">

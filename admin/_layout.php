@@ -3,6 +3,10 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../src/layout.php';
 
+// Gate every admin page before it runs any POST handler or export – the
+// check inside ny_admin_render_header() alone comes too late.
+ny_require_admin();
+
 function ny_admin_render_header(string $title, string $active = ''): void {
     ny_send_security_headers();
     $user = ny_require_admin();
