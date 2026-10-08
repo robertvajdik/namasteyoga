@@ -16,10 +16,18 @@ if (!$user) {
 
 $classId   = (int)($_POST['class_id'] ?? 0);
 $classDate = (string)($_POST['class_date'] ?? '');
+$pay       = (string)($_POST['pay'] ?? 'none');
+if (!in_array($pay, ['none', 'credits'], true)) {
+    $pay = 'none';
+}
 
-$result = ny_reserve_class((int)$user['id'], $classId, $classDate);
+$result = ny_reserve_class((int)$user['id'], $classId, $classDate, $pay);
 if ($result['ok']) {
-    ny_flash_set('ok', t('reserve.flash.confirmed', $result['class']['name'], $result['date']->format('j. n. Y')));
+    if (($result['payment_method'] ?? '') === 'credits') {
+        ny_flash_set('ok', t('reserve.flash.confirmed_credits', $result['class']['name'], $result['date']->format('j. n. Y'), (int)$result['price_kc']));
+    } else {
+        ny_flash_set('ok', t('reserve.flash.confirmed', $result['class']['name'], $result['date']->format('j. n. Y')));
+    }
 } else {
     ny_flash_set('err', $result['msg']);
 }

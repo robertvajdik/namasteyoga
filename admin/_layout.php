@@ -37,6 +37,7 @@ function ny_admin_render_header(string $title, string $active = ''): void {
             <a href="reservations.php" class="<?= $active === 'reservations' ? 'is-active' : '' ?>"><?= ny_icon('calendar', 16) ?> Rezervace</a>
             <a href="classes.php"      class="<?= $active === 'classes'      ? 'is-active' : '' ?>"><?= ny_icon('menu', 16) ?> Lekce</a>
             <a href="users.php"        class="<?= $active === 'users'        ? 'is-active' : '' ?>"><?= ny_icon('user', 16) ?> Uživatelé</a>
+            <a href="credits.php"      class="<?= $active === 'credits'      ? 'is-active' : '' ?>"><?= ny_icon('tag', 16) ?> Kredity</a>
             <div class="sep">Obsah</div>
             <a href="teachers.php"     class="<?= $active === 'teachers'     ? 'is-active' : '' ?>"><?= ny_icon('user', 16) ?> Lektoři</a>
             <a href="massages.php"     class="<?= $active === 'massages'     ? 'is-active' : '' ?>"><?= ny_icon('menu', 16) ?> Masáže</a>

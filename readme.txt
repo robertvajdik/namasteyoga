@@ -55,7 +55,7 @@ STRUKTURA
     kontakt.php .............. kontaktní údaje, mapa, kontaktní formulář
     podminky.php ............. provozní podmínky studia
     gdpr.php ................. zásady zpracování osobních údajů
-    my.php ................... moje rezervace, avatar, statistiky uživatele
+    myprofile.php ............ moje rezervace, avatar, statistiky uživatele
     login.php / register.php . přihlášení + registrace + host mode
     logout.php ............... odhlášení
     newsletter.php ........... POST endpoint pro přihlášení k odběru

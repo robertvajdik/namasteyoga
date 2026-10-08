@@ -540,9 +540,9 @@ body.has-qr-open { overflow: hidden; }
 .tbl th { background: var(--surface-muted); color: var(--text-muted); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; font-size: 11px; }
 .tbl tbody tr + tr td { border-top: 1px solid var(--border-subtle); }
 
-/* -- Booking rows on my.php ------------------------------------- */
+/* -- Booking rows on myprofile.php ------------------------------- */
 .booking-row {
-    display: grid; grid-template-columns: 90px 1fr auto auto auto; gap: 20px;
+    display: grid; grid-template-columns: 90px 1fr auto; gap: 20px;
     align-items: center; padding: 20px 22px;
     background: var(--surface-card); border: 1px solid var(--border-subtle);
     border-radius: var(--radius-lg); box-shadow: var(--shadow-soft);
@@ -550,6 +550,10 @@ body.has-qr-open { overflow: hidden; }
 .booking-row .gcal-btn {
     display: inline-flex; align-items: center; gap: 6px;
     white-space: nowrap;
+}
+.booking-actions {
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 12px; flex-wrap: wrap;
 }
 .booking-row + .booking-row { margin-top: 12px; }
 .booking-row .date-block {
@@ -562,7 +566,7 @@ body.has-qr-open { overflow: hidden; }
 
 @media (max-width: 640px) {
     .booking-row { grid-template-columns: 80px 1fr; }
-    .booking-row .badge, .booking-row form, .booking-row .gcal-btn { grid-column: 1 / -1; justify-self: start; }
+    .booking-row .booking-actions { grid-column: 1 / -1; justify-content: flex-start; }
 }
 
 /* -- Footer ------------------------------------------------------ */
@@ -770,9 +774,8 @@ body.has-qr-open { overflow: hidden; }
     .booking-row .date-block .num { font-size: 22px; }
     .booking-row .info { grid-area: info; min-width: 0; }
     .booking-row .info .name { font-size: 18px; }
-    .booking-row > .badge   { grid-area: actions; justify-self: start; align-self: center; }
-    .booking-row > .gcal-btn{ grid-area: actions; justify-self: center; align-self: center; }
-    .booking-row > form     { grid-area: actions; justify-self: end;   align-self: center; }
+    .booking-row .booking-actions { grid-area: actions; gap: 8px; }
+    .booking-row .booking-actions form { margin-left: auto; }
 
     /* Section headings tighter on mobile. */
     .section-h-gap { margin-top: 28px; }
@@ -1477,6 +1480,39 @@ body.admin-body {
 .admin-stat .num { font-family: var(--font-display); font-weight: 800; font-size: 28px; color: var(--sage-700); line-height: 1; }
 .admin-stat .lbl { color: var(--text-muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; margin-top: 6px; }
 
+.my-next-class {
+    display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+    background: linear-gradient(135deg, var(--sage-50, #f1f5ee) 0%, var(--surface-card) 100%);
+    border: 1px solid var(--border-subtle);
+    border-left: 4px solid var(--sage-700);
+    border-radius: var(--radius-md); padding: 18px 22px;
+    box-shadow: var(--shadow-soft); margin: 0 0 18px;
+}
+.my-next-class-date {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-width: 72px; padding: 10px 14px;
+    background: var(--white); border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle);
+}
+.my-next-class-date .dow {
+    font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--text-muted); font-weight: 700;
+}
+.my-next-class-date .num {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: 22px; color: var(--text-strong); line-height: 1.1;
+}
+.my-next-class-info { flex: 1 1 220px; min-width: 0; }
+.my-next-class-eyebrow {
+    font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--sage-700); font-weight: 700; margin-bottom: 4px;
+}
+.my-next-class-name {
+    margin: 0 0 4px; font-size: 20px; color: var(--text-strong);
+}
+.my-next-class-meta { color: var(--text-muted); font-size: 14px; }
+.my-next-class-meta strong { color: var(--text-strong); }
+
 .my-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -1487,9 +1523,17 @@ body.admin-body {
     border-radius: var(--radius-md); padding: 18px 20px;
     box-shadow: var(--shadow-soft);
 }
+.my-stat--credit {
+    background: linear-gradient(135deg, var(--cream, #faf5ec) 0%, var(--surface-card) 100%);
+    border-color: var(--border-strong, var(--border-subtle));
+}
 .my-stat .num {
     font-family: var(--font-display); font-weight: 800;
     font-size: 30px; color: var(--sage-700); line-height: 1;
+}
+.my-stat .num .unit {
+    font-size: 14px; font-weight: 600; color: var(--text-muted);
+    letter-spacing: 0; text-transform: none; margin-left: 2px;
 }
 .my-stat .num-text {
     font-size: 16px; line-height: 1.2; color: var(--text-strong);
@@ -1499,6 +1543,14 @@ body.admin-body {
     color: var(--text-muted); font-size: 11px; letter-spacing: .06em;
     text-transform: uppercase; margin-top: 8px;
 }
+.my-stat-sub {
+    display: block; margin-top: 6px;
+    color: var(--text-muted); font-size: 12px;
+}
+.my-stat-sub--link {
+    color: var(--sage-700); font-weight: 600; text-decoration: none;
+}
+.my-stat-sub--link:hover { text-decoration: underline; }
 
 .stats-card {
     background: var(--surface-card); border: 1px solid var(--border-subtle);
@@ -1538,7 +1590,7 @@ body.admin-body {
 }
 .attend-bar-fill {
     width: 100%;
-    height: var(--bar-h, 0%);
+    height: var(--pct, 0%);
     background: linear-gradient(180deg, var(--sage-500, #8aa682), var(--sage-700, #4f6b4a));
     border-radius: 6px 6px 0 0;
     transition: height var(--dur-base) var(--ease-calm);
@@ -1553,10 +1605,33 @@ body.admin-body {
 .stats-list-track { height: 6px; background: var(--surface-muted); border-radius: 999px; overflow: hidden; margin-top: 4px; }
 .stats-list-fill {
     height: 100%;
-    width: var(--bar-w, 0%);
+    width: var(--pct, 0%);
     background: linear-gradient(90deg, var(--sage-500, #8aa682), var(--sage-700, #4f6b4a));
     border-radius: 999px;
 }
+
+/* Bar sizes for myprofile.php charts, snapped to 5 % steps (no inline styles). */
+.pct-0 { --pct: 0%; }
+.pct-5 { --pct: 5%; }
+.pct-10 { --pct: 10%; }
+.pct-15 { --pct: 15%; }
+.pct-20 { --pct: 20%; }
+.pct-25 { --pct: 25%; }
+.pct-30 { --pct: 30%; }
+.pct-35 { --pct: 35%; }
+.pct-40 { --pct: 40%; }
+.pct-45 { --pct: 45%; }
+.pct-50 { --pct: 50%; }
+.pct-55 { --pct: 55%; }
+.pct-60 { --pct: 60%; }
+.pct-65 { --pct: 65%; }
+.pct-70 { --pct: 70%; }
+.pct-75 { --pct: 75%; }
+.pct-80 { --pct: 80%; }
+.pct-85 { --pct: 85%; }
+.pct-90 { --pct: 90%; }
+.pct-95 { --pct: 95%; }
+.pct-100 { --pct: 100%; }
 
 .mini-chart {
     display: grid;
@@ -1832,11 +1907,71 @@ img.teacher-thumb { display: inline-block; }
     .profile-edit-form .profile-field { flex: 1 1 100%; }
     .profile-edit-form .btn { width: 100%; }
 }
+/* Credits (permanent-pass wallet) UI on myprofile.php + rezervace helpers. */
+.credits-balance {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px; font-weight: 700;
+    color: var(--text-strong, #3a2718);
+    line-height: 1.1; margin: 10px 0 2px;
+}
+.credits-balance-unit { font-size: 18px; color: var(--text-muted); font-weight: 400; margin-left: 4px; }
+.credits-form { flex: 1 1 100%; align-items: flex-end; }
+.credits-bank, .credits-history {
+    flex: 1 1 100%;
+    border-top: 1px solid var(--border-subtle);
+    padding-top: 12px; margin-top: 8px;
+}
+.credits-bank > summary, .credits-history > summary {
+    cursor: pointer; font-weight: 600; color: var(--text-strong);
+    padding: 4px 0; list-style: none;
+}
+.credits-bank > summary::-webkit-details-marker,
+.credits-history > summary::-webkit-details-marker { display: none; }
+.credits-bank > summary::before, .credits-history > summary::before {
+    content: '▸'; display: inline-block; margin-right: 8px;
+    transition: transform .15s ease; color: var(--text-muted);
+}
+.credits-bank[open] > summary::before, .credits-history[open] > summary::before { transform: rotate(90deg); }
+.credits-bank-dl {
+    display: grid; grid-template-columns: auto 1fr; gap: 4px 16px;
+    margin: 10px 0; font-size: 14px;
+}
+.credits-bank-dl dt { color: var(--text-muted); }
+.credits-bank-dl dd { margin: 0; }
+.credits-qr { text-align: center; margin: 14px 0 6px; }
+.credits-qr .poukaz-qr-box { min-width: 220px; min-height: 220px; padding: 12px; }
+.credits-qr .poukaz-qr-amount { margin-top: 10px; }
+.credits-qr .hint { margin-top: 8px; }
+.credits-history-list { list-style: none; margin: 10px 0 0; padding: 0; }
+.credits-history-list li {
+    display: grid;
+    grid-template-columns: 90px 1fr auto;
+    align-items: baseline;
+    gap: 12px; padding: 6px 0;
+    border-bottom: 1px dashed var(--border-subtle);
+    font-size: 14px;
+}
+.credits-history-list li:last-child { border-bottom: none; }
+.credits-history-date { color: var(--text-muted); font-size: 12px; }
+.credits-history-kind { color: var(--text-body); min-width: 0; overflow-wrap: anywhere; }
+.credits-history-delta { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.credits-history-delta.is-plus { color: #4a7a47; }
+.credits-history-delta.is-minus { color: #a24c3b; }
+@media (max-width: 560px) {
+    .credits-history-list li { grid-template-columns: 1fr auto; }
+    .credits-history-date { grid-column: 1 / -1; }
+}
+
+/* Admin credits – inline decide form keeps approve/reject + note on one row. */
+.credit-decide-form { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; justify-content: flex-end; }
+.credit-decide-form input[type=text] { max-width: 220px; flex: 1 1 160px; }
+
 .switch {
+    position: relative;
     display: inline-flex; align-items: center; gap: 10px;
     cursor: pointer; user-select: none;
 }
-.switch input { position: absolute; opacity: 0; pointer-events: none; }
+.switch input { position: absolute; top: 0; left: 0; width: 1px; height: 1px; margin: 0; opacity: 0; pointer-events: none; }
 .switch .switch-track {
     position: relative;
     width: 44px; height: 24px;
@@ -2288,8 +2423,8 @@ img, iframe, video { max-width: 100%; }
         display: flex; align-items: baseline; gap: 8px;
     }
     .booking-row .date-block .num { font-size: 20px; }
-    .booking-row > form { justify-self: stretch; }
-    .booking-row > form .btn { width: 100%; }
+    .booking-row .booking-actions form { flex: 1 1 100%; margin-left: 0; }
+    .booking-row .booking-actions form .btn { width: 100%; }
 }
 
 /* Admin: header stacks nicely on mobile. */
@@ -4082,7 +4217,12 @@ img, iframe, video { max-width: 100%; }
         grid-template-columns: 1fr;
         text-align: center;
     }
-    .page-hero-media-img { aspect-ratio: 16 / 11; max-height: 380px; }
+    .page-hero-media-img {
+        aspect-ratio: 4 / 5;
+        max-width: 420px;
+        margin: 0 auto;
+    }
+    .page-hero-media-img img { object-position: center top; }
 }
 
 /* -- Page hero: full-width background image variant ----------------

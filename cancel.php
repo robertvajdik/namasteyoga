@@ -20,17 +20,18 @@ if (!$classId || !$dateObj) {
     ny_redirect('rezervace.php');
 }
 
-$pdo = ny_db();
-$upd = $pdo->prepare(
-    "UPDATE ny_reservations
-        SET status = 'cancelled'
-      WHERE user_id = ? AND class_id = ? AND class_date = ? AND status = 'booked'"
-);
-$upd->execute([$user['id'], $classId, $classDate]);
+try {
+    $res = ny_cancel_reservation((int)$user['id'], $classId, $classDate);
+} catch (Throwable $e) {
+    ny_flash_set('err', $e->getMessage());
+    ny_redirect('rezervace.php?week=' . $classDate);
+}
 
-if ($upd->rowCount() > 0) {
-    ny_flash_set('ok', t('cancel.flash.ok'));
-} else {
+if (!$res['ok']) {
     ny_flash_set('err', t('cancel.flash.not_found'));
+} elseif ($res['refunded_kc'] > 0) {
+    ny_flash_set('ok', t('cancel.flash.ok_refund', $res['refunded_kc']));
+} else {
+    ny_flash_set('ok', t('cancel.flash.ok'));
 }
 ny_redirect('rezervace.php?week=' . $classDate);

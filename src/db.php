@@ -188,6 +188,69 @@ function ny_ensure_content_tables(): void {
     if ($hasReminded === 0) {
         $pdo->exec('ALTER TABLE ny_reservations ADD COLUMN reminded_at DATETIME NULL AFTER created_at');
     }
+    // credit_balance_kc on ny_users – integer koruna, debited by credit-paid
+    // reservations and credited by admin-approved top-ups.
+    $hasCredit = (int)$pdo->query(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME   = 'ny_users'
+            AND COLUMN_NAME  = 'credit_balance_kc'"
+    )->fetchColumn();
+    if ($hasCredit === 0) {
+        $pdo->exec('ALTER TABLE ny_users ADD COLUMN credit_balance_kc INT NOT NULL DEFAULT 0 AFTER last_login_at');
+    }
+    // payment_method + price_kc on reservations – snapshot of what the member
+    // paid for the slot. "credits" is auto-refunded on cancel; "qr" is manual.
+    $hasPaymentMethod = (int)$pdo->query(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME   = 'ny_reservations'
+            AND COLUMN_NAME  = 'payment_method'"
+    )->fetchColumn();
+    if ($hasPaymentMethod === 0) {
+        $pdo->exec("ALTER TABLE ny_reservations ADD COLUMN payment_method ENUM('none','qr','credits','other') NOT NULL DEFAULT 'none' AFTER status");
+    }
+    $hasPriceKc = (int)$pdo->query(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME   = 'ny_reservations'
+            AND COLUMN_NAME  = 'price_kc'"
+    )->fetchColumn();
+    if ($hasPriceKc === 0) {
+        $pdo->exec('ALTER TABLE ny_reservations ADD COLUMN price_kc INT NOT NULL DEFAULT 0 AFTER payment_method');
+    }
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS ny_credit_topups (
+            id            INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            user_id       INT UNSIGNED NOT NULL,
+            amount_kc     INT NOT NULL,
+            status        ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+            note          VARCHAR(255) NOT NULL DEFAULT '',
+            admin_note    VARCHAR(255) NOT NULL DEFAULT '',
+            requested_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            decided_at    DATETIME NULL,
+            decided_by    INT UNSIGNED NULL,
+            PRIMARY KEY (id),
+            KEY user_id (user_id),
+            KEY status (status, requested_at)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS ny_credit_ledger (
+            id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+            user_id     INT UNSIGNED NOT NULL,
+            delta_kc    INT NOT NULL,
+            balance_kc  INT NOT NULL,
+            kind        ENUM('topup','reservation','refund','adjustment') NOT NULL,
+            ref_type    VARCHAR(32) NOT NULL DEFAULT '',
+            ref_id      INT UNSIGNED NULL,
+            note        VARCHAR(255) NOT NULL DEFAULT '',
+            created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY user_id (user_id, created_at)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+
     // Period validity on classes – NULL = open-ended. Used by the schedule to
     // hide a recurring class outside of its valid date window.
     $hasStartsOn = (int)$pdo->query(
@@ -608,6 +671,146 @@ function ny_voucher_send_email(int $voucherId, ?string $overrideEmail = null): b
     return true;
 }
 
+/**
+ * Credit (permanent-pass) wallet. Balance lives on ny_users.credit_balance_kc;
+ * every change is also written to ny_credit_ledger so admins can audit the
+ * trail. All amounts are whole koruna – no decimals.
+ */
+function ny_user_balance_kc(int $userId): int {
+    ny_ensure_content_tables();
+    $stmt = ny_db()->prepare('SELECT credit_balance_kc FROM ny_users WHERE id = ?');
+    $stmt->execute([$userId]);
+    return (int)($stmt->fetchColumn() ?: 0);
+}
+
+/**
+ * Append a ledger row and move ny_users.credit_balance_kc by $delta.
+ * Must be called inside an open transaction – throws if the resulting balance
+ * would go negative, so callers can rely on the invariant that balance >= 0.
+ */
+function ny_credit_apply(int $userId, int $delta, string $kind, string $refType = '', ?int $refId = null, string $note = ''): int {
+    $pdo = ny_db();
+    $stmt = $pdo->prepare('SELECT credit_balance_kc FROM ny_users WHERE id = ? FOR UPDATE');
+    $stmt->execute([$userId]);
+    $current = (int)($stmt->fetchColumn() ?: 0);
+    $next    = $current + $delta;
+    if ($next < 0) {
+        throw new RuntimeException('Nedostatek kreditu.');
+    }
+    $pdo->prepare('UPDATE ny_users SET credit_balance_kc = ? WHERE id = ?')->execute([$next, $userId]);
+    $pdo->prepare(
+        'INSERT INTO ny_credit_ledger (user_id, delta_kc, balance_kc, kind, ref_type, ref_id, note)
+         VALUES (?, ?, ?, ?, ?, ?, ?)'
+    )->execute([$userId, $delta, $next, $kind, $refType, $refId, $note]);
+    return $next;
+}
+
+function ny_credit_topup_request(int $userId, int $amountKc, string $note = ''): int {
+    ny_ensure_content_tables();
+    if ($amountKc <= 0) {
+        throw new RuntimeException('Zadejte částku vyšší než 0 Kč.');
+    }
+    $pdo = ny_db();
+    $pdo->prepare(
+        'INSERT INTO ny_credit_topups (user_id, amount_kc, note) VALUES (?, ?, ?)'
+    )->execute([$userId, $amountKc, mb_substr(trim($note), 0, 255)]);
+    return (int)$pdo->lastInsertId();
+}
+
+function ny_credit_topup_decide(int $topupId, int $adminId, bool $approve, string $adminNote = ''): void {
+    ny_ensure_content_tables();
+    $pdo = ny_db();
+    $pdo->beginTransaction();
+    try {
+        $stmt = $pdo->prepare('SELECT * FROM ny_credit_topups WHERE id = ? FOR UPDATE');
+        $stmt->execute([$topupId]);
+        $row = $stmt->fetch();
+        if (!$row || $row['status'] !== 'pending') {
+            throw new RuntimeException('Žádost už byla vyřízena.');
+        }
+        $status = $approve ? 'approved' : 'rejected';
+        $pdo->prepare(
+            'UPDATE ny_credit_topups SET status = ?, admin_note = ?, decided_at = NOW(), decided_by = ? WHERE id = ?'
+        )->execute([$status, mb_substr(trim($adminNote), 0, 255), $adminId, $topupId]);
+        if ($approve) {
+            ny_credit_apply(
+                (int)$row['user_id'],
+                (int)$row['amount_kc'],
+                'topup',
+                'topup',
+                (int)$row['id'],
+                $adminNote !== '' ? $adminNote : (string)$row['note']
+            );
+        }
+        $pdo->commit();
+    } catch (Throwable $e) {
+        $pdo->rollBack();
+        throw $e;
+    }
+}
+
+/**
+ * Admin manual adjustment – positive or negative. Used for refunds outside
+ * the normal reservation flow or to correct mistakes. Reason text is required
+ * so the ledger stays self-explanatory.
+ */
+function ny_credit_adjust(int $userId, int $deltaKc, int $adminId, string $note): void {
+    ny_ensure_content_tables();
+    if ($deltaKc === 0) {
+        throw new RuntimeException('Zadejte nenulovou částku.');
+    }
+    if (trim($note) === '') {
+        throw new RuntimeException('Zadejte prosím důvod úpravy.');
+    }
+    $pdo = ny_db();
+    $pdo->beginTransaction();
+    try {
+        ny_credit_apply($userId, $deltaKc, 'adjustment', 'admin', $adminId, $note);
+        $pdo->commit();
+    } catch (Throwable $e) {
+        $pdo->rollBack();
+        throw $e;
+    }
+}
+
+function ny_credit_topups_pending(): array {
+    ny_ensure_content_tables();
+    return ny_db()->query(
+        "SELECT t.*, u.display_name, u.email
+           FROM ny_credit_topups t
+           JOIN ny_users u ON u.id = t.user_id
+          WHERE t.status = 'pending'
+          ORDER BY t.requested_at ASC"
+    )->fetchAll();
+}
+
+function ny_credit_topups_recent(int $limit = 50): array {
+    ny_ensure_content_tables();
+    $limit = max(1, min(500, $limit));
+    $stmt = ny_db()->prepare(
+        "SELECT t.*, u.display_name, u.email
+           FROM ny_credit_topups t
+           JOIN ny_users u ON u.id = t.user_id
+          ORDER BY t.requested_at DESC
+          LIMIT $limit"
+    );
+    $stmt->execute();
+    return $stmt->fetchAll();
+}
+
+function ny_credit_ledger_recent(int $userId, int $limit = 10): array {
+    ny_ensure_content_tables();
+    $limit = max(1, min(200, $limit));
+    $stmt = ny_db()->prepare(
+        "SELECT * FROM ny_credit_ledger
+          WHERE user_id = ?
+          ORDER BY created_at DESC, id DESC
+          LIMIT $limit"
+    );
+    $stmt->execute([$userId]);
+    return $stmt->fetchAll();
+}
+
 function ny_teachers_active(): array {
     ny_ensure_content_tables();
     return ny_db()->query('SELECT * FROM ny_teachers WHERE active = 1 ORDER BY sort_order, name')->fetchAll();
@@ -972,7 +1175,7 @@ function ny_reminders_send_due(?int $overrideHours = null): int {
                  . 'Čas: ' . substr($r['start_time'], 0, 5) . ' – ' . substr($r['end_time'], 0, 5) . "\n"
                  . 'Lektor: ' . $r['teacher'] . "\n"
                  . ($r['room'] ? 'Sál: ' . $r['room'] . "\n" : '')
-                 . "\nRezervaci můžete spravovat na " . $baseUrl . "/my.php\n"
+                 . "\nRezervaci můžete spravovat na " . $baseUrl . "/myprofile.php\n"
                  . "\nTěšíme se na Vás!\n" . $site;
 
         if (ny_mail($r['email'], $subject, $body)) {

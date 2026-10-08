@@ -34,6 +34,7 @@ foreach ($countsStmt as $r) {
 
 $mine = [];
 $user = ny_current_user();
+$userBalance = $user ? ny_user_balance_kc((int)$user['id']) : 0;
 
 // Surname of the signed-in attendee, appended to the SPAYD MSG so the
 // payment arrives on the studio's account tagged with the person's name.
@@ -93,36 +94,8 @@ if ($user) {
     }
 }
 
-// Loose categorization by class name → design's category colour set.
-function ny_category(string $name): string {
-    $n = mb_strtolower($name);
-    if (str_contains($n, 'pilates'))      return 'pilates';
-    if (str_contains($n, 'masáž'))        return 'massage';
-    if (str_contains($n, 'workshop'))     return 'workshop';
-    if (str_contains($n, 'individ'))      return 'individual';
-    return 'yoga';
-}
-
-/**
- * One-time entry price for a class, mapped to the matching cenik_open_* card
- * (fly/wall/kids get their own slot; everything else is the standard single entry).
- * Returns null for class types with no fixed drop-in price (workshops, individual
- * lessons, massages) — those are quoted separately on the cenik page.
- */
-function ny_class_price(string $name): ?string {
-    $cat = ny_category($name);
-    if ($cat === 'workshop' || $cat === 'individual' || $cat === 'massage') {
-        return null;
-    }
-    $n = mb_strtolower($name);
-    $i = 1;
-    if (str_contains($n, 'fly'))                                                $i = 5;
-    elseif (str_contains($n, 'wall'))                                           $i = 6;
-    elseif (str_contains($n, 'děts') || str_contains($n, 'dets') || str_contains($n, 'kids') || str_contains($n, 'child')) $i = 4;
-    $s = ny_settings_all();
-    $o = trim((string)($s['cenik_open_' . $i . '_amount'] ?? ''));
-    return $o !== '' ? $o : t('cenik.open.' . $i . '.amount');
-}
+// ny_category() + ny_class_price() live in src/layout.php so they are shared
+// with the credit-payment code path in ny_reserve_class().
 
 $weekIsoNum = (int)$monday->format('W');
 
@@ -149,6 +122,11 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
     <?php if (!$user): ?>
         <span class="hint">
             <?= t('rezervace.login.hint') ?>
+        </span>
+    <?php else: ?>
+        <span class="hint">
+            <?= sprintf(e(t('rezervace.credits.balance')), (int)$userBalance) ?>
+            · <a href="myprofile.php#credits"><?= e(t('rezervace.credits.topup')) ?></a>
         </span>
     <?php endif; ?>
 </div>
@@ -256,6 +234,18 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
                             <input type="hidden" name="class_date" value="<?= e($dateStr) ?>">
                             <button class="btn btn-primary btn-sm" type="submit"><?= e(t('rezervace.btn.reserve')) ?></button>
                         </form>
+                        <?php if ($priceAmount !== null && $priceAmount > 0 && $userBalance >= $priceAmount): ?>
+                        <form method="post" action="reserve.php" class="inline"
+                              onsubmit="return confirm('<?= e(sprintf(t('rezervace.credits.confirm'), $priceAmount, $c['name'])) ?>');">
+                            <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+                            <input type="hidden" name="class_id" value="<?= (int)$c['id'] ?>">
+                            <input type="hidden" name="class_date" value="<?= e($dateStr) ?>">
+                            <input type="hidden" name="pay" value="credits">
+                            <button class="btn btn-sand btn-sm" type="submit" title="<?= e(sprintf(t('rezervace.credits.title'), $userBalance)) ?>">
+                                <?= sprintf(e(t('rezervace.credits.btn')), (int)$priceAmount) ?>
+                            </button>
+                        </form>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
                 <?php if (!$user && !$isPast): ?>

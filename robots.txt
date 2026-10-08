@@ -13,7 +13,7 @@ Disallow: /login.php
 Disallow: /register.php
 Disallow: /forgot.php
 Disallow: /reset.php
-Disallow: /my.php
+Disallow: /myprofile.php
 Disallow: /cron/
 Disallow: /src/
 Disallow: /*?utm_

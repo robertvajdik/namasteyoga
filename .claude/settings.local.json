@@ -22,7 +22,16 @@
       "Bash(awk -F'=' '{print $1}')",
       "PowerShell(php -l e:\\\\Work\\\\www\\\\namasteyoga_rezervace\\\\styly.php)",
       "Bash(xxd)",
-      "PowerShell(php -l e:\\\\Work\\\\www\\\\namasteyoga_rezervace\\\\rezervace.php)"
+      "PowerShell(php -l e:\\\\Work\\\\www\\\\namasteyoga_rezervace\\\\rezervace.php)",
+      "Bash(where php *)",
+      "Read(//c/xampp/php/**)",
+      "Read(//c/wamp64/bin/**)",
+      "Bash(ls /c/Program*Files/PHP*)",
+      "PowerShell(Test-Path *)",
+      "PowerShell($cmdPath = cmd /c \"where php 2>nul\"; Write-Output \"cmd where: $cmdPath\"; $cmdPath2 = cmd /c \"echo %PATH%\"; Write-Output \"cmd PATH: $cmdPath2\")",
+      "PowerShell(& \"C:\\\\Users\\\\robert\\\\AppData\\\\Local\\\\Microsoft\\\\WinGet\\\\Packages\\\\PHP.PHP.8.3_Microsoft.Winget.Source_8wekyb3d8bbwe\\\\php.exe\" -l \"E:\\\\Work\\\\www\\\\namasteyoga_rezervace\\\\admin\\\\credits.php\")",
+      "PowerShell(& \"C:\\\\Users\\\\robert\\\\AppData\\\\Local\\\\Microsoft\\\\WinGet\\\\Packages\\\\PHP.PHP.8.3_Microsoft.Winget.Source_8wekyb3d8bbwe\\\\php.exe\" -l \"E:\\\\Work\\\\www\\\\namasteyoga_rezervace\\\\my.php\")",
+      "PowerShell(& \"C:\\\\Users\\\\robert\\\\AppData\\\\Local\\\\Microsoft\\\\WinGet\\\\Packages\\\\PHP.PHP.8.3_Microsoft.Winget.Source_8wekyb3d8bbwe\\\\php.exe\" -l \"E:\\\\Work\\\\www\\\\namasteyoga_rezervace\\\\myprofile.php\"; & \"C:\\\\Users\\\\robert\\\\AppData\\\\Local\\\\Microsoft\\\\WinGet\\\\Packages\\\\PHP.PHP.8.3_Microsoft.Winget.Source_8wekyb3d8bbwe\\\\php.exe\" -l \"E:\\\\Work\\\\www\\\\namasteyoga_rezervace\\\\src\\\\layout.php\"; & \"C:\\\\Users\\\\robert\\\\AppData\\\\Local\\\\Microsoft\\\\WinGet\\\\Packages\\\\PHP.PHP.8.3_Microsoft.Winget.Source_8wekyb3d8bbwe\\\\php.exe\" -l \"E:\\\\Work\\\\www\\\\namasteyoga_rezervace\\\\src\\\\db.php\"; & \"C:\\\\Users\\\\robert\\\\AppData\\\\Local\\\\Microsoft\\\\WinGet\\\\Packages\\\\PHP.PHP.8.3_Microsoft.Winget.Source_8wekyb3d8bbwe\\\\php.exe\" -l \"E:\\\\Work\\\\www\\\\namasteyoga_rezervace\\\\rezervace.php\")"
     ]
   }
 }

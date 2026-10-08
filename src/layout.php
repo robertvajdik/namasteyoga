@@ -175,13 +175,45 @@ function ny_week_start(?string $iso): DateTimeImmutable {
  * 'date' => DateTimeImmutable] on success, or ['ok' => false, 'msg' => string]
  * on any validation / capacity / DB error.
  */
-function ny_reserve_class(int $userId, int $classId, string $classDate): array {
+/**
+ * Loose categorization by class name → design's category colour set and
+ * cenik_open_* price slot. Shared between the schedule UI and the backend
+ * reserve flow so credit charges use the same price the UI displays.
+ */
+function ny_category(string $name): string {
+    $n = mb_strtolower($name);
+    if (str_contains($n, 'pilates'))      return 'pilates';
+    if (str_contains($n, 'masáž'))        return 'massage';
+    if (str_contains($n, 'workshop'))     return 'workshop';
+    if (str_contains($n, 'individ'))      return 'individual';
+    return 'yoga';
+}
+
+function ny_class_price(string $name): ?string {
+    $cat = ny_category($name);
+    if ($cat === 'workshop' || $cat === 'individual' || $cat === 'massage') {
+        return null;
+    }
+    $n = mb_strtolower($name);
+    $i = 1;
+    if (str_contains($n, 'fly'))                                                $i = 5;
+    elseif (str_contains($n, 'wall'))                                           $i = 6;
+    elseif (str_contains($n, 'děts') || str_contains($n, 'dets') || str_contains($n, 'kids') || str_contains($n, 'child')) $i = 4;
+    $s = ny_settings_all();
+    $o = trim((string)($s['cenik_open_' . $i . '_amount'] ?? ''));
+    return $o !== '' ? $o : t('cenik.open.' . $i . '.amount');
+}
+
+function ny_reserve_class(int $userId, int $classId, string $classDate, string $paymentMethod = 'none'): array {
     $dateObj = DateTimeImmutable::createFromFormat('Y-m-d', $classDate);
     if (!$classId || !$dateObj || $dateObj->format('Y-m-d') !== $classDate) {
         return ['ok' => false, 'msg' => t('reserve.err.invalid')];
     }
     if ($dateObj < new DateTimeImmutable('today')) {
         return ['ok' => false, 'msg' => t('reserve.err.past')];
+    }
+    if (!in_array($paymentMethod, ['none', 'qr', 'credits', 'other'], true)) {
+        $paymentMethod = 'none';
     }
     $pdo = ny_db();
     $pdo->beginTransaction();
@@ -203,17 +235,97 @@ function ny_reserve_class(int $userId, int $classId, string $classDate): array {
         if ((int)$countStmt->fetchColumn() >= (int)$class['capacity']) {
             throw new RuntimeException(t('reserve.err.full'));
         }
+        // Price snapshot – free-form "250 Kč" strings reduce to the integer koruna.
+        $priceStr = trim((string)($class['price'] ?? ''));
+        if ($priceStr === '') {
+            $priceStr = (string)ny_class_price((string)$class['name']);
+        }
+        $priceKc = ny_price_amount($priceStr) ?? 0;
+
+        if ($paymentMethod === 'credits') {
+            if ($priceKc <= 0) {
+                throw new RuntimeException(t('reserve.err.no_price'));
+            }
+            // Prevent credit-paying twice for the same slot. Also means a
+            // credit-paid booking that got cancelled stays refunded – a re-book
+            // must pay again.
+            $exists = $pdo->prepare(
+                "SELECT payment_method FROM ny_reservations
+                  WHERE user_id = ? AND class_id = ? AND class_date = ?
+                  FOR UPDATE"
+            );
+            $exists->execute([$userId, $classId, $classDate]);
+            $prev = $exists->fetch();
+            $alreadyPaid = $prev && $prev['payment_method'] === 'credits';
+            if (!$alreadyPaid) {
+                ny_credit_apply(
+                    $userId,
+                    -$priceKc,
+                    'reservation',
+                    'reservation',
+                    null,
+                    (string)$class['name'] . ' · ' . $classDate
+                );
+            }
+        }
+
         $ins = $pdo->prepare(
-            "INSERT INTO ny_reservations (user_id, class_id, class_date, status)
-             VALUES (?, ?, ?, 'booked')
-             ON DUPLICATE KEY UPDATE status = 'booked', created_at = CURRENT_TIMESTAMP"
+            "INSERT INTO ny_reservations (user_id, class_id, class_date, status, payment_method, price_kc)
+             VALUES (?, ?, ?, 'booked', ?, ?)
+             ON DUPLICATE KEY UPDATE status = 'booked',
+                                     payment_method = VALUES(payment_method),
+                                     price_kc = VALUES(price_kc),
+                                     created_at = CURRENT_TIMESTAMP"
         );
-        $ins->execute([$userId, $classId, $classDate]);
+        $ins->execute([$userId, $classId, $classDate, $paymentMethod, $priceKc]);
         $pdo->commit();
-        return ['ok' => true, 'class' => $class, 'date' => $dateObj];
+        return ['ok' => true, 'class' => $class, 'date' => $dateObj, 'payment_method' => $paymentMethod, 'price_kc' => $priceKc];
     } catch (Throwable $ex) {
         $pdo->rollBack();
         return ['ok' => false, 'msg' => $ex->getMessage()];
+    }
+}
+
+/**
+ * Cancel a reservation. If the slot was paid with credits, the amount is
+ * refunded automatically in the same transaction so the ledger stays clean.
+ * Returns ['ok' => bool, 'refunded_kc' => int].
+ */
+function ny_cancel_reservation(int $userId, int $classId, string $classDate): array {
+    $pdo = ny_db();
+    $pdo->beginTransaction();
+    try {
+        $stmt = $pdo->prepare(
+            "SELECT id, payment_method, price_kc, status
+               FROM ny_reservations
+              WHERE user_id = ? AND class_id = ? AND class_date = ?
+              FOR UPDATE"
+        );
+        $stmt->execute([$userId, $classId, $classDate]);
+        $row = $stmt->fetch();
+        if (!$row || $row['status'] !== 'booked') {
+            $pdo->commit();
+            return ['ok' => false, 'refunded_kc' => 0];
+        }
+        $pdo->prepare("UPDATE ny_reservations SET status = 'cancelled' WHERE id = ?")
+            ->execute([$row['id']]);
+        $refunded = 0;
+        if ($row['payment_method'] === 'credits' && (int)$row['price_kc'] > 0) {
+            $refunded = (int)$row['price_kc'];
+            ny_credit_apply(
+                $userId,
+                $refunded,
+                'refund',
+                'reservation',
+                (int)$row['id'],
+                'Zrušení lekce · ' . $classDate
+            );
+        }
+        $pdo->commit();
+        return ['ok' => true, 'refunded_kc' => $refunded];
+    } catch (Throwable $ex) {
+        $pdo->rollBack();
+        throw $ex;
     }
 }
 
@@ -546,7 +658,7 @@ gtag('config', <?= json_encode($gaId) ?>, { anonymize_ip: true });
         </div>
         <div class="header-user">
             <?php if ($user): ?>
-                <a class="header-user-link" href="my.php" title="Moje rezervace">
+                <a class="header-user-link" href="myprofile.php" title="Moje rezervace">
                     <?php if (!empty($user['avatar'])): ?>
                         <span class="user-avatar"><img src="assets/avatars/<?= e(rawurlencode($user['avatar'])) ?>" alt=""></span>
                     <?php else: ?>
@@ -590,7 +702,7 @@ gtag('config', <?= json_encode($gaId) ?>, { anonymize_ip: true });
             <a href="cenik.php"        class="<?= $active === 'cenik'      ? 'is-active' : '' ?>"><?= e(t('nav.cenik')) ?></a>
             <a href="kontakt.php"      class="<?= $active === 'kontakt'    ? 'is-active' : '' ?>"><?= e(t('nav.kontakt')) ?></a>
             <?php if ($user): ?>
-                <a href="my.php" class="<?= $active === 'my' ? 'is-active' : '' ?>"><?= e(t('nav.my')) ?></a>
+                <a href="myprofile.php" class="<?= $active === 'my' ? 'is-active' : '' ?>"><?= e(t('nav.my')) ?></a>
             <?php else: ?>
                 <a href="register.php" class="<?= $active === 'register' ? 'is-active' : '' ?>"><?= e(t('nav.register')) ?></a>
             <?php endif; ?>
