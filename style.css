@@ -4093,10 +4093,11 @@ img, iframe, video { max-width: 100%; }
     display: flex;
     align-items: center;
     grid-template-columns: none;
-    background-color: var(--landing-ink, #2b1f17);
+    background-color: #f5ead5;
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
+    background-blend-mode: multiply;
     min-height: clamp(420px, 48vw, 640px);
     padding: clamp(80px, 10vw, 140px) clamp(20px, 4vw, 48px);
     width: 100vw;
