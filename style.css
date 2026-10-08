@@ -285,31 +285,30 @@ form input:focus { outline: none; border-color: var(--sage-400); box-shadow: var
 /* -- Schedule ---------------------------------------------------- */
 .schedule-toolbar {
     display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
-    gap: 16px; margin-bottom: 22px;
+    gap: 14px; margin-bottom: 18px;
 }
 .week-nav {
-    display: inline-flex; align-items: center; gap: 6px;
+    display: inline-flex; align-items: center; gap: 4px;
     background: var(--surface-card); border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-pill); padding: 6px;
+    border-radius: var(--radius-pill); padding: 5px;
     box-shadow: var(--shadow-soft);
 }
 .week-nav a, .week-nav button {
-    background: transparent; border: 0; padding: 8px 14px;
+    background: transparent; border: 0; padding: 7px 12px;
     border-radius: var(--radius-pill); color: var(--text-body); cursor: pointer;
     font: 600 var(--fs-sm)/1 var(--font-body);
 }
 .week-nav a:hover, .week-nav button:hover { background: var(--sand-100); color: var(--text-strong); }
-.week-nav .range { padding: 0 12px; text-align: center; }
+.week-nav .range { padding: 0 10px; text-align: center; }
 .week-nav .range strong {
-    display: block; font-family: var(--font-display); font-weight: 700; font-size: 18px;
+    display: block; font-family: var(--font-display); font-weight: 700; font-size: 17px;
     color: var(--text-strong); line-height: 1.1;
 }
-.week-nav .range small { color: var(--text-muted); font-size: 12px; }
+.week-nav .range small { color: var(--text-muted); font-size: 11px; }
 
 .week-grid {
     display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 8px;
-    align-items: stretch;
+    gap: 7px; align-items: stretch;
 }
 @media (max-width: 1080px) { .week-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (max-width: 780px)  { .week-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -338,59 +337,53 @@ form input:focus { outline: none; border-color: var(--sage-400); box-shadow: var
     background: var(--surface-card);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-md);
-    padding: 10px 8px;
+    padding: 8px 7px;
     display: flex; flex-direction: column;
-    min-height: 180px;
+    min-height: 160px;
     box-shadow: var(--shadow-soft);
 }
-.day.is-today  { background: var(--sand-100); border-color: var(--accent-ink); }
-.day.is-past   { opacity: .6; }
+.day.is-today { background: var(--sand-100); border-color: var(--accent-ink); }
+.day.is-past  { opacity: .6; }
 .day-head {
-    text-align: center; padding: 4px 0 10px;
-    border-bottom: 1px solid var(--border-subtle); margin-bottom: 8px;
+    text-align: center; padding: 2px 0 7px;
+    border-bottom: 1px solid var(--border-subtle); margin-bottom: 6px;
 }
-.day-name  { font: 700 11px/1 var(--font-body); letter-spacing: var(--ls-eyebrow); color: var(--text-muted); text-transform: uppercase; }
+.day-name  { font: 700 10px/1 var(--font-body); letter-spacing: var(--ls-eyebrow); color: var(--text-muted); text-transform: uppercase; }
 .day.is-today .day-name { color: var(--accent-ink); }
-.day-date  { font-family: var(--font-display); font-weight: 700; font-size: 20px; color: var(--text-strong); margin-top: 2px; }
-.day-empty { font-size: 12px; color: var(--text-muted); text-align: center; padding: 16px 4px; font-style: italic; }
-.day-slots { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.day-date  { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--text-strong); margin-top: 2px; }
+.day-empty { font-size: 11px; color: var(--text-muted); text-align: center; padding: 12px 4px; font-style: italic; }
+.day-slots { display: flex; flex-direction: column; gap: 5px; flex: 1; }
 
 .class-card {
     background: var(--sand-50);
     border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-sm); padding: 8px 10px 10px;
-    display: flex; flex-direction: column; gap: 3px;
+    border-radius: var(--radius-sm); padding: 7px 9px 8px;
+    display: flex; flex-direction: column; gap: 2px;
     border-left: 3px solid var(--cat-yoga);
     transition: transform var(--dur-fast) var(--ease-calm), box-shadow var(--dur-fast) var(--ease-calm), background var(--dur-fast) var(--ease-calm);
     min-width: 0;
 }
 .class-card:hover { transform: translateY(-1px); box-shadow: var(--shadow-soft); background: var(--surface-card); }
 .class-card.is-full { opacity: .8; }
-.class-card .time { font: 700 12px/1 var(--font-body); color: var(--accent-ink); letter-spacing: .02em; }
-.class-card .title { font-family: var(--font-display); font-weight: 700; color: var(--text-strong); font-size: 14px; line-height: 1.2; overflow-wrap: anywhere; }
-.class-card .meta { font-size: 11px; color: var(--text-muted); overflow-wrap: anywhere; }
+.class-card .time  { font: 700 11px/1 var(--font-body); color: var(--accent-ink); letter-spacing: .02em; }
+.class-card .title { font-family: var(--font-display); font-weight: 700; color: var(--text-strong); font-size: 13px; line-height: 1.15; overflow-wrap: anywhere; }
+.class-card .meta  { font-size: 10px; color: var(--text-muted); overflow-wrap: anywhere; }
 .class-card .class-price {
     font-size: 11px; font-weight: 600; color: var(--sage-700); letter-spacing: .01em; margin-top: 2px;
-    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    display: flex; align-items: center; gap: 6px; flex-wrap: nowrap;
 }
+.class-card .class-price > span:first-child { flex: 0 0 auto; white-space: nowrap; }
 .class-card.is-full .class-price { color: var(--text-muted); }
 .class-card .class-qr-btn {
-    display: inline-flex; align-items: center; gap: 4px;
-    font: 600 10px/1 var(--font-body);
-    letter-spacing: .02em;
-    color: var(--sage-700);
-    background: transparent;
+    display: inline-flex; align-items: center; gap: 3px;
+    font: 600 10px/1 var(--font-body); letter-spacing: .02em;
+    color: var(--sage-700); background: transparent;
     border: 1px solid var(--sage-200, rgba(135,160,135,.4));
-    border-radius: 999px;
-    padding: 3px 8px;
-    cursor: pointer;
+    border-radius: 999px; padding: 2px 7px; cursor: pointer;
+    flex: 0 0 auto; margin-left: auto;
     transition: background .15s ease, color .15s ease, border-color .15s ease;
 }
-.class-card .class-qr-btn:hover {
-    background: var(--sage-700);
-    border-color: var(--sage-700);
-    color: #fff;
-}
+.class-card .class-qr-btn:hover { background: var(--sage-700); border-color: var(--sage-700); color: #fff; }
 .class-card .class-qr-btn .icon { flex: 0 0 auto; }
 
 /* -- QR payment modal (per-class SPAYD) ---------------------------- */
@@ -448,6 +441,8 @@ form input:focus { outline: none; border-color: var(--sage-400); box-shadow: var
 .qr-modal-bank dd { margin: 0; color: var(--text-strong); overflow-wrap: anywhere; }
 .qr-modal-bank .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .qr-modal-hint { margin: 0; font-size: 11px; }
+.qr-modal-actions { display: flex; justify-content: center; margin-top: 10px; }
+.qr-modal-actions .btn { display: inline-flex; align-items: center; gap: 6px; }
 body.has-qr-open { overflow: hidden; }
 @media (max-width: 560px) {
     .qr-modal { padding: 0; align-items: flex-end; }
@@ -475,54 +470,34 @@ body.has-qr-open { overflow: hidden; }
     from { transform: translateY(100%); }
     to   { transform: translateY(0); }
 }
-.schedule-price-hint { text-align: center; margin: 16px auto 0; max-width: 60ch; }
+.schedule-price-hint { text-align: center; margin: 14px auto 0; max-width: 60ch; }
 .schedule-price-hint a { color: var(--sage-700); text-decoration: underline; text-underline-offset: 2px; }
 .schedule-pay-hint {
     display: flex; align-items: center; gap: 8px;
     width: fit-content; max-width: 100%;
-    margin: 0 auto 16px;
-    padding: 10px 16px;
-    background: var(--sage-100, #E3EFEC);
-    color: var(--sage-700);
-    border-radius: 999px;
-    font-size: 13px;
-    font-weight: 500;
-    line-height: 1.3;
-    text-align: left;
+    margin: 0 auto 14px; padding: 8px 14px;
+    background: var(--sage-100, #E3EFEC); color: var(--sage-700);
+    border-radius: 999px; font: 500 12px/1.3 var(--font-body); text-align: left;
 }
 .schedule-pay-hint .icon { flex: 0 0 auto; color: var(--sage-700); }
 .class-card .row {
     display: flex; flex-direction: column; align-items: stretch;
-    gap: 6px; margin-top: 8px; min-width: 0;
+    gap: 5px; margin-top: 6px; min-width: 0;
 }
-.class-card .row .badge { align-self: flex-start; font-size: 10px; padding: 3px 7px; }
+.class-card .row .badge { align-self: flex-start; font-size: 10px; padding: 2px 7px; }
 .class-card .row form.inline { display: block; width: 100%; margin: 0; }
 .class-card .row .btn,
 .class-card .row .btn-sm {
-    width: 100%;
-    padding: 7px 10px;
-    font-size: 12px;
-    justify-content: center;
-    box-sizing: border-box;
-    max-width: 100%;
+    width: 100%; padding: 6px 10px; font-size: 11px;
+    justify-content: center; box-sizing: border-box; max-width: 100%;
 }
-.class-card .row .hint { font-size: 11px; }
+.class-card .row .hint { font-size: 10px; }
 .class-card-login {
-    margin-top: 8px;
-    display: flex;
-    width: 100%;
-    box-sizing: border-box;
-    padding: 7px 10px;
-    font-size: 12px;
-    background: var(--sage-100);
-    border-color: var(--sage-200);
-    color: var(--accent-ink);
+    margin-top: 6px; display: flex; width: 100%; box-sizing: border-box;
+    padding: 6px 10px; font-size: 11px;
+    background: var(--sage-100); border-color: var(--sage-200); color: var(--accent-ink);
 }
-.class-card-login:hover {
-    background: var(--sage-300);
-    border-color: var(--sage-300);
-    color: #fff;
-}
+.class-card-login:hover { background: var(--sage-300); border-color: var(--sage-300); color: #fff; }
 
 /* Wider cards (4-col tablet layer): keep badge + button side-by-side. */
 @media (min-width: 781px) and (max-width: 1080px) {
@@ -2283,6 +2258,8 @@ img, iframe, video { max-width: 100%; }
     .class-card .time  { grid-row: 1 / span 2; align-self: center; font-size: 15px; }
     .class-card .title { font-size: 15px; }
     .class-card .meta  { grid-column: 2; font-size: 12px; }
+    .class-card .class-price { grid-column: 1 / -1; margin-top: 4px; font-size: 12px; }
+    .class-card .class-qr-btn { font-size: 11px; padding: 3px 9px; }
     .class-card .row   {
         grid-column: 1 / -1; margin-top: 8px;
         flex-direction: row; align-items: center;

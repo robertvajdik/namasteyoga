@@ -51,15 +51,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ny_flash_set('err', 'Datum ukončení nesmí být před datem zahájení.');
     } elseif ($id) {
         $pdo->prepare(
-            'UPDATE ny_classes SET name=?, description=?, teacher=?, room=?, capacity=?, day_of_week=?, start_time=?, end_time=?, active=?, starts_on=?, ends_on=? WHERE id=?'
-        )->execute([$name, $desc, $teacher, $room, $capacity, $dow, $start, $end, $active, $startsOn, $endsOn, $id]);
+            'UPDATE ny_classes SET name=?, description=?, teacher=?, room=?, capacity=?, price=?, day_of_week=?, start_time=?, end_time=?, active=?, starts_on=?, ends_on=? WHERE id=?'
+        )->execute([$name, $desc, $teacher, $room, $capacity, $price, $dow, $start, $end, $active, $startsOn, $endsOn, $id]);
         ny_flash_set('ok', 'Lekce byla uložena.');
         ny_redirect('classes.php');
     } else {
         $pdo->prepare(
-            'INSERT INTO ny_classes (name, description, teacher, room, capacity, day_of_week, start_time, end_time, active, starts_on, ends_on)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        )->execute([$name, $desc, $teacher, $room, $capacity, $dow, $start, $end, $active, $startsOn, $endsOn]);
+            'INSERT INTO ny_classes (name, description, teacher, room, capacity, price, day_of_week, start_time, end_time, active, starts_on, ends_on)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        )->execute([$name, $desc, $teacher, $room, $capacity, $price, $dow, $start, $end, $active, $startsOn, $endsOn]);
         ny_flash_set('ok', 'Lekce byla vytvořena.');
         ny_redirect('classes.php');
     }
@@ -88,7 +88,7 @@ ny_admin_render_header('Lekce', 'classes');
 ?>
 
 <?php if ($editing || $isNew):
-    $c = $editing ?: ['id' => 0, 'name' => '', 'description' => '', 'teacher' => '', 'room' => '', 'capacity' => 12, 'day_of_week' => 1, 'start_time' => '18:00', 'end_time' => '19:15', 'active' => 1, 'starts_on' => null, 'ends_on' => null];
+    $c = $editing ?: ['id' => 0, 'name' => '', 'description' => '', 'teacher' => '', 'room' => '', 'capacity' => 12, 'price' => '', 'day_of_week' => 1, 'start_time' => '18:00', 'end_time' => '19:15', 'active' => 1, 'starts_on' => null, 'ends_on' => null];
 ?>
 <div class="admin-card">
     <h2><?= $editing ? 'Upravit lekci' : 'Nová lekce' ?></h2>
@@ -107,6 +107,9 @@ ny_admin_render_header('Lekce', 'classes');
             </label>
             <label>Kapacita
                 <input type="number" min="1" name="capacity" value="<?= (int)$c['capacity'] ?>" required>
+            </label>
+            <label>Cena
+                <input type="text" name="price" value="<?= e((string)($c['price'] ?? '')) ?>" placeholder="např. 250 Kč">
             </label>
             <label>Den v týdnu
                 <select name="day_of_week" required>
@@ -158,7 +161,7 @@ ny_admin_render_header('Lekce', 'classes');
     <?php else: ?>
         <div class="tbl-wrap">
         <table class="admin-tbl">
-            <thead><tr><th>Den</th><th>Čas</th><th>Název</th><th>Lektor</th><th>Sál</th><th>Kapacita</th><th>Období</th><th>Stav</th><th></th></tr></thead>
+            <thead><tr><th>Den</th><th>Čas</th><th>Název</th><th>Lektor</th><th>Sál</th><th>Kapacita</th><th>Cena</th><th>Období</th><th>Stav</th><th></th></tr></thead>
             <tbody>
             <?php foreach ($classes as $c):
                 $n       = $resCounts[(int)$c['id']] ?? 0;
@@ -175,6 +178,7 @@ ny_admin_render_header('Lekce', 'classes');
                     <td><?= e($c['teacher']) ?></td>
                     <td><?= e((string)($c['room'] ?? '—')) ?></td>
                     <td><?= (int)$c['capacity'] ?></td>
+                    <td><?= $c['price'] !== '' ? e((string)$c['price']) : '<span class="hint">—</span>' ?></td>
                     <td>
                         <?php if ($starts || $ends): ?>
                             <?= e($starts ?? '…') ?> – <?= e($ends ?? '…') ?>

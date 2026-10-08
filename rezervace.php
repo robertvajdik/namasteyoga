@@ -35,6 +35,31 @@ foreach ($countsStmt as $r) {
 $mine = [];
 $user = ny_current_user();
 
+// Surname of the signed-in attendee, appended to the SPAYD MSG so the
+// payment arrives on the studio's account tagged with the person's name.
+$userSurname = '';
+if ($user) {
+    $parts = preg_split('/\s+/u', trim((string)($user['display_name'] ?? ''))) ?: [];
+    $userSurname = $parts ? (string)end($parts) : '';
+    $userSurname = preg_replace('/\s+/u', '', $userSurname);
+}
+
+// SPAYD MSG must be ASCII and stays under qrcodejs' type-10 byte capacity
+// (~108 bytes with correctLevel M). Czech diacritics transliterate to ASCII
+// so Czech banking apps display the payment reference correctly.
+function ny_ascii_msg(string $s): string {
+    static $map = [
+        'á'=>'a','č'=>'c','ď'=>'d','é'=>'e','ě'=>'e','í'=>'i','ň'=>'n',
+        'ó'=>'o','ř'=>'r','š'=>'s','ť'=>'t','ú'=>'u','ů'=>'u','ý'=>'y','ž'=>'z',
+        'Á'=>'A','Č'=>'C','Ď'=>'D','É'=>'E','Ě'=>'E','Í'=>'I','Ň'=>'N',
+        'Ó'=>'O','Ř'=>'R','Š'=>'S','Ť'=>'T','Ú'=>'U','Ů'=>'U','Ý'=>'Y','Ž'=>'Z',
+        '–'=>'-','—'=>'-','„'=>'"','"'=>'"','"'=>'"','‚'=>"'", '‘'=>"'", '’'=>"'",
+    ];
+    $s = strtr($s, $map);
+    $s = preg_replace('/[^\x20-\x7E]/', '', $s);
+    return (string)preg_replace('/\s+/', ' ', trim((string)$s));
+}
+
 // Rosters: first-name lists per class + date. Only exposed to signed-in
 // members so casual visitors / bots don't scrape attendee lists.
 $rosters = [];
@@ -179,7 +204,8 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
                     <?= e($c['teacher']) ?><?php if ($c['room']): ?> · <?= e($c['room']) ?><?php endif; ?>
                 </div>
                 <?php
-                    $price       = ny_class_price((string)$c['name']);
+                    $classPrice  = trim((string)($c['price'] ?? ''));
+                    $price       = $classPrice !== '' ? $classPrice : ny_class_price((string)$c['name']);
                     $priceAmount = $price !== null ? ny_price_amount($price) : null;
                     $showQr      = $iban !== '' && $priceAmount !== null && $priceAmount > 0;
                 ?>
@@ -189,7 +215,7 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
                         <?php if ($showQr): ?>
                             <button type="button" class="class-qr-btn"
                                     data-qr-amount="<?= (int)$priceAmount ?>"
-                                    data-qr-msg="<?= e('Lekce ' . $c['name']) ?>"
+                                    data-qr-msg="<?= e(ny_ascii_msg('Lekce ' . $c['name'] . ($userSurname !== '' ? ' ' . $userSurname : ''))) ?>"
                                     data-qr-title="<?= e($c['name']) ?>"
                                     data-qr-date="<?= e($date->format('j. n.') . ' ' . substr($c['start_time'], 0, 5)) ?>"
                                     aria-label="<?= e(t('rezervace.qr.open')) ?>">
@@ -346,6 +372,12 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
             <dd class="mono" id="qr-modal-msg"></dd>
         </dl>
         <p class="qr-modal-hint hint"><?= e(t('rezervace.qr.hint')) ?></p>
+        <div class="qr-modal-actions">
+            <button type="button" class="btn btn-secondary" id="qr-modal-download">
+                <?= ny_icon('download', 14) ?>
+                <span><?= e(t('rezervace.qr.download')) ?></span>
+            </button>
+        </div>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
@@ -357,7 +389,17 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
     var subEl    = document.getElementById('qr-modal-sub');
     var amountEl = document.getElementById('qr-modal-amount');
     var msgEl    = document.getElementById('qr-modal-msg');
+    var dlBtn    = document.getElementById('qr-modal-download');
     if (!modal || !box) return;
+
+    var currentFileBase = 'qr-platba';
+    function slugify(s) {
+        return (s || '').toString()
+            .normalize('NFD').replace(/[̀-ͯ]/g, '')
+            .replace(/[^a-zA-Z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .toLowerCase() || 'qr-platba';
+    }
 
     var iban = <?= json_encode(preg_replace('/\s+/', '', strtoupper($iban))) ?>;
 
@@ -380,18 +422,61 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
         return Math.max(min, Math.round(side));
     }
 
-    function render(amount, msg) {
-        box.innerHTML = '';
-        if (typeof QRCode === 'undefined') {
-            box.textContent = '…';
-            return;
+    // Load qrcodejs on demand with a timeout. Also keeps us resilient when the
+    // CDN is slow — render() can await the load before painting the box.
+    var qrLoadState = 'idle'; // idle | loading | ready | error
+    var qrLoadCallbacks = [];
+    var QR_SRCS = [
+        'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js',
+        'https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js'
+    ];
+    function loadQr(cb) {
+        if (typeof QRCode !== 'undefined') { qrLoadState = 'ready'; cb(null); return; }
+        qrLoadCallbacks.push(cb);
+        if (qrLoadState === 'loading' || qrLoadState === 'ready') return;
+        qrLoadState = 'loading';
+        var i = 0;
+        function tryNext() {
+            if (i >= QR_SRCS.length) {
+                qrLoadState = 'error';
+                qrLoadCallbacks.splice(0).forEach(function (c) { c(new Error('load failed')); });
+                return;
+            }
+            var s = document.createElement('script');
+            s.src = QR_SRCS[i++];
+            s.async = true;
+            s.onload = function () {
+                if (typeof QRCode === 'undefined') { tryNext(); return; }
+                qrLoadState = 'ready';
+                qrLoadCallbacks.splice(0).forEach(function (c) { c(null); });
+            };
+            s.onerror = function () { tryNext(); };
+            document.head.appendChild(s);
         }
+        tryNext();
+    }
+
+    function paintQr(amount, msg) {
+        box.innerHTML = '';
         var side = qrSize();
         new QRCode(box, {
             text: buildSpayd(amount, msg),
             width: side,
             height: side,
             correctLevel: QRCode.CorrectLevel.M
+        });
+    }
+
+    function render(amount, msg) {
+        box.innerHTML = '';
+        box.textContent = '…';
+        loadQr(function (err) {
+            if (!lastRender || lastRender.amount !== amount || lastRender.msg !== msg) return;
+            if (err || typeof QRCode === 'undefined') {
+                box.textContent = <?= json_encode(t('rezervace.qr.err')) ?>;
+                return;
+            }
+            paintQr(amount, msg);
         });
     }
 
@@ -414,10 +499,32 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
         subEl.textContent    = when;
         amountEl.textContent = amount > 0 ? amount.toLocaleString('cs-CZ') + ' Kč' : '—';
         msgEl.textContent    = msg;
+        currentFileBase = 'qr-' + slugify(title + (when ? '-' + when : ''));
         lastRender = { amount: amount, msg: msg };
         render(amount, msg);
         modal.hidden = false;
         document.body.classList.add('has-qr-open');
+    }
+
+    function qrDataUrl() {
+        var canvas = box.querySelector('canvas');
+        if (canvas) {
+            try { return canvas.toDataURL('image/png'); } catch (e) {}
+        }
+        var img = box.querySelector('img');
+        return img ? img.src : null;
+    }
+    if (dlBtn) {
+        dlBtn.addEventListener('click', function () {
+            var url = qrDataUrl();
+            if (!url) return;
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = currentFileBase + '.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
     }
     function closeModal() {
         modal.hidden = true;
