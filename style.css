@@ -438,7 +438,7 @@ form input:focus { outline: none; border-color: var(--sage-400); box-shadow: var
     min-height: 240px;
     margin-bottom: 14px;
 }
-.qr-modal-box img, .qr-modal-box canvas { display: block; }
+.qr-modal-box img, .qr-modal-box canvas { display: block; max-width: 100%; height: auto; }
 .qr-modal-bank {
     display: grid; grid-template-columns: auto 1fr; gap: 4px 12px;
     margin: 0 0 10px;
@@ -449,6 +449,32 @@ form input:focus { outline: none; border-color: var(--sage-400); box-shadow: var
 .qr-modal-bank .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
 .qr-modal-hint { margin: 0; font-size: 11px; }
 body.has-qr-open { overflow: hidden; }
+@media (max-width: 560px) {
+    .qr-modal { padding: 0; align-items: flex-end; }
+    .qr-modal-backdrop { backdrop-filter: none; }
+    .qr-modal-inner {
+        width: 100%;
+        max-height: 92vh;
+        padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        box-shadow: 0 -20px 50px -20px rgba(26,20,16,.4);
+        animation: qr-sheet-in .22s ease-out;
+    }
+    .qr-modal-head { margin-bottom: 10px; }
+    .qr-modal-title { font-size: 16px; }
+    .qr-modal-close {
+        font-size: 28px; padding: 8px 12px; margin: -8px -8px 0 0;
+        min-width: 44px; min-height: 44px;
+        display: inline-flex; align-items: center; justify-content: center;
+    }
+    .qr-modal-box { padding: 10px; min-height: 0; margin-bottom: 12px; }
+    .qr-modal-bank { font-size: 13px; gap: 2px 12px; }
+    .qr-modal-hint { font-size: 12px; }
+}
+@keyframes qr-sheet-in {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+}
 .schedule-price-hint { text-align: center; margin: 16px auto 0; max-width: 60ch; }
 .schedule-price-hint a { color: var(--sage-700); text-decoration: underline; text-underline-offset: 2px; }
 .schedule-pay-hint {
@@ -4105,12 +4131,7 @@ img, iframe, video { max-width: 100%; }
     text-align: left;
     gap: 0;
 }
-.page-hero-media--bg::before {
-    content: "";
-    position: absolute; inset: 0;
-    background: rgba(43, 31, 23, .78);
-    pointer-events: none;
-}
+.page-hero-media--bg::before { content: none; }
 .page-hero-media--bg .page-hero-media-body {
     position: relative;
     width: 100%;

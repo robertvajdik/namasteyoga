@@ -369,19 +369,41 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
         return parts.join('*');
     }
 
+    function qrSize() {
+        var vw = Math.min(window.innerWidth, document.documentElement.clientWidth);
+        var vh = window.innerHeight || document.documentElement.clientHeight;
+        // modal padding + inner padding + box padding roughly reserves ~80px on small, ~96px on large
+        var reserve = vw <= 560 ? 60 : 96;
+        var max = vw <= 560 ? 320 : 260;
+        var min = 180;
+        var side = Math.min(vw - reserve, vh - 260, max);
+        return Math.max(min, Math.round(side));
+    }
+
     function render(amount, msg) {
         box.innerHTML = '';
         if (typeof QRCode === 'undefined') {
             box.textContent = '…';
             return;
         }
+        var side = qrSize();
         new QRCode(box, {
             text: buildSpayd(amount, msg),
-            width: 240,
-            height: 240,
+            width: side,
+            height: side,
             correctLevel: QRCode.CorrectLevel.M
         });
     }
+
+    var lastRender = null;
+    var resizeTimer;
+    window.addEventListener('resize', function () {
+        if (modal.hidden || !lastRender) return;
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function () {
+            render(lastRender.amount, lastRender.msg);
+        }, 150);
+    });
 
     function openModal(btn) {
         var amount = parseInt(btn.getAttribute('data-qr-amount') || '0', 10) || 0;
@@ -392,6 +414,7 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
         subEl.textContent    = when;
         amountEl.textContent = amount > 0 ? amount.toLocaleString('cs-CZ') + ' Kč' : '—';
         msgEl.textContent    = msg;
+        lastRender = { amount: amount, msg: msg };
         render(amount, msg);
         modal.hidden = false;
         document.body.classList.add('has-qr-open');
@@ -399,6 +422,7 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
     function closeModal() {
         modal.hidden = true;
         box.innerHTML = '';
+        lastRender = null;
         document.body.classList.remove('has-qr-open');
     }
 

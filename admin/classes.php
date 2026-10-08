@@ -37,6 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $room     = trim((string)($_POST['room'] ?? '')) ?: null;
     $desc     = trim((string)($_POST['description'] ?? '')) ?: null;
     $capacity = max(1, (int)($_POST['capacity'] ?? 12));
+    $price    = trim((string)($_POST['price'] ?? ''));
     $dow      = (int)($_POST['day_of_week'] ?? 1);
     $start    = (string)($_POST['start_time'] ?? '');
     $end      = (string)($_POST['end_time'] ?? '');

@@ -208,6 +208,15 @@ function ny_ensure_content_tables(): void {
     if ($hasEndsOn === 0) {
         $pdo->exec('ALTER TABLE ny_classes ADD COLUMN ends_on DATE NULL AFTER starts_on');
     }
+    $hasPrice = (int)$pdo->query(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME   = 'ny_classes'
+            AND COLUMN_NAME  = 'price'"
+    )->fetchColumn();
+    if ($hasPrice === 0) {
+        $pdo->exec('ALTER TABLE ny_classes ADD COLUMN price VARCHAR(60) NOT NULL DEFAULT "" AFTER capacity');
+    }
     $pdo->exec(
         'CREATE TABLE IF NOT EXISTS ny_massages (
             id          INT UNSIGNED NOT NULL AUTO_INCREMENT,

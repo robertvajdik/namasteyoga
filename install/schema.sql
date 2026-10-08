@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS `ny_classes` (
   `description`  TEXT DEFAULT NULL,
   `teacher`      VARCHAR(120) NOT NULL,
   `capacity`     INT UNSIGNED NOT NULL DEFAULT 12,
+  `price`        VARCHAR(60) NOT NULL DEFAULT '',
   `day_of_week`  TINYINT UNSIGNED NOT NULL, -- 1=Mon .. 7=Sun (ISO-8601)
   `start_time`   TIME NOT NULL,
   `end_time`     TIME NOT NULL,
