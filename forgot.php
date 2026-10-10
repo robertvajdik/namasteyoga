@@ -24,16 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Only issue a reset for real (non-guest) users. Response is identical either way
         // so we never leak whether an e-mail exists in the DB (enumeration protection).
         if ($u && (int)$u['is_guest'] === 0) {
-            $token    = ny_password_reset_create((int)$u['id']);
-            $link     = ny_base_url() . '/reset.php?t=' . rawurlencode($token);
-            $siteName = ny_setting('site_name', 'Studio Namasté');
-            $body     = "Ahoj " . ($u['display_name'] ?: 'jogíne') . ",\n\n"
-                      . "obdrželi jsme žádost o obnovení hesla k účtu na webu " . $siteName . ".\n\n"
-                      . "Nové heslo si můžete nastavit tímto odkazem (platí 60 minut):\n"
-                      . $link . "\n\n"
-                      . "Pokud jste o obnovení hesla nežádali, tento e-mail ignorujte – k účtu se nikdo nedostane.\n\n"
-                      . "-- \n" . $siteName;
-            ny_mail($email, 'Obnovení hesla · ' . $siteName, $body);
+            ny_password_reset_send((int)$u['id'], $email, (string)$u['display_name']);
         }
         $sent = true;
     }

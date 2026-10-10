@@ -42,12 +42,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ny_redirect('myprofile.php');
         }
         if ($act === 'change_password') {
-            $current = (string)($_POST['current_password'] ?? '');
-            $new1    = (string)($_POST['new_password'] ?? '');
-            $new2    = (string)($_POST['new_password2'] ?? '');
-            if (empty($user['password_hash']) || !ny_verify_password($current, (string)$user['password_hash'])) {
-                throw new RuntimeException(t('my.err.password_current'));
-            }
+            $new1 = (string)($_POST['new_password'] ?? '');
+            $new2 = (string)($_POST['new_password2'] ?? '');
             if (strlen($new1) < 8) {
                 throw new RuntimeException(t('my.err.password_short'));
             }
@@ -58,6 +54,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->prepare('UPDATE ny_users SET password_hash = ? WHERE id = ?')
                 ->execute([$hash, $user['id']]);
             ny_flash_set('ok', t('my.flash.password_changed'));
+            ny_redirect('myprofile.php');
+        }
+        if ($act === 'send_password_reset') {
+            // One reset e-mail per 5 minutes per session to avoid mail spam.
+            if ((int)($_SESSION['pw_reset_sent_at'] ?? 0) > time() - 300) {
+                throw new RuntimeException(t('my.err.password_reset_wait'));
+            }
+            if (!ny_password_reset_send((int)$user['id'], (string)$user['email'], (string)$user['display_name'])) {
+                throw new RuntimeException(t('my.err.password_reset_mail'));
+            }
+            $_SESSION['pw_reset_sent_at'] = time();
+            ny_flash_set('ok', sprintf(t('my.flash.password_reset_sent'), (string)$user['email']));
             ny_redirect('myprofile.php');
         }
         if ($act === 'remove_avatar' && !empty($user['avatar'])) {
@@ -651,9 +659,6 @@ ny_render_header(t('my.title'), 'my', ['description' => t('my.meta.description')
     <form method="post" class="pref-card-form profile-edit-form">
         <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
         <input type="hidden" name="action" value="change_password">
-        <label class="profile-field"><span><?= e(t('my.password.current')) ?></span>
-            <input type="password" name="current_password" required autocomplete="current-password">
-        </label>
         <label class="profile-field"><span><?= e(t('my.password.new')) ?></span>
             <input type="password" name="new_password" required autocomplete="new-password" minlength="8">
         </label>
@@ -661,6 +666,12 @@ ny_render_header(t('my.title'), 'my', ['description' => t('my.meta.description')
             <input type="password" name="new_password2" required autocomplete="new-password" minlength="8">
         </label>
         <button class="btn btn-primary btn-sm" type="submit"><?= e(t('my.password.save')) ?></button>
+    </form>
+    <form method="post" class="pref-card-form">
+        <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+        <input type="hidden" name="action" value="send_password_reset">
+        <span class="hint"><?= e(t('my.password.reset.hint')) ?></span>
+        <button class="btn btn-ghost btn-sm" type="submit"><?= e(t('my.password.reset')) ?></button>
     </form>
 </div>
 

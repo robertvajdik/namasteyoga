@@ -1107,6 +1107,23 @@ function ny_password_reset_create(int $userId, int $ttlMinutes = 60): string {
     return $token;
 }
 
+/**
+ * Create a reset token for the user and e-mail them the reset.php link.
+ * Shared by forgot.php (anonymous) and myprofile.php (logged-in member).
+ */
+function ny_password_reset_send(int $userId, string $email, string $displayName = ''): bool {
+    $token    = ny_password_reset_create($userId);
+    $link     = ny_base_url() . '/reset.php?t=' . rawurlencode($token);
+    $siteName = ny_setting('site_name', 'Studio Namasté');
+    $body     = "Ahoj " . ($displayName ?: 'jogíne') . ",\n\n"
+              . "obdrželi jsme žádost o obnovení hesla k účtu na webu " . $siteName . ".\n\n"
+              . "Nové heslo si můžete nastavit tímto odkazem (platí 60 minut):\n"
+              . $link . "\n\n"
+              . "Pokud jste o obnovení hesla nežádali, tento e-mail ignorujte – k účtu se nikdo nedostane.\n\n"
+              . "-- \n" . $siteName;
+    return ny_mail($email, 'Obnovení hesla · ' . $siteName, $body);
+}
+
 function ny_password_reset_find(string $token): ?array {
     ny_ensure_content_tables();
     if ($token === '') return null;

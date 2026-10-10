@@ -1915,7 +1915,14 @@ img.teacher-thumb { display: inline-block; }
     line-height: 1.1; margin: 10px 0 2px;
 }
 .credits-balance-unit { font-size: 18px; color: var(--text-muted); font-weight: 400; margin-left: 4px; }
-.credits-form { flex: 1 1 100%; align-items: flex-end; }
+.credits-form { flex: 1 1 100%; align-items: flex-end; flex-wrap: nowrap; }
+/* Base `form label` margin pushes the input above the button baseline –
+   drop it and size the button to the input so both share one line. */
+.credits-form .profile-field { margin: 0; }
+.credits-form .btn { flex: 0 0 auto; height: 46px; white-space: nowrap; }
+@media (max-width: 640px) {
+    .credits-form { flex-wrap: wrap; }
+}
 .credits-bank, .credits-history {
     flex: 1 1 100%;
     border-top: 1px solid var(--border-subtle);
