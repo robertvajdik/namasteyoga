@@ -773,6 +773,50 @@ function ny_credit_adjust(int $userId, int $deltaKc, int $adminId, string $note)
     }
 }
 
+/**
+ * Member redeems a dárkový poukaz into their credit wallet. Only paid/issued,
+ * non-expired vouchers with a numeric amount qualify; the voucher is flipped
+ * to "redeemed" in the same transaction so a code can be used only once.
+ * Returns the credited amount in Kč.
+ */
+function ny_credit_redeem_voucher(int $userId, string $code): int {
+    ny_ensure_content_tables();
+    $code = strtoupper(trim($code));
+    if ($code === '') {
+        throw new RuntimeException(t('my.credits.voucher.err.empty'));
+    }
+    $pdo = ny_db();
+    $pdo->beginTransaction();
+    try {
+        $stmt = $pdo->prepare('SELECT * FROM ny_vouchers WHERE code = ? LIMIT 1 FOR UPDATE');
+        $stmt->execute([$code]);
+        $v = $stmt->fetch();
+        if (!$v || in_array((string)$v['status'], ['pending', 'cancelled'], true)) {
+            throw new RuntimeException(t('my.credits.voucher.err.invalid'));
+        }
+        if ($v['status'] === 'redeemed') {
+            throw new RuntimeException(t('my.credits.voucher.err.used'));
+        }
+        if (!empty($v['valid_until']) && $v['valid_until'] < (new DateTimeImmutable('today'))->format('Y-m-d')) {
+            throw new RuntimeException(t('my.credits.voucher.err.expired'));
+        }
+        $amount = (int)$v['amount_czk'];
+        if ($amount <= 0) {
+            throw new RuntimeException(t('my.credits.voucher.err.no_amount'));
+        }
+        $stamp = 'Uplatněno na kredit uživatele #' . $userId . ' (' . date('j. n. Y H:i') . ')';
+        $note  = trim((string)($v['note'] ?? ''));
+        $pdo->prepare('UPDATE ny_vouchers SET status = "redeemed", note = ? WHERE id = ?')
+            ->execute([$note !== '' ? $note . "\n" . $stamp : $stamp, (int)$v['id']]);
+        ny_credit_apply($userId, $amount, 'topup', 'voucher', (int)$v['id'], 'Poukaz ' . $v['code']);
+        $pdo->commit();
+        return $amount;
+    } catch (Throwable $e) {
+        $pdo->rollBack();
+        throw $e;
+    }
+}
+
 function ny_credit_topups_pending(): array {
     ny_ensure_content_tables();
     return ny_db()->query(

@@ -88,6 +88,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ny_flash_set('ok', t('my.credits.flash.requested'));
             ny_redirect('myprofile.php#credits');
         }
+        if ($act === 'redeem_voucher') {
+            // Throttle guessing: at most 5 failed codes per 15 minutes per session.
+            $fails = array_filter(
+                (array)($_SESSION['voucher_fails'] ?? []),
+                fn($ts) => $ts > time() - 900
+            );
+            if (count($fails) >= 5) {
+                throw new RuntimeException(t('my.credits.voucher.err.throttle'));
+            }
+            try {
+                $credited = ny_credit_redeem_voucher((int)$user['id'], (string)($_POST['code'] ?? ''));
+            } catch (RuntimeException $e) {
+                $fails[] = time();
+                $_SESSION['voucher_fails'] = array_values($fails);
+                throw $e;
+            }
+            unset($_SESSION['voucher_fails']);
+            ny_flash_set('ok', sprintf(t('my.credits.voucher.flash.ok'), number_format($credited, 0, ',', ' ')));
+            ny_redirect('myprofile.php#credits');
+        }
         if ($act === 'upload_avatar' && isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
             $f = $_FILES['avatar'];
             $mime = @mime_content_type($f['tmp_name']) ?: '';
@@ -483,6 +503,14 @@ ny_render_header(t('my.title'), 'my', ['description' => t('my.meta.description')
             <input type="text" name="note" maxlength="200" placeholder="<?= e(t('my.credits.note.ph')) ?>">
         </label>
         <button class="btn btn-primary btn-sm" type="submit"><?= e(t('my.credits.request')) ?></button>
+    </form>
+    <form method="post" class="pref-card-form profile-edit-form credits-form" autocomplete="off">
+        <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+        <input type="hidden" name="action" value="redeem_voucher">
+        <label class="profile-field"><span><?= e(t('my.credits.voucher.code')) ?></span>
+            <input type="text" name="code" maxlength="32" required placeholder="NY-XXXXXX" style="text-transform: uppercase">
+        </label>
+        <button class="btn btn-secondary btn-sm" type="submit"><?= e(t('my.credits.voucher.redeem')) ?></button>
     </form>
     <?php if ($iban !== '' || $bankAccount !== ''): ?>
     <?php
