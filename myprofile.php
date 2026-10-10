@@ -164,7 +164,7 @@ $historyStmt = $pdo->prepare(
        JOIN ny_classes c ON c.id = r.class_id
       WHERE r.user_id = ? AND (r.class_date < ? OR r.status = 'cancelled')
       ORDER BY r.class_date DESC, c.start_time DESC
-      LIMIT 40"
+      LIMIT 50"
 );
 $historyStmt->execute([$user['id'], $today]);
 $history = $historyStmt->fetchAll();
@@ -741,12 +741,12 @@ ny_render_header(t('my.title'), 'my', ['description' => t('my.meta.description')
         <p class="hint"><?= e(t('my.history.empty')) ?></p>
     <?php else: ?>
         <div class="tbl-wrap">
-            <table class="tbl">
+            <table class="tbl" id="my-history">
                 <thead><tr><th><?= e(t('my.history.col.date')) ?></th><th><?= e(t('my.history.col.class')) ?></th><th><?= e(t('my.history.col.teacher')) ?></th><th><?= e(t('my.history.col.status')) ?></th></tr></thead>
                 <tbody>
-                <?php foreach ($history as $r):
+                <?php foreach ($history as $hi => $r):
                     $d = new DateTimeImmutable($r['class_date']); ?>
-                    <tr>
+                    <tr data-page="<?= intdiv($hi, 10) ?>"<?= $hi >= 10 ? ' hidden' : '' ?>>
                         <td data-label="<?= e(t('my.history.col.date')) ?>"><?= e($d->format('j. n. Y')) ?></td>
                         <td data-label="<?= e(t('my.history.col.class')) ?>"><?= e($r['name']) ?></td>
                         <td data-label="<?= e(t('my.history.col.teacher')) ?>"><?= e($r['teacher']) ?></td>
@@ -762,6 +762,35 @@ ny_render_header(t('my.title'), 'my', ['description' => t('my.meta.description')
                 </tbody>
             </table>
         </div>
+        <?php $historyPages = (int)ceil(count($history) / 10); if ($historyPages > 1): ?>
+        <nav class="my-pager" data-target="my-history" data-pages="<?= $historyPages ?>" aria-label="<?= e(t('my.history.h')) ?>">
+            <button type="button" class="btn btn-ghost btn-sm" data-dir="-1" disabled>&larr; <?= e(t('my.history.prev')) ?></button>
+            <span class="my-pager-info"><?= sprintf(e(t('my.history.page')), 1, $historyPages) ?></span>
+            <button type="button" class="btn btn-ghost btn-sm" data-dir="1"><?= e(t('my.history.next')) ?> &rarr;</button>
+        </nav>
+        <script>
+        (function () {
+            var nav = document.querySelector('.my-pager[data-target="my-history"]');
+            if (!nav) return;
+            var rows  = document.querySelectorAll('#my-history tbody tr');
+            var pages = parseInt(nav.getAttribute('data-pages'), 10);
+            var info  = nav.querySelector('.my-pager-info');
+            var tpl   = <?= json_encode(t('my.history.page'), JSON_UNESCAPED_UNICODE) ?>;
+            var prev  = nav.querySelector('[data-dir="-1"]');
+            var next  = nav.querySelector('[data-dir="1"]');
+            var page  = 0;
+            function show(p) {
+                page = Math.max(0, Math.min(pages - 1, p));
+                rows.forEach(function (r) { r.hidden = parseInt(r.getAttribute('data-page'), 10) !== page; });
+                info.textContent = tpl.replace('%d', page + 1).replace('%d', pages);
+                prev.disabled = page === 0;
+                next.disabled = page === pages - 1;
+            }
+            prev.addEventListener('click', function () { show(page - 1); });
+            next.addEventListener('click', function () { show(page + 1); });
+        })();
+        </script>
+        <?php endif; ?>
     <?php endif; ?>
     </section>
 </div>

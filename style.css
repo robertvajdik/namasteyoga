@@ -1934,6 +1934,10 @@ img.teacher-thumb { display: inline-block; }
 .my-card-head + .booking-row { border-top: 0; padding-top: 0; }
 .my-card .booking-row + .booking-row { margin-top: 0; }
 .my-card .tbl-wrap { margin: 0; }
+.my-pager { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; }
+.my-pager-info { font-size: 13px; color: var(--text-muted); }
+#my-history tr[hidden] { display: none !important; }
+.my-pager .btn:disabled { opacity: .4; cursor: default; }
 /* Side column: one field per row, full-width actions. */
 .my-card--stack { flex-direction: column; align-items: stretch; gap: 14px; }
 .my-card--stack .pref-card-info { flex: 0 0 auto; }
