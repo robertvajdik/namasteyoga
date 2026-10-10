@@ -1907,6 +1907,49 @@ img.teacher-thumb { display: inline-block; }
     .profile-edit-form .profile-field { flex: 1 1 100%; }
     .profile-edit-form .btn { width: 100%; }
 }
+/* myprofile.php – two-column card layout: bookings/credits/history on the
+   left, account settings stacked in a narrower side column. */
+.my-layout {
+    display: grid; grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 24px; align-items: start;
+}
+.my-main, .my-side { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.my-card {
+    background: var(--surface-card); border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg); padding: 22px 24px;
+    box-shadow: var(--shadow-soft);
+}
+.my-card.pref-card { margin-bottom: 0; }
+.my-card-head {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
+}
+.my-card-head h3 { margin: 0; font-size: 18px; color: var(--text-strong); }
+.my-card .empty-state { padding: 12px 0 4px; }
+/* Bookings inside a card: flat rows split by hairlines instead of nested boxes. */
+.my-card .booking-row {
+    background: none; border: 0; box-shadow: none; border-radius: 0;
+    padding: 16px 0; border-top: 1px solid var(--border-subtle);
+}
+.my-card-head + .booking-row { border-top: 0; padding-top: 0; }
+.my-card .booking-row + .booking-row { margin-top: 0; }
+.my-card .tbl-wrap { margin: 0; }
+/* Side column: one field per row, full-width actions. */
+.my-card--stack { flex-direction: column; align-items: stretch; gap: 14px; }
+.my-card--stack .pref-card-info { flex: 0 0 auto; }
+.my-card--stack .pref-card-form { flex-direction: column; align-items: stretch; flex: 0 0 auto; }
+.my-card--stack .profile-edit-form .profile-field { flex: 0 0 auto; min-width: 0; margin: 0; }
+.my-card--stack .btn { width: 100%; align-self: stretch; }
+.my-card--stack .hint { margin: 0; }
+@media (max-width: 1000px) {
+    .my-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+    .my-card { padding: 18px 16px; }
+    .my-card .booking-row { grid-template-columns: 70px 1fr; }
+    .my-card .booking-actions { grid-column: 1 / -1; justify-content: flex-start; }
+}
+
 /* Credits (permanent-pass wallet) UI on myprofile.php + rezervace helpers. */
 .credits-balance {
     font-family: 'Playfair Display', serif;
@@ -1915,6 +1958,26 @@ img.teacher-thumb { display: inline-block; }
     line-height: 1.1; margin: 10px 0 2px;
 }
 .credits-balance-unit { font-size: 18px; color: var(--text-muted); font-weight: 400; margin-left: 4px; }
+/* Bank-transfer top-up: price picks, amount form and payment details in one box. */
+.credits-topup {
+    flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 12px;
+    border: 1px solid var(--border-subtle); border-radius: var(--radius-md, 12px);
+    padding: 14px 16px; background: var(--sand-50);
+}
+.credits-topup .credits-bank { margin-top: 0; }
+.credits-presets { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.credits-presets-lbl { flex: 1 1 100%; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
+.credits-preset {
+    display: inline-flex; flex-direction: column; align-items: flex-start; gap: 2px;
+    padding: 8px 14px; cursor: pointer; text-align: left;
+    background: var(--white); color: var(--text-strong);
+    border: 1px solid var(--border-default); border-radius: var(--radius-sm);
+    font: 400 13px/1.2 var(--font-body);
+    transition: border-color var(--dur-fast) var(--ease-calm), background var(--dur-fast) var(--ease-calm);
+}
+.credits-preset strong { font-size: 15px; font-weight: 600; }
+.credits-preset:hover { background: var(--sand-100); }
+.credits-preset.is-active { border-color: var(--sage-400); background: var(--sand-100); box-shadow: var(--focus-ring); }
 .credits-form { flex: 1 1 100%; align-items: flex-end; flex-wrap: nowrap; }
 /* Base `form label` margin pushes the input above the button baseline –
    drop it and size the button to the input so both share one line. */

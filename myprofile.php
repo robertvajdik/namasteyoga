@@ -307,6 +307,18 @@ $pendingTopupStmt = $pdo->prepare(
 $pendingTopupStmt->execute([$user['id']]);
 $pendingTopups = $pendingTopupStmt->fetchAll();
 
+// Top-up shortcuts taken from the ceník "open classes" cards (admin override
+// or translation default), so members can pay exactly for a pass.
+$topupPresets = [];
+for ($i = 1; $i <= 6; $i++) {
+    $title  = trim(ny_setting('cenik_open_' . $i . '_title', '')) ?: t('cenik.open.' . $i . '.title');
+    $amount = trim(ny_setting('cenik_open_' . $i . '_amount', '')) ?: t('cenik.open.' . $i . '.amount');
+    $kc     = (int)preg_replace('/[^0-9]/', '', $amount);
+    if ($kc >= 100 && $kc <= 20000 && !isset($topupPresets[$kc])) {
+        $topupPresets[$kc] = $title;
+    }
+}
+
 $iban        = trim((string)ny_setting('bank_iban', ''));
 $bankAccount = trim((string)ny_setting('bank_account_number', ''));
 
@@ -489,282 +501,333 @@ ny_render_header(t('my.title'), 'my', ['description' => t('my.meta.description')
 </section>
 <?php endif; ?>
 
-<div class="pref-card" id="credits">
-    <div class="pref-card-info">
-        <h3><?= e(t('my.credits.h')) ?></h3>
-        <p class="muted"><?= e(t('my.credits.desc')) ?></p>
-        <div class="credits-balance"><?= number_format($creditBalance, 0, ',', ' ') ?> <span class="credits-balance-unit"><?= e(t('my.credits.unit')) ?></span></div>
-        <?php if ($pendingTopups): ?>
-            <p class="hint">
-                <?php $sumPending = array_sum(array_map(fn($t) => (int)$t['amount_kc'], $pendingTopups)); ?>
-                <?= sprintf(e(t('my.credits.pending')), count($pendingTopups), (int)$sumPending) ?>
-            </p>
-        <?php endif; ?>
-    </div>
-    <form method="post" class="pref-card-form profile-edit-form credits-form">
-        <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
-        <input type="hidden" name="action" value="request_topup">
-        <label class="profile-field"><span><?= e(t('my.credits.amount')) ?></span>
-            <input type="number" id="credits-topup-amount" name="amount" min="100" max="20000" step="50" required inputmode="numeric" placeholder="500">
-        </label>
-        <label class="profile-field"><span><?= e(t('my.credits.note')) ?></span>
-            <input type="text" name="note" maxlength="200" placeholder="<?= e(t('my.credits.note.ph')) ?>">
-        </label>
-        <button class="btn btn-primary btn-sm" type="submit"><?= e(t('my.credits.request')) ?></button>
-    </form>
-    <form method="post" class="pref-card-form profile-edit-form credits-form" autocomplete="off">
-        <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
-        <input type="hidden" name="action" value="redeem_voucher">
-        <label class="profile-field"><span><?= e(t('my.credits.voucher.code')) ?></span>
-            <input type="text" name="code" maxlength="32" required placeholder="NY-XXXXXX" style="text-transform: uppercase">
-        </label>
-        <button class="btn btn-secondary btn-sm" type="submit"><?= e(t('my.credits.voucher.redeem')) ?></button>
-    </form>
-    <?php if ($iban !== '' || $bankAccount !== ''): ?>
-    <?php
-        $qrDefaultAmount = 500;
-        $qrMsg           = 'Kredit ' . (string)$user['display_name'];
-        $qrSpayd         = $iban !== '' ? ny_spayd($iban, (float)$qrDefaultAmount, $qrMsg) : '';
-    ?>
-    <details class="credits-bank">
-        <summary><?= e(t('my.credits.bank.summary')) ?></summary>
-        <dl class="credits-bank-dl">
-            <?php if ($bankAccount !== ''): ?>
-                <dt><?= e(t('my.credits.bank.account')) ?></dt>
-                <dd class="mono"><?= e($bankAccount) ?></dd>
-            <?php endif; ?>
-            <?php if ($iban !== ''): ?>
-                <dt><?= e(t('my.credits.bank.iban')) ?></dt>
-                <dd class="mono"><?= e($iban) ?></dd>
-            <?php endif; ?>
-            <dt><?= e(t('my.credits.bank.msg')) ?></dt>
-            <dd class="mono"><?= e($qrMsg) ?></dd>
-        </dl>
-        <?php if ($iban !== ''): ?>
-            <div class="credits-qr">
-                <div class="poukaz-qr-box" id="credits-qr"
-                     data-iban="<?= e($iban) ?>"
-                     data-amount="<?= (int)$qrDefaultAmount ?>"
-                     data-msg="<?= e($qrMsg) ?>"
-                     data-any-amount="<?= e(t('my.credits.bank.qr.any')) ?>"
-                     data-spayd="<?= e($qrSpayd) ?>"></div>
-                <div class="poukaz-qr-amount">
-                    <span><?= e(t('my.credits.bank.qr.amount')) ?></span>
-                    <strong id="credits-qr-amount-lbl"><?= number_format($qrDefaultAmount, 0, ',', ' ') ?> Kč</strong>
-                </div>
-                <p class="hint"><?= e(t('my.credits.bank.qr.hint')) ?></p>
-            </div>
-        <?php endif; ?>
-        <p class="hint"><?= e(t('my.credits.bank.hint')) ?></p>
-    </details>
-    <?php if ($iban !== ''): ?>
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
-    <script>
-    (function () {
-        var qrEl    = document.getElementById('credits-qr');
-        var amtEl   = document.getElementById('credits-topup-amount');
-        var lblEl   = document.getElementById('credits-qr-amount-lbl');
-        if (!qrEl) return;
-
-        function parseAmount(s) {
-            var m = String(s || '').replace(/[^0-9]/g, '');
-            return m ? parseInt(m, 10) : 0;
-        }
-        function buildSpayd(iban, amount, msg) {
-            var parts = ['SPD*1.0*ACC:' + iban.replace(/\s+/g, '').toUpperCase()];
-            if (amount > 0) parts.push('AM:' + amount.toFixed(2));
-            parts.push('CC:CZK');
-            if (msg) parts.push('MSG:' + msg.substring(0, 60));
-            return parts.join('*');
-        }
-        function render(amount) {
-            if (typeof QRCode === 'undefined') return;
-            var iban = qrEl.getAttribute('data-iban') || '';
-            var msg  = qrEl.getAttribute('data-msg')  || '';
-            if (!iban) return;
-            qrEl.innerHTML = '';
-            new QRCode(qrEl, {
-                text: buildSpayd(iban, amount, msg),
-                width: 220, height: 220,
-                correctLevel: QRCode.CorrectLevel.M
-            });
-            if (lblEl) {
-                var anyLbl = qrEl.getAttribute('data-any-amount') || '';
-                lblEl.textContent = amount > 0
-                    ? amount.toLocaleString('cs-CZ') + ' Kč'
-                    : anyLbl;
-            }
-        }
-
-        var initAmount = parseInt(qrEl.getAttribute('data-amount') || '0', 10) || 0;
-        window.addEventListener('load', function () { render(initAmount); });
-        if (amtEl) {
-            amtEl.addEventListener('input', function () {
-                var v = parseAmount(amtEl.value);
-                render(v > 0 ? v : initAmount);
-            });
-        }
-    })();
-    </script>
-    <?php endif; ?>
-    <?php endif; ?>
-    <?php if ($creditLedger): ?>
-    <details class="credits-history">
-        <summary><?= e(t('my.credits.history.h')) ?></summary>
-        <ul class="credits-history-list">
-            <?php foreach ($creditLedger as $row):
-                $dt = new DateTimeImmutable((string)$row['created_at']);
-                $delta = (int)$row['delta_kc'];
-                $kindKey = 'my.credits.kind.' . (string)$row['kind'];
-            ?>
-                <li>
-                    <span class="credits-history-date"><?= e($dt->format('j. n. Y')) ?></span>
-                    <span class="credits-history-kind"><?= e(t($kindKey)) ?><?= $row['note'] !== '' ? ' · ' . e((string)$row['note']) : '' ?></span>
-                    <span class="credits-history-delta <?= $delta >= 0 ? 'is-plus' : 'is-minus' ?>">
-                        <?= $delta > 0 ? '+' : '' ?><?= number_format($delta, 0, ',', ' ') ?>&nbsp;Kč
-                    </span>
-                </li>
-            <?php endforeach; ?>
-        </ul>
-    </details>
-    <?php endif; ?>
-</div>
-
-<div class="pref-card">
-    <div class="pref-card-info">
-        <h3><?= e(t('my.profile.h')) ?></h3>
-        <p class="muted"><?= e(t('my.profile.desc')) ?></p>
-    </div>
-    <form method="post" class="pref-card-form profile-edit-form">
-        <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
-        <input type="hidden" name="action" value="update_profile">
-        <label class="profile-field"><span><?= e(t('my.profile.name')) ?></span>
-            <input type="text" name="name" value="<?= e((string)$user['display_name']) ?>" required maxlength="190">
-        </label>
-        <label class="profile-field"><span><?= e(t('my.profile.email')) ?></span>
-            <input type="email" name="email" value="<?= e((string)$user['email']) ?>" required maxlength="190" autocomplete="email">
-        </label>
-        <label class="profile-field"><span><?= e(t('my.profile.phone')) ?></span>
-            <input type="tel" name="phone" value="<?= e((string)($user['phone'] ?? '')) ?>" maxlength="30" autocomplete="tel">
-        </label>
-        <button class="btn btn-primary btn-sm" type="submit"><?= e(t('my.profile.save')) ?></button>
-    </form>
-</div>
-
-<div class="pref-card">
-    <div class="pref-card-info">
-        <h3><?= e(t('my.password.h')) ?></h3>
-        <p class="muted"><?= e(t('my.password.desc')) ?></p>
-    </div>
-    <form method="post" class="pref-card-form profile-edit-form">
-        <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
-        <input type="hidden" name="action" value="change_password">
-        <label class="profile-field"><span><?= e(t('my.password.new')) ?></span>
-            <input type="password" name="new_password" required autocomplete="new-password" minlength="8">
-        </label>
-        <label class="profile-field"><span><?= e(t('my.password.new2')) ?></span>
-            <input type="password" name="new_password2" required autocomplete="new-password" minlength="8">
-        </label>
-        <button class="btn btn-primary btn-sm" type="submit"><?= e(t('my.password.save')) ?></button>
-    </form>
-    <form method="post" class="pref-card-form">
-        <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
-        <input type="hidden" name="action" value="send_password_reset">
-        <span class="hint"><?= e(t('my.password.reset.hint')) ?></span>
-        <button class="btn btn-ghost btn-sm" type="submit"><?= e(t('my.password.reset')) ?></button>
-    </form>
-</div>
-
-<div class="pref-card">
-    <div class="pref-card-info">
-        <h3><?= e(t('my.newsletter.h')) ?></h3>
-        <p class="muted"><?= sprintf(e(t('my.newsletter.desc')), e($user['email'])) ?></p>
-    </div>
-    <form method="post" class="pref-card-form">
-        <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
-        <input type="hidden" name="action" value="newsletter_toggle">
-        <label class="switch">
-            <input type="checkbox" name="subscribe" value="1" <?= $isSubscribed ? 'checked' : '' ?> onchange="this.form.submit()">
-            <span class="switch-track"><span class="switch-knob"></span></span>
-            <span class="switch-label"><?= e($isSubscribed ? t('my.newsletter.on') : t('my.newsletter.off')) ?></span>
-        </label>
-        <noscript><button class="btn btn-secondary btn-sm" type="submit"><?= e(t('my.newsletter.save')) ?></button></noscript>
-    </form>
-</div>
-
-<h2 class="section-h" id="upcoming"><?= e(t('my.upcoming.h')) ?></h2>
-<?php if (!$upcoming): ?>
-    <div class="card text-center empty-state">
-        <div class="empty-state-title"><?= e(t('my.upcoming.empty_title')) ?></div>
-        <p class="text-muted empty-state-hint"><?= e(t('my.upcoming.empty_hint')) ?></p>
-        <a class="btn btn-primary" href="rezervace.php"><?= e(t('my.upcoming.book')) ?></a>
-    </div>
-<?php else: ?>
-    <?php
-    $studioAddr = ny_setting('address', '');
-    foreach ($upcoming as $r):
-        $d = new DateTimeImmutable($r['class_date']);
-        $dow = (int)$d->format('N');
-        $gcalTitle   = $r['name'] . ' · ' . ny_setting('site_name', 'Studio Namasté');
-        $gcalDetails = 'Lektor: ' . $r['teacher']
-                     . ($r['room'] ? "\nSál: " . $r['room'] : '')
-                     . "\n\nRezervaci můžete spravovat na " . ny_base_url() . '/myprofile.php';
-        $gcalUrl = ny_gcal_url((string)$r['class_date'], (string)$r['start_time'], (string)$r['end_time'], $gcalTitle, $gcalDetails, $studioAddr);
-    ?>
-        <div class="booking-row">
-            <div class="date-block">
-                <div class="dow"><?= e($daysShort[$dow]) ?></div>
-                <div class="num"><?= e($d->format('j. n.')) ?></div>
-            </div>
-            <div class="info">
-                <div class="name"><?= e($r['name']) ?></div>
-                <div class="meta">
-                    <?= e(substr($r['start_time'], 0, 5)) ?> – <?= e(substr($r['end_time'], 0, 5)) ?>
-                    · <?= e($r['teacher']) ?><?php if ($r['room']): ?> · <?= e($r['room']) ?><?php endif; ?>
-                </div>
-            </div>
-            <div class="booking-actions">
-                <span class="badge badge-success"><span class="dot"></span><?= e(t('my.badge.confirmed')) ?></span>
-                <a class="btn btn-secondary btn-sm gcal-btn" href="<?= e($gcalUrl) ?>" target="_blank" rel="noopener" title="<?= e(t('my.gcal.title')) ?>">
-                    <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/><line x1="12" y1="13" x2="12" y2="19" stroke="currentColor" stroke-width="2"/><line x1="9" y1="16" x2="15" y2="16" stroke="currentColor" stroke-width="2"/></svg>
-                    <?= e(t('my.gcal.btn')) ?>
-                </a>
-                <form method="post" action="cancel.php" class="inline">
-                    <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
-                    <input type="hidden" name="class_id" value="<?= (int)$r['class_id'] ?>">
-                    <input type="hidden" name="class_date" value="<?= e($r['class_date']) ?>">
-                    <button class="btn btn-ghost btn-sm" type="submit"><?= e(t('my.btn.cancel')) ?></button>
-                </form>
-            </div>
+<div class="my-layout">
+<div class="my-main">
+    <section class="my-card" id="upcoming">
+        <div class="my-card-head">
+            <h3><?= e(t('my.upcoming.h')) ?></h3>
+            <?php if ($upcoming): ?><a class="btn btn-secondary btn-sm" href="rezervace.php"><?= e(t('my.upcoming.book')) ?></a><?php endif; ?>
         </div>
-    <?php endforeach; ?>
-<?php endif; ?>
+    <?php if (!$upcoming): ?>
+        <div class="text-center empty-state">
+            <div class="empty-state-title"><?= e(t('my.upcoming.empty_title')) ?></div>
+            <p class="text-muted empty-state-hint"><?= e(t('my.upcoming.empty_hint')) ?></p>
+            <a class="btn btn-primary" href="rezervace.php"><?= e(t('my.upcoming.book')) ?></a>
+        </div>
+    <?php else: ?>
+        <?php
+        $studioAddr = ny_setting('address', '');
+        foreach ($upcoming as $r):
+            $d = new DateTimeImmutable($r['class_date']);
+            $dow = (int)$d->format('N');
+            $gcalTitle   = $r['name'] . ' · ' . ny_setting('site_name', 'Studio Namasté');
+            $gcalDetails = 'Lektor: ' . $r['teacher']
+                         . ($r['room'] ? "\nSál: " . $r['room'] : '')
+                         . "\n\nRezervaci můžete spravovat na " . ny_base_url() . '/myprofile.php';
+            $gcalUrl = ny_gcal_url((string)$r['class_date'], (string)$r['start_time'], (string)$r['end_time'], $gcalTitle, $gcalDetails, $studioAddr);
+        ?>
+            <div class="booking-row">
+                <div class="date-block">
+                    <div class="dow"><?= e($daysShort[$dow]) ?></div>
+                    <div class="num"><?= e($d->format('j. n.')) ?></div>
+                </div>
+                <div class="info">
+                    <div class="name"><?= e($r['name']) ?></div>
+                    <div class="meta">
+                        <?= e(substr($r['start_time'], 0, 5)) ?> – <?= e(substr($r['end_time'], 0, 5)) ?>
+                        · <?= e($r['teacher']) ?><?php if ($r['room']): ?> · <?= e($r['room']) ?><?php endif; ?>
+                    </div>
+                </div>
+                <div class="booking-actions">
+                    <span class="badge badge-success"><span class="dot"></span><?= e(t('my.badge.confirmed')) ?></span>
+                    <a class="btn btn-secondary btn-sm gcal-btn" href="<?= e($gcalUrl) ?>" target="_blank" rel="noopener" title="<?= e(t('my.gcal.title')) ?>">
+                        <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2"/><line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/><line x1="12" y1="13" x2="12" y2="19" stroke="currentColor" stroke-width="2"/><line x1="9" y1="16" x2="15" y2="16" stroke="currentColor" stroke-width="2"/></svg>
+                        <?= e(t('my.gcal.btn')) ?>
+                    </a>
+                    <form method="post" action="cancel.php" class="inline">
+                        <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+                        <input type="hidden" name="class_id" value="<?= (int)$r['class_id'] ?>">
+                        <input type="hidden" name="class_date" value="<?= e($r['class_date']) ?>">
+                        <button class="btn btn-ghost btn-sm" type="submit"><?= e(t('my.btn.cancel')) ?></button>
+                    </form>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    <?php endif; ?>
+    </section>
 
-<h2 class="section-h section-h-gap"><?= e(t('my.history.h')) ?></h2>
-<?php if (!$history): ?>
-    <p class="hint"><?= e(t('my.history.empty')) ?></p>
-<?php else: ?>
-    <div class="tbl-wrap">
-        <table class="tbl">
-            <thead><tr><th><?= e(t('my.history.col.date')) ?></th><th><?= e(t('my.history.col.class')) ?></th><th><?= e(t('my.history.col.teacher')) ?></th><th><?= e(t('my.history.col.status')) ?></th></tr></thead>
-            <tbody>
-            <?php foreach ($history as $r):
-                $d = new DateTimeImmutable($r['class_date']); ?>
-                <tr>
-                    <td data-label="<?= e(t('my.history.col.date')) ?>"><?= e($d->format('j. n. Y')) ?></td>
-                    <td data-label="<?= e(t('my.history.col.class')) ?>"><?= e($r['name']) ?></td>
-                    <td data-label="<?= e(t('my.history.col.teacher')) ?>"><?= e($r['teacher']) ?></td>
-                    <td data-label="<?= e(t('my.history.col.status')) ?>">
-                        <?php if ($r['status'] === 'cancelled'): ?>
-                            <span class="badge badge-danger"><?= e(t('my.history.status.cancelled')) ?></span>
-                        <?php else: ?>
-                            <span class="badge"><?= e(t('my.history.status.attended')) ?></span>
-                        <?php endif; ?>
-                    </td>
-                </tr>
+    <section class="pref-card my-card" id="credits">
+        <div class="pref-card-info">
+            <h3><?= e(t('my.credits.h')) ?></h3>
+            <p class="muted"><?= e(t('my.credits.desc')) ?></p>
+            <div class="credits-balance"><?= number_format($creditBalance, 0, ',', ' ') ?> <span class="credits-balance-unit"><?= e(t('my.credits.unit')) ?></span></div>
+            <?php if ($pendingTopups): ?>
+                <p class="hint">
+                    <?php $sumPending = array_sum(array_map(fn($t) => (int)$t['amount_kc'], $pendingTopups)); ?>
+                    <?= sprintf(e(t('my.credits.pending')), count($pendingTopups), (int)$sumPending) ?>
+                </p>
+            <?php endif; ?>
+        </div>
+        <div class="credits-topup">
+        <?php if ($topupPresets): ?>
+        <div class="credits-presets" role="group" aria-label="<?= e(t('my.credits.presets')) ?>">
+            <span class="credits-presets-lbl"><?= e(t('my.credits.presets')) ?></span>
+            <?php foreach ($topupPresets as $kc => $title): ?>
+                <button type="button" class="credits-preset" data-amount="<?= (int)$kc ?>">
+                    <span><?= e($title) ?></span>
+                    <strong><?= number_format($kc, 0, ',', ' ') ?> Kč</strong>
+                </button>
             <?php endforeach; ?>
-            </tbody>
-        </table>
-    </div>
-<?php endif; ?>
+        </div>
+        <script>
+        (function () {
+            var btns = document.querySelectorAll('.credits-preset');
+            // The amount input is rendered after this script, so resolve it lazily.
+            function amountEl() { return document.getElementById('credits-topup-amount'); }
+            function sync() {
+                var amt = amountEl();
+                btns.forEach(function (o) { o.classList.toggle('is-active', !!amt && o.getAttribute('data-amount') === amt.value); });
+            }
+            btns.forEach(function (b) {
+                b.addEventListener('click', function () {
+                    var amt = amountEl();
+                    if (!amt) return;
+                    amt.value = b.getAttribute('data-amount');
+                    amt.dispatchEvent(new Event('input', { bubbles: true }));
+                    sync();
+                    var bank = document.querySelector('.credits-bank');
+                    if (bank) bank.open = true;
+                });
+            });
+            document.addEventListener('input', function (ev) {
+                if (ev.target && ev.target.id === 'credits-topup-amount') sync();
+            });
+        })();
+        </script>
+        <?php endif; ?>
+        <form method="post" class="pref-card-form profile-edit-form credits-form">
+            <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+            <input type="hidden" name="action" value="request_topup">
+            <label class="profile-field"><span><?= e(t('my.credits.amount')) ?></span>
+                <input type="number" id="credits-topup-amount" name="amount" min="100" max="20000" step="50" required inputmode="numeric" placeholder="500">
+            </label>
+            <label class="profile-field"><span><?= e(t('my.credits.note')) ?></span>
+                <input type="text" name="note" maxlength="200" placeholder="<?= e(t('my.credits.note.ph')) ?>">
+            </label>
+            <button class="btn btn-primary btn-sm" type="submit"><?= e(t('my.credits.request')) ?></button>
+        </form>
+        <?php if ($iban !== '' || $bankAccount !== ''): ?>
+        <?php
+            $qrDefaultAmount = 500;
+            $qrMsg           = 'Kredit ' . (string)$user['display_name'];
+            $qrSpayd         = $iban !== '' ? ny_spayd($iban, (float)$qrDefaultAmount, $qrMsg) : '';
+        ?>
+        <details class="credits-bank" open>
+            <summary><?= e(t('my.credits.bank.summary')) ?></summary>
+            <dl class="credits-bank-dl">
+                <?php if ($bankAccount !== ''): ?>
+                    <dt><?= e(t('my.credits.bank.account')) ?></dt>
+                    <dd class="mono"><?= e($bankAccount) ?></dd>
+                <?php endif; ?>
+                <?php if ($iban !== ''): ?>
+                    <dt><?= e(t('my.credits.bank.iban')) ?></dt>
+                    <dd class="mono"><?= e($iban) ?></dd>
+                <?php endif; ?>
+                <dt><?= e(t('my.credits.bank.msg')) ?></dt>
+                <dd class="mono"><?= e($qrMsg) ?></dd>
+            </dl>
+            <?php if ($iban !== ''): ?>
+                <div class="credits-qr">
+                    <div class="poukaz-qr-box" id="credits-qr"
+                         data-iban="<?= e($iban) ?>"
+                         data-amount="<?= (int)$qrDefaultAmount ?>"
+                         data-msg="<?= e($qrMsg) ?>"
+                         data-any-amount="<?= e(t('my.credits.bank.qr.any')) ?>"
+                         data-spayd="<?= e($qrSpayd) ?>"></div>
+                    <div class="poukaz-qr-amount">
+                        <span><?= e(t('my.credits.bank.qr.amount')) ?></span>
+                        <strong id="credits-qr-amount-lbl"><?= number_format($qrDefaultAmount, 0, ',', ' ') ?> Kč</strong>
+                    </div>
+                    <p class="hint"><?= e(t('my.credits.bank.qr.hint')) ?></p>
+                </div>
+            <?php endif; ?>
+            <p class="hint"><?= e(t('my.credits.bank.hint')) ?></p>
+        </details>
+        <?php if ($iban !== ''): ?>
+        <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" defer></script>
+        <script>
+        (function () {
+            var qrEl    = document.getElementById('credits-qr');
+            var amtEl   = document.getElementById('credits-topup-amount');
+            var lblEl   = document.getElementById('credits-qr-amount-lbl');
+            if (!qrEl) return;
+
+            function parseAmount(s) {
+                var m = String(s || '').replace(/[^0-9]/g, '');
+                return m ? parseInt(m, 10) : 0;
+            }
+            function buildSpayd(iban, amount, msg) {
+                var parts = ['SPD*1.0*ACC:' + iban.replace(/\s+/g, '').toUpperCase()];
+                if (amount > 0) parts.push('AM:' + amount.toFixed(2));
+                parts.push('CC:CZK');
+                if (msg) parts.push('MSG:' + msg.substring(0, 60));
+                return parts.join('*');
+            }
+            function render(amount) {
+                if (typeof QRCode === 'undefined') return;
+                var iban = qrEl.getAttribute('data-iban') || '';
+                var msg  = qrEl.getAttribute('data-msg')  || '';
+                if (!iban) return;
+                qrEl.innerHTML = '';
+                new QRCode(qrEl, {
+                    text: buildSpayd(iban, amount, msg),
+                    width: 220, height: 220,
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+                if (lblEl) {
+                    var anyLbl = qrEl.getAttribute('data-any-amount') || '';
+                    lblEl.textContent = amount > 0
+                        ? amount.toLocaleString('cs-CZ') + ' Kč'
+                        : anyLbl;
+                }
+            }
+
+            var initAmount = parseInt(qrEl.getAttribute('data-amount') || '0', 10) || 0;
+            window.addEventListener('load', function () { render(initAmount); });
+            if (amtEl) {
+                amtEl.addEventListener('input', function () {
+                    var v = parseAmount(amtEl.value);
+                    render(v > 0 ? v : initAmount);
+                });
+            }
+        })();
+        </script>
+        <?php endif; ?>
+        <?php endif; ?>
+        </div>
+        <form method="post" class="pref-card-form profile-edit-form credits-form" autocomplete="off">
+            <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+            <input type="hidden" name="action" value="redeem_voucher">
+            <label class="profile-field"><span><?= e(t('my.credits.voucher.code')) ?></span>
+                <input type="text" name="code" maxlength="32" required placeholder="NY-XXXXXX" style="text-transform: uppercase">
+            </label>
+            <button class="btn btn-secondary btn-sm" type="submit"><?= e(t('my.credits.voucher.redeem')) ?></button>
+        </form>
+        <?php if ($creditLedger): ?>
+        <details class="credits-history">
+            <summary><?= e(t('my.credits.history.h')) ?></summary>
+            <ul class="credits-history-list">
+                <?php foreach ($creditLedger as $row):
+                    $dt = new DateTimeImmutable((string)$row['created_at']);
+                    $delta = (int)$row['delta_kc'];
+                    $kindKey = 'my.credits.kind.' . (string)$row['kind'];
+                ?>
+                    <li>
+                        <span class="credits-history-date"><?= e($dt->format('j. n. Y')) ?></span>
+                        <span class="credits-history-kind"><?= e(t($kindKey)) ?><?= $row['note'] !== '' ? ' · ' . e((string)$row['note']) : '' ?></span>
+                        <span class="credits-history-delta <?= $delta >= 0 ? 'is-plus' : 'is-minus' ?>">
+                            <?= $delta > 0 ? '+' : '' ?><?= number_format($delta, 0, ',', ' ') ?>&nbsp;Kč
+                        </span>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+        </details>
+        <?php endif; ?>
+    </section>
+
+    <section class="my-card">
+        <div class="my-card-head"><h3><?= e(t('my.history.h')) ?></h3></div>
+    <?php if (!$history): ?>
+        <p class="hint"><?= e(t('my.history.empty')) ?></p>
+    <?php else: ?>
+        <div class="tbl-wrap">
+            <table class="tbl">
+                <thead><tr><th><?= e(t('my.history.col.date')) ?></th><th><?= e(t('my.history.col.class')) ?></th><th><?= e(t('my.history.col.teacher')) ?></th><th><?= e(t('my.history.col.status')) ?></th></tr></thead>
+                <tbody>
+                <?php foreach ($history as $r):
+                    $d = new DateTimeImmutable($r['class_date']); ?>
+                    <tr>
+                        <td data-label="<?= e(t('my.history.col.date')) ?>"><?= e($d->format('j. n. Y')) ?></td>
+                        <td data-label="<?= e(t('my.history.col.class')) ?>"><?= e($r['name']) ?></td>
+                        <td data-label="<?= e(t('my.history.col.teacher')) ?>"><?= e($r['teacher']) ?></td>
+                        <td data-label="<?= e(t('my.history.col.status')) ?>">
+                            <?php if ($r['status'] === 'cancelled'): ?>
+                                <span class="badge badge-danger"><?= e(t('my.history.status.cancelled')) ?></span>
+                            <?php else: ?>
+                                <span class="badge"><?= e(t('my.history.status.attended')) ?></span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+    </section>
+</div>
+
+<aside class="my-side">
+    <section class="pref-card my-card my-card--stack">
+        <div class="pref-card-info">
+            <h3><?= e(t('my.profile.h')) ?></h3>
+            <p class="muted"><?= e(t('my.profile.desc')) ?></p>
+        </div>
+        <form method="post" class="pref-card-form profile-edit-form">
+            <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+            <input type="hidden" name="action" value="update_profile">
+            <label class="profile-field"><span><?= e(t('my.profile.name')) ?></span>
+                <input type="text" name="name" value="<?= e((string)$user['display_name']) ?>" required maxlength="190">
+            </label>
+            <label class="profile-field"><span><?= e(t('my.profile.email')) ?></span>
+                <input type="email" name="email" value="<?= e((string)$user['email']) ?>" required maxlength="190" autocomplete="email">
+            </label>
+            <label class="profile-field"><span><?= e(t('my.profile.phone')) ?></span>
+                <input type="tel" name="phone" value="<?= e((string)($user['phone'] ?? '')) ?>" maxlength="30" autocomplete="tel">
+            </label>
+            <button class="btn btn-primary btn-sm" type="submit"><?= e(t('my.profile.save')) ?></button>
+        </form>
+    </section>
+
+    <section class="pref-card my-card my-card--stack">
+        <div class="pref-card-info">
+            <h3><?= e(t('my.password.h')) ?></h3>
+            <p class="muted"><?= e(t('my.password.desc')) ?></p>
+        </div>
+        <form method="post" class="pref-card-form profile-edit-form">
+            <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+            <input type="hidden" name="action" value="change_password">
+            <label class="profile-field"><span><?= e(t('my.password.new')) ?></span>
+                <input type="password" name="new_password" required autocomplete="new-password" minlength="8">
+            </label>
+            <label class="profile-field"><span><?= e(t('my.password.new2')) ?></span>
+                <input type="password" name="new_password2" required autocomplete="new-password" minlength="8">
+            </label>
+            <button class="btn btn-primary btn-sm" type="submit"><?= e(t('my.password.save')) ?></button>
+        </form>
+        <form method="post" class="pref-card-form">
+            <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+            <input type="hidden" name="action" value="send_password_reset">
+            <span class="hint"><?= e(t('my.password.reset.hint')) ?></span>
+            <button class="btn btn-ghost btn-sm" type="submit"><?= e(t('my.password.reset')) ?></button>
+        </form>
+    </section>
+
+    <section class="pref-card my-card my-card--stack">
+        <div class="pref-card-info">
+            <h3><?= e(t('my.newsletter.h')) ?></h3>
+            <p class="muted"><?= sprintf(e(t('my.newsletter.desc')), e($user['email'])) ?></p>
+        </div>
+        <form method="post" class="pref-card-form">
+            <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+            <input type="hidden" name="action" value="newsletter_toggle">
+            <label class="switch">
+                <input type="checkbox" name="subscribe" value="1" <?= $isSubscribed ? 'checked' : '' ?> onchange="this.form.submit()">
+                <span class="switch-track"><span class="switch-knob"></span></span>
+                <span class="switch-label"><?= e($isSubscribed ? t('my.newsletter.on') : t('my.newsletter.off')) ?></span>
+            </label>
+            <noscript><button class="btn btn-secondary btn-sm" type="submit"><?= e(t('my.newsletter.save')) ?></button></noscript>
+        </form>
+    </section>
+</aside>
+</div>
 <?php ny_render_footer();
