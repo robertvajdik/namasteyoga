@@ -4,7 +4,9 @@ declare(strict_types=1);
 require __DIR__ . '/src/layout.php';
 
 ny_render_header(t('styly.title'), 'styly', [
-    'description' => t('styly.meta.description')
+    'description'  => t('styly.meta.description'),
+    'og_image'     => 'assets/banners/styly_namasteyoga.cz.jpg',
+    'og_image_alt' => t('styly.hero.title'),
 ]);
 
 $toggleMore = e(t('styly.toggle.more'));
@@ -165,6 +167,7 @@ $toggleLess = e(t('styly.toggle.less'));
         <h2 class="section-h"><?= e(t('styly.sec3.title')) ?></h2>
         <p class="styly-section-lead"><?= e(t('styly.sec3.lead')) ?></p>
     </div>
+    <div class="styly-split">
     <div class="styly-list">
         <article class="styly-item">
             <h3><?= t('styly.panevni.title') ?></h3>
@@ -253,6 +256,10 @@ $toggleLess = e(t('styly.toggle.less'));
                 </div>
             </details>
         </article>
+    </div>
+    <figure class="styly-photo">
+        <img src="assets/banners/styly2_namasteyoga.cz.jpg" alt="<?= e(t('styly.photo.alt')) ?>" loading="lazy" decoding="async">
+    </figure>
     </div>
 </section>
 

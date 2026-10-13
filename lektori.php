@@ -5,12 +5,13 @@ require __DIR__ . '/src/layout.php';
 
 $teachers = ny_teachers_active();
 
-ny_render_header(t('lektori.title'), 'lektori', ['description' => t('lektori.meta.description')]);
+ny_render_header(t('lektori.title'), 'lektori', [
+    'description'  => t('lektori.meta.description'),
+    'og_image'     => 'assets/banners/lektori_namasteyoga.cz.jpg',
+    'og_image_alt' => t('lektori.hero.title'),
+]);
 ?>
-<section class="page-hero-media">
-    <div class="page-hero-media-img">
-        <img src="assets/banners/lektori_namasteyoga.cz.jpg" alt="<?= e(t('lektori.hero.title')) ?>" loading="eager">
-    </div>
+<section class="page-hero-media page-hero-media--bg page-hero-media--lektori" role="img" aria-label="<?= e(t('lektori.hero.title')) ?>">
     <div class="page-hero-media-body">
         <div class="eyebrow"><?= e(t('lektori.hero.eyebrow')) ?></div>
         <h1 class="page-title"><?= e(t('lektori.hero.title')) ?></h1>

@@ -468,7 +468,9 @@ function ny_render_header(string $title, string $active = '', array $opts = []):
         ?: 'Studio Namasté Yoga v Uherském Brodě – jóga, pilates, masáže a individuální lekce pro začátečníky i pokročilé.';
     $desc    = trim((string)($opts['description'] ?? '')) ?: $defaultDesc;
     $kw      = trim((string)($s['meta_keywords'] ?? ''));
-    $ogImg   = trim((string)($s['og_image'] ?? '')) ?: 'assets/logo_namasteyoga.png';
+    $ogImg   = trim((string)($opts['og_image'] ?? ''))
+        ?: trim((string)($s['og_image'] ?? ''))
+        ?: 'assets/logo_namasteyoga.png';
 
     $baseUrl = rtrim(ny_base_url(), '/');
     // Canonical URL: strip tracking + session params so crawlers consolidate

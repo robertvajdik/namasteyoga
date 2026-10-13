@@ -3226,6 +3226,33 @@ img, iframe, video { max-width: 100%; }
 
 .styly-list { display: grid; grid-template-columns: 1fr; gap: 24px; }
 
+.styly-split {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    gap: 32px;
+    align-items: start;
+}
+.styly-photo {
+    margin: 0;
+    position: sticky;
+    top: 100px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0,0,0,.08);
+}
+.styly-photo img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 640px;
+    object-fit: cover;
+}
+@media (max-width: 900px) {
+    .styly-split { grid-template-columns: 1fr; gap: 24px; }
+    .styly-photo { position: static; order: -1; }
+    .styly-photo img { max-height: 320px; }
+}
+
 .styly-item {
     background: var(--surface-card);
     border-radius: var(--radius-lg);
@@ -5560,6 +5587,7 @@ body.voucher-page {
 .page-hero-media--individ { background-image: url('assets/banners/individu%C3%A1lni_lekce_namasteyoga.cz.jpg'); }
 .page-hero-media--kontakt { background-image: url('assets/banners/kontakt_namasteyoga.cz.jpg'); }
 .page-hero-media--lekce { background-image: url('assets/banners/lekceakurzy_namasteyoga.cz.jpg'); }
+.page-hero-media--lektori { background-image: url('assets/banners/lektori_namasteyoga.cz.jpg'); }
 .page-hero-media--masaze { background-image: url('assets/banners/masaze_fyzio_namasteyoga.cz.jpg'); }
 .page-hero-media--styly { background-image: url('assets/banners/styly_namasteyoga.cz.jpg'); }
 
