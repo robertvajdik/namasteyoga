@@ -29,7 +29,7 @@ function ny_admin_render_header(string $title, string $active = ''): void {
 <div class="admin-layout">
     <aside class="admin-sidebar" role="navigation" aria-label="Admin menu">
         <div class="admin-brand">
-            <img src="../assets/logoCream.png" alt="Namasté">
+            <img src="../assets/logo_namasteyoga.png" alt="Namasté">
             <div>
                 <strong>Namasté</strong>
                 <small>Administrace</small>
@@ -40,7 +40,8 @@ function ny_admin_render_header(string $title, string $active = ''): void {
             <div class="sep">Provoz</div>
             <a href="reservations.php" class="<?= $active === 'reservations' ? 'is-active' : '' ?>"><?= ny_icon('calendar', 16) ?> Rezervace</a>
             <a href="classes.php"      class="<?= $active === 'classes'      ? 'is-active' : '' ?>"><?= ny_icon('menu', 16) ?> Lekce</a>
-            <a href="users.php"        class="<?= $active === 'users'        ? 'is-active' : '' ?>"><?= ny_icon('user', 16) ?> Uživatelé</a>
+            <a href="therapy.php"      class="<?= $active === 'therapy'      ? 'is-active' : '' ?>"><?= ny_icon('calendar', 16) ?> Masáže – termíny</a>
+            <a href="users.php"       class="<?= $active === 'users'        ? 'is-active' : '' ?>"><?= ny_icon('user', 16) ?> Uživatelé</a>
             <a href="credits.php"      class="<?= $active === 'credits'      ? 'is-active' : '' ?>"><?= ny_icon('tag', 16) ?> Kredity</a>
             <div class="sep">Obsah</div>
             <a href="teachers.php"     class="<?= $active === 'teachers'     ? 'is-active' : '' ?>"><?= ny_icon('user', 16) ?> Lektoři</a>

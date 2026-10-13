@@ -447,7 +447,7 @@ ny_admin_render_header('Kredity', 'credits');
                     <td data-label="Datum"><?= e($dt->format('j. n. Y H:i')) ?></td>
                     <td data-label="Uživatel"><?= e((string)$l['display_name']) ?><br><small class="hint"><?= e((string)$l['email']) ?></small></td>
                     <td data-label="Typ"><span class="badge"><?= e($label) ?></span><?php if ($ref !== ''): ?><br><small class="hint mono"><?= e($ref) ?></small><?php endif; ?></td>
-                    <td data-label="Změna" class="text-right"><strong style="color: <?= $delta >= 0 ? 'var(--success, #2a7a2a)' : 'var(--danger, #a33)' ?>"><?= $delta > 0 ? '+' : '' ?><?= number_format($delta, 0, ',', ' ') ?> Kč</strong></td>
+                    <td data-label="Změna" class="text-right"><strong class="<?= $delta >= 0 ? 'delta-plus' : 'delta-minus' ?>"><?= $delta > 0 ? '+' : '' ?><?= number_format($delta, 0, ',', ' ') ?> Kč</strong></td>
                     <td data-label="Zůstatek po" class="text-right"><?= number_format((int)$l['balance_kc'], 0, ',', ' ') ?> Kč</td>
                     <td data-label="Poznámka"><?= e((string)$l['note']) ?></td>
                 </tr>

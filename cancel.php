@@ -13,18 +13,19 @@ if (!$user) {
     ny_redirect('login.php');
 }
 
+$return    = (string)($_POST['return'] ?? '');
 $classId   = (int)($_POST['class_id'] ?? 0);
 $classDate = (string)($_POST['class_date'] ?? '');
 $dateObj   = DateTimeImmutable::createFromFormat('Y-m-d', $classDate);
 if (!$classId || !$dateObj) {
-    ny_redirect('rezervace.php');
+    ny_redirect(ny_booking_return_url($return));
 }
 
 try {
     $res = ny_cancel_reservation((int)$user['id'], $classId, $classDate);
 } catch (Throwable $e) {
     ny_flash_set('err', $e->getMessage());
-    ny_redirect('rezervace.php?week=' . $classDate);
+    ny_redirect(ny_booking_return_url($return, $classDate));
 }
 
 if (!$res['ok']) {
@@ -34,4 +35,4 @@ if (!$res['ok']) {
 } else {
     ny_flash_set('ok', t('cancel.flash.ok'));
 }
-ny_redirect('rezervace.php?week=' . $classDate);
+ny_redirect(ny_booking_return_url($return, $classDate));

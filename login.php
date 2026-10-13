@@ -17,6 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pass      = (string)($_POST['password'] ?? '');
     $classId   = (int)($_POST['return_class_id'] ?? 0);
     $classDate = (string)($_POST['return_class_date'] ?? '');
+    $return    = (string)($_POST['return'] ?? '');
 
     $stmt = ny_db()->prepare('SELECT * FROM ny_users WHERE email = ? LIMIT 1');
     $stmt->execute([$regEmail]);
@@ -36,15 +37,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ny_flash_set($r['ok'] ? 'ok' : 'err', $r['ok']
                 ? t('reserve.flash.confirmed', $r['class']['name'], $r['date']->format('j. n. Y'))
                 : $r['msg']);
-            ny_redirect('rezervace.php?week=' . rawurlencode($classDate));
+            ny_redirect(ny_booking_return_url($return, $classDate));
         }
-        ny_redirect('rezervace.php');
+        ny_redirect($return !== '' ? ny_booking_return_url($return) : 'rezervace.php');
     }
     $error = t('login.err.bad_credentials');
 }
 
 $returnClassDate = (string)($_GET['class_date'] ?? '');
 $returnClassId   = (int)($_GET['class_id'] ?? 0);
+$returnPage      = (string)($_GET['return'] ?? '');
 
 ny_render_header(t('login.title'), 'login', ['description' => t('login.meta.description'), 'noindex' => true]);
 ?>
@@ -62,6 +64,7 @@ ny_render_header(t('login.title'), 'login', ['description' => t('login.meta.desc
         <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
         <input type="hidden" name="return_class_date" value="<?= e($returnClassDate) ?>">
         <input type="hidden" name="return_class_id" value="<?= $returnClassId ?>">
+        <input type="hidden" name="return" value="<?= e($returnPage) ?>">
         <label><?= e(t('login.field.email')) ?>
             <input type="email" name="email" value="<?= e($regEmail) ?>" required autocomplete="email">
         </label>

@@ -16,7 +16,7 @@ ny_render_header(t('notfound.title'), '', [
     <p class="page-lead">
         <?= e(t('notfound.hero.lead')) ?>
     </p>
-    <p style="margin-top: var(--space-5); display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+    <p class="notfound-actions">
         <a href="index.php" class="btn btn-primary"><?= e(t('notfound.cta.home')) ?></a>
         <a href="rezervace.php" class="btn"><?= e(t('notfound.cta.schedule')) ?></a>
     </p>

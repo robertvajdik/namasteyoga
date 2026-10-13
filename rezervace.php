@@ -136,13 +136,30 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
     <span><?= e(t('rezervace.pay.hint')) ?></span>
 </p>
 
+<?php
+// Two calendars for the same week: group classes on top, massage / physio
+// slots (ny_is_therapy_class()) in a separate calendar underneath.
+$calendars = ['main' => [], 'therapy' => []];
+foreach ($classes as $c) {
+    $calendars[ny_is_therapy_class($c) ? 'therapy' : 'main'][] = $c;
+}
+foreach ($calendars as $calKey => $calClasses):
+    if ($calKey === 'therapy'):
+        if (!$calClasses) continue;
+?>
+<section id="masaze-fyzio" class="section-title-block section-h-gap">
+    <div class="eyebrow"><?= e(t('rezervace.therapy.eyebrow')) ?></div>
+    <h2 class="page-title"><?= e(t('rezervace.therapy.title')) ?></h2>
+    <p class="page-lead"><?= e(t('rezervace.therapy.lead')) ?></p>
+</section>
+<?php endif; ?>
 <div class="week-grid">
 <?php for ($d = 1; $d <= 7; $d++):
     $date       = $monday->modify('+' . ($d - 1) . ' days');
     $dateStr    = $date->format('Y-m-d');
     $isPast     = $date < $today;
     $isToday    = $date == $today;
-    $dayClasses = array_values(array_filter($classes, function ($c) use ($d, $dateStr) {
+    $dayClasses = array_values(array_filter($calClasses, function ($c) use ($d, $dateStr) {
         if ((int)$c['day_of_week'] !== $d) return false;
         if (!empty($c['starts_on']) && $dateStr < $c['starts_on']) return false;
         if (!empty($c['ends_on'])   && $dateStr > $c['ends_on'])   return false;
@@ -163,12 +180,13 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
             $capacity = (int)$c['capacity'];
             $left     = max(0, $capacity - $taken);
             $booked   = isset($mine[$key]);
-            $cat      = ny_category((string)$c['name']);
+            $cat      = ny_is_therapy_class($c) ? 'massage' : ny_category((string)$c['name']);
         ?>
             <?php
                 $roster        = $rosters[$key] ?? [];
                 $rosterTitle   = $c['name'] . ' · ' . $date->format('j. n.') . ' · ' . substr($c['start_time'], 0, 5);
-                $canShowRoster = $user && $taken > 0;
+                // Massage / physio clients stay private – no roster for those slots.
+                $canShowRoster = $user && $taken > 0 && $cat !== 'massage';
             ?>
             <article class="class-card <?= $left === 0 ? 'is-full' : '' ?> <?= $canShowRoster ? 'has-roster' : '' ?>"
                      data-cat="<?= e($cat) ?>"
@@ -183,7 +201,7 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
                 </div>
                 <?php
                     $classPrice  = trim((string)($c['price'] ?? ''));
-                    $price       = $classPrice !== '' ? $classPrice : ny_class_price((string)$c['name']);
+                    $price       = $classPrice !== '' ? $classPrice : ($cat === 'massage' ? null : ny_class_price((string)$c['name']));
                     $priceAmount = $price !== null ? ny_price_amount($price) : null;
                     $showQr      = $iban !== '' && $priceAmount !== null && $priceAmount > 0;
                     $creditPrice = $priceAmount !== null && $priceAmount > 0 ? ny_credit_price($priceAmount) : null;
@@ -264,6 +282,7 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
     </section>
 <?php endfor; ?>
 </div>
+<?php endforeach; ?>
 
 <p class="schedule-price-hint hint">
     <?= t('rezervace.price.hint') ?>

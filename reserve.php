@@ -11,7 +11,7 @@ ny_csrf_check($_POST['csrf'] ?? null);
 $user = ny_current_user();
 if (!$user) {
     ny_flash_set('err', t('reserve.err.login_required'));
-    ny_redirect('login.php');
+    ny_redirect(($_POST['return'] ?? '') === 'masaze' ? 'login.php?return=masaze' : 'login.php');
 }
 
 $classId   = (int)($_POST['class_id'] ?? 0);
@@ -32,4 +32,4 @@ if ($result['ok']) {
     ny_flash_set('err', $result['msg']);
 }
 
-ny_redirect('rezervace.php?week=' . rawurlencode($classDate));
+ny_redirect(ny_booking_return_url((string)($_POST['return'] ?? ''), $classDate));

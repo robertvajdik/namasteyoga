@@ -149,7 +149,7 @@ $user = ny_current_user();
 $today = (new DateTimeImmutable('today'))->format('Y-m-d');
 
 $upcomingStmt = $pdo->prepare(
-    "SELECT r.*, c.name, c.teacher, c.room, c.start_time, c.end_time, c.day_of_week
+    "SELECT r.*, c.name, c.teacher, c.room, c.start_time, c.end_time, c.day_of_week, c.kind
        FROM ny_reservations r
        JOIN ny_classes c ON c.id = r.class_id
       WHERE r.user_id = ? AND r.status = 'booked' AND r.class_date >= ?
@@ -157,6 +157,9 @@ $upcomingStmt = $pdo->prepare(
 );
 $upcomingStmt->execute([$user['id'], $today]);
 $upcoming = $upcomingStmt->fetchAll();
+// Massage / physio bookings get their own card; group classes stay in "upcoming".
+$upcomingTherapy = array_values(array_filter($upcoming, 'ny_is_therapy_class'));
+$upcomingClasses = array_values(array_filter($upcoming, fn($r) => !ny_is_therapy_class($r)));
 
 $historyStmt = $pdo->prepare(
     "SELECT r.*, c.name, c.teacher, c.start_time
@@ -501,31 +504,18 @@ ny_render_header(t('my.title'), 'my', ['description' => t('my.meta.description')
 </section>
 <?php endif; ?>
 
-<div class="my-layout">
-<div class="my-main">
-    <section class="my-card" id="upcoming">
-        <div class="my-card-head">
-            <h3><?= e(t('my.upcoming.h')) ?></h3>
-            <?php if ($upcoming): ?><a class="btn btn-secondary btn-sm" href="rezervace.php"><?= e(t('my.upcoming.book')) ?></a><?php endif; ?>
-        </div>
-    <?php if (!$upcoming): ?>
-        <div class="text-center empty-state">
-            <div class="empty-state-title"><?= e(t('my.upcoming.empty_title')) ?></div>
-            <p class="text-muted empty-state-hint"><?= e(t('my.upcoming.empty_hint')) ?></p>
-            <a class="btn btn-primary" href="rezervace.php"><?= e(t('my.upcoming.book')) ?></a>
-        </div>
-    <?php else: ?>
-        <?php
-        $studioAddr = ny_setting('address', '');
-        foreach ($upcoming as $r):
-            $d = new DateTimeImmutable($r['class_date']);
-            $dow = (int)$d->format('N');
-            $gcalTitle   = $r['name'] . ' · ' . ny_setting('site_name', 'Studio Namasté');
-            $gcalDetails = 'Lektor: ' . $r['teacher']
-                         . ($r['room'] ? "\nSál: " . $r['room'] : '')
-                         . "\n\nRezervaci můžete spravovat na " . ny_base_url() . '/myprofile.php';
-            $gcalUrl = ny_gcal_url((string)$r['class_date'], (string)$r['start_time'], (string)$r['end_time'], $gcalTitle, $gcalDetails, $studioAddr);
-        ?>
+<?php
+// One booking row (upcoming classes + massage cards share the markup).
+$studioAddr = ny_setting('address', '');
+$renderBookingRow = function (array $r) use ($daysShort, $studioAddr): void {
+    $d = new DateTimeImmutable($r['class_date']);
+    $dow = (int)$d->format('N');
+    $gcalTitle   = $r['name'] . ' · ' . ny_setting('site_name', 'Studio Namasté');
+    $gcalDetails = (ny_is_therapy_class($r) ? 'Terapeut: ' : 'Lektor: ') . $r['teacher']
+                 . ($r['room'] ? "\nSál: " . $r['room'] : '')
+                 . "\n\nRezervaci můžete spravovat na " . ny_base_url() . '/myprofile.php';
+    $gcalUrl = ny_gcal_url((string)$r['class_date'], (string)$r['start_time'], (string)$r['end_time'], $gcalTitle, $gcalDetails, $studioAddr);
+?>
             <div class="booking-row">
                 <div class="date-block">
                     <div class="dow"><?= e($daysShort[$dow]) ?></div>
@@ -548,13 +538,41 @@ ny_render_header(t('my.title'), 'my', ['description' => t('my.meta.description')
                         <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
                         <input type="hidden" name="class_id" value="<?= (int)$r['class_id'] ?>">
                         <input type="hidden" name="class_date" value="<?= e($r['class_date']) ?>">
+                        <input type="hidden" name="return" value="myprofile">
                         <button class="btn btn-ghost btn-sm" type="submit"><?= e(t('my.btn.cancel')) ?></button>
                     </form>
                 </div>
             </div>
-        <?php endforeach; ?>
+<?php
+};
+?>
+<div class="my-layout">
+<div class="my-main">
+    <section class="my-card" id="upcoming">
+        <div class="my-card-head">
+            <h3><?= e(t('my.upcoming.h')) ?></h3>
+            <?php if ($upcomingClasses): ?><a class="btn btn-secondary btn-sm" href="rezervace.php"><?= e(t('my.upcoming.book')) ?></a><?php endif; ?>
+        </div>
+    <?php if (!$upcomingClasses): ?>
+        <div class="text-center empty-state">
+            <div class="empty-state-title"><?= e(t('my.upcoming.empty_title')) ?></div>
+            <p class="text-muted empty-state-hint"><?= e(t('my.upcoming.empty_hint')) ?></p>
+            <a class="btn btn-primary" href="rezervace.php"><?= e(t('my.upcoming.book')) ?></a>
+        </div>
+    <?php else: ?>
+        <?php foreach ($upcomingClasses as $r) $renderBookingRow($r); ?>
     <?php endif; ?>
     </section>
+
+    <?php if ($upcomingTherapy): ?>
+    <section class="my-card" id="therapy">
+        <div class="my-card-head">
+            <h3><?= e(t('my.therapy.h')) ?></h3>
+            <a class="btn btn-secondary btn-sm" href="masaze.php#terminy"><?= e(t('my.therapy.book')) ?></a>
+        </div>
+        <?php foreach ($upcomingTherapy as $r) $renderBookingRow($r); ?>
+    </section>
+    <?php endif; ?>
 
     <section class="pref-card my-card" id="credits">
         <div class="pref-card-info">
@@ -715,7 +733,7 @@ ny_render_header(t('my.title'), 'my', ['description' => t('my.meta.description')
             <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
             <input type="hidden" name="action" value="redeem_voucher">
             <label class="profile-field"><span><?= e(t('my.credits.voucher.code')) ?></span>
-                <input type="text" name="code" maxlength="32" required placeholder="NY-XXXXXX" style="text-transform: uppercase">
+                <input type="text" name="code" maxlength="32" required placeholder="NY-XXXXXX" class="input-upper">
             </label>
             <button class="btn btn-secondary btn-sm" type="submit"><?= e(t('my.credits.voucher.redeem')) ?></button>
         </form>

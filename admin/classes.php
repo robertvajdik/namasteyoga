@@ -73,7 +73,8 @@ if ($action === 'edit' && $editId) {
 }
 $isNew = $action === 'new';
 
-$classes = $pdo->query('SELECT * FROM ny_classes ORDER BY active DESC, day_of_week, start_time')->fetchAll();
+// Massage / physio slots have their own page (therapy.php).
+$classes = $pdo->query("SELECT * FROM ny_classes WHERE kind <> 'therapy' ORDER BY active DESC, day_of_week, start_time")->fetchAll();
 
 // Reservation counts per class – shown next to the delete button so admin
 // knows how many bookings would cascade away.

@@ -85,7 +85,7 @@ STRUKTURA
         settings.php ......... editovatelné nastavení webu
 
     assets/
-        logoCream.png ........ hlavní logo (footer/OG)
+        logo_namasteyoga.png ........ hlavní logo (footer/OG)
         avatars/ ............. avatary uživatelů
         gallery/ ............. fotky do galerie
         teachers/ ............ portréty lektorů

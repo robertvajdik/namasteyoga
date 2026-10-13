@@ -183,10 +183,24 @@ function ny_week_start(?string $iso): DateTimeImmutable {
 function ny_category(string $name): string {
     $n = mb_strtolower($name);
     if (str_contains($n, 'pilates'))      return 'pilates';
-    if (str_contains($n, 'masáž'))        return 'massage';
+    // Massage + physio slots share one category: they are booked from
+    // masaze.php and never show attendee rosters.
+    if (str_contains($n, 'masáž') || str_contains($n, 'masaz') || str_contains($n, 'massage')
+        || str_contains($n, 'fyzio') || str_contains($n, 'physio')) return 'massage';
     if (str_contains($n, 'workshop'))     return 'workshop';
     if (str_contains($n, 'individ'))      return 'individual';
     return 'yoga';
+}
+
+/**
+ * Massage / physio slot (admin → Masáže – termíny) rather than a group class.
+ * Falls back to the name check for rows read before the kind column existed.
+ */
+function ny_is_therapy_class(array $class): bool {
+    if (isset($class['kind'])) {
+        return $class['kind'] === 'therapy';
+    }
+    return ny_category((string)($class['name'] ?? '')) === 'massage';
 }
 
 function ny_class_price(string $name): ?string {
@@ -208,6 +222,20 @@ function ny_class_price(string $name): ?string {
  * Discount for members paying a class with credits (Kč off the drop-in price),
  * editable in admin → Nastavení → Kredit.
  */
+/**
+ * Where reserve.php / cancel.php / login.php send the user back to. Only
+ * whitelisted page keys are accepted so the param can't be an open redirect.
+ */
+function ny_booking_return_url(string $return, string $classDate = ''): string {
+    if ($return === 'masaze') {
+        return 'masaze.php#terminy';
+    }
+    if ($return === 'myprofile') {
+        return 'myprofile.php#upcoming';
+    }
+    return $classDate !== '' ? 'rezervace.php?week=' . rawurlencode($classDate) : 'rezervace.php';
+}
+
 function ny_credit_discount(): int {
     return max(0, (int)ny_setting('credit_discount_kc', '10'));
 }
@@ -239,6 +267,11 @@ function ny_reserve_class(int $userId, int $classId, string $classDate, string $
         if ((int)$class['day_of_week'] !== (int)$dateObj->format('N')) {
             throw new RuntimeException(t('reserve.err.day_mismatch'));
         }
+        // Outside the class's validity window (e.g. a one-off massage slot).
+        if ((!empty($class['starts_on']) && $classDate < $class['starts_on'])
+            || (!empty($class['ends_on']) && $classDate > $class['ends_on'])) {
+            throw new RuntimeException(t('reserve.err.not_found'));
+        }
         $countStmt = $pdo->prepare(
             "SELECT COUNT(*) FROM ny_reservations
               WHERE class_id = ? AND class_date = ? AND status = 'booked' FOR UPDATE"
@@ -249,7 +282,7 @@ function ny_reserve_class(int $userId, int $classId, string $classDate, string $
         }
         // Price snapshot – free-form "250 Kč" strings reduce to the integer koruna.
         $priceStr = trim((string)($class['price'] ?? ''));
-        if ($priceStr === '') {
+        if ($priceStr === '' && !ny_is_therapy_class($class)) {
             $priceStr = (string)ny_class_price((string)$class['name']);
         }
         $priceKc = ny_price_amount($priceStr) ?? 0;
@@ -435,7 +468,7 @@ function ny_render_header(string $title, string $active = '', array $opts = []):
         ?: 'Studio Namasté Yoga v Uherském Brodě – jóga, pilates, masáže a individuální lekce pro začátečníky i pokročilé.';
     $desc    = trim((string)($opts['description'] ?? '')) ?: $defaultDesc;
     $kw      = trim((string)($s['meta_keywords'] ?? ''));
-    $ogImg   = trim((string)($s['og_image'] ?? '')) ?: 'assets/logoCream.png';
+    $ogImg   = trim((string)($s['og_image'] ?? '')) ?: 'assets/logo_namasteyoga.png';
 
     $baseUrl = rtrim(ny_base_url(), '/');
     // Canonical URL: strip tracking + session params so crawlers consolidate
@@ -511,8 +544,8 @@ function ny_render_header(string $title, string $active = '', array $opts = []):
 <meta name="twitter:image"           content="<?= e($ogImageAbs) ?>">
 <meta name="twitter:image:alt"       content="<?= e($ogImageAlt) ?>">
 
-<link rel="icon" href="assets/logoCream.png" type="image/png" sizes="any">
-<link rel="apple-touch-icon" href="assets/logoCream.png">
+<link rel="icon" href="assets/logo_namasteyoga.png" type="image/png" sizes="any">
+<link rel="apple-touch-icon" href="assets/logo_namasteyoga.png">
 <?php if ($preloadImg !== ''):
     $preloadAbs = preg_match('#^https?://#i', $preloadImg) ? $preloadImg : ($baseUrl . '/' . ltrim($preloadImg, '/'));
 ?>
@@ -526,7 +559,7 @@ function ny_render_header(string $title, string $active = '', array $opts = []):
 <?php
 $sameAs    = array_values(array_filter([$fbUrl, $igUrl, $ytUrl], static fn($u) => trim((string)$u) !== ''));
 $ldOpening = trim((string)($s['opening'] ?? '')) ?: 'Mo-Su';
-$logoAbs   = $baseUrl . '/assets/logoCream.png';
+$logoAbs   = $baseUrl . '/assets/logo_namasteyoga.png';
 $business = [
     '@type'     => 'HealthAndBeautyBusiness',
     '@id'       => $baseUrl . '/#business',
@@ -692,7 +725,7 @@ gtag('config', <?= json_encode($gaId) ?>, { anonymize_ip: true });
         </div>
     </div>
     <div class="band">
-        <a class="logo" href="index.php"><img src="assets/logoCream.png" alt="<?= e($siteName) ?>"></a>
+        <a class="logo" href="index.php"><img src="assets/logo_namasteyoga.png" alt="<?= e($siteName) ?>"></a>
         <input type="checkbox" id="nav-toggle" class="nav-toggle-input" aria-hidden="true" autocomplete="off">
         <label for="nav-toggle" class="nav-toggle" aria-label="Menu" role="button" tabindex="0">
             <span class="nav-toggle-open"><?= ny_icon('menu', 22) ?></span>
@@ -701,7 +734,7 @@ gtag('config', <?= json_encode($gaId) ?>, { anonymize_ip: true });
         <label for="nav-toggle" class="nav-backdrop" aria-hidden="true" tabindex="-1"></label>
         <nav id="site-nav">
             <label for="nav-toggle" class="nav-panel-close" aria-label="<?= e(t('nav.close') ?: 'Zavřít') ?>" tabindex="0"><?= ny_icon('close', 20) ?></label>
-            <a href="index.php" class="nav-panel-logo" aria-label="<?= e($siteName) ?>"><img src="assets/logoCream.png" alt=""></a>
+            <a href="index.php" class="nav-panel-logo" aria-label="<?= e($siteName) ?>"><img src="assets/logo_namasteyoga.png" alt=""></a>
             <a href="index.php"        class="<?= $active === 'home'       ? 'is-active' : '' ?>"><?= e(t('nav.home')) ?></a>
             <a href="rezervace.php"    class="<?= $active === 'schedule'   ? 'is-active' : '' ?>"><?= e(t('nav.schedule')) ?></a>
             <div class="nav-item has-submenu">
@@ -746,7 +779,7 @@ function ny_render_footer(bool $bare = false): void {
 <footer class="site-footer">
     <div class="inner">
         <div class="foot-brand">
-            <img src="assets/logoCream.png" alt="<?= e($siteName) ?>">
+            <img src="assets/logo_namasteyoga.png" alt="<?= e($siteName) ?>">
             <p class="foot-tag"><?= e(t('footer.tag')) ?></p>
         </div>
         <div class="foot-col">

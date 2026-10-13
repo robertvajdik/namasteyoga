@@ -281,6 +281,24 @@ function ny_ensure_content_tables(): void {
     if ($hasPrice === 0) {
         $pdo->exec('ALTER TABLE ny_classes ADD COLUMN price VARCHAR(60) NOT NULL DEFAULT "" AFTER capacity');
     }
+    // kind – 'therapy' marks massage / physio slots managed in admin/therapy.php
+    // (own calendar, no public roster). Existing slots named masáž/fyzio are
+    // migrated once when the column is added.
+    $hasKind = (int)$pdo->query(
+        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME   = 'ny_classes'
+            AND COLUMN_NAME  = 'kind'"
+    )->fetchColumn();
+    if ($hasKind === 0) {
+        $pdo->exec("ALTER TABLE ny_classes ADD COLUMN kind VARCHAR(16) NOT NULL DEFAULT 'class' AFTER price");
+        $upd = $pdo->prepare("UPDATE ny_classes SET kind = 'therapy' WHERE id = ?");
+        foreach ($pdo->query('SELECT id, name FROM ny_classes') as $r) {
+            if (ny_category((string)$r['name']) === 'massage') {
+                $upd->execute([(int)$r['id']]);
+            }
+        }
+    }
     $pdo->exec(
         'CREATE TABLE IF NOT EXISTS ny_massages (
             id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
