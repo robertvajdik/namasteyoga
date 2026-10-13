@@ -4853,6 +4853,7 @@ body.has-promo-zoom-open { overflow: hidden; }
 /* Kill the container's top/bottom padding on the landing page so the dark
    hero and CTA band sit flush against the header and footer (no cream strips). */
 .container.page:has(> .landing-hero) { padding-top: 0; }
+.container.page:has(> .page-hero-media--bg) { padding-top: 0; }
 .container.page:has(> .landing-cta-band:last-child) { padding-bottom: 0; }
 body:has(.landing-cta-band) .site-footer { margin-top: 0; }
 
