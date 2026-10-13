@@ -150,7 +150,7 @@ foreach ($calendars as $calKey => $calClasses):
 <section id="masaze-fyzio" class="section-title-block section-h-gap">
     <div class="eyebrow"><?= e(t('rezervace.therapy.eyebrow')) ?></div>
     <h2 class="page-title"><?= e(t('rezervace.therapy.title')) ?></h2>
-    <p class="page-lead"><?= e(t('rezervace.therapy.lead')) ?></p>
+    <p class="page-lead"><?= e(t('rezervace.therapy.lead')) ?> <?= e(t('rezervace.therapy.phone')) ?><?php $phoneLink = ny_phone_obf(ny_settings_all()['phone'] ?? '', ny_icon('phone', 16) . ' '); if ($phoneLink !== ''): ?> <?= $phoneLink ?><?php endif; ?>.</p>
 </section>
 <?php endif; ?>
 <div class="week-grid">
