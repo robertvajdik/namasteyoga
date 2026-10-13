@@ -560,6 +560,12 @@ ny_render_header(t('my.title'), 'my', ['description' => t('my.meta.description')
         <div class="pref-card-info">
             <h3><?= e(t('my.credits.h')) ?></h3>
             <p class="muted"><?= e(t('my.credits.desc')) ?></p>
+            <?php if (ny_credit_discount() > 0): ?>
+            <p class="credits-discount">
+                <?= ny_icon('tag', 16) ?>
+                <span><?= sprintf(t('my.credits.discount'), ny_credit_discount()) ?></span>
+            </p>
+            <?php endif; ?>
             <div class="credits-balance"><?= number_format($creditBalance, 0, ',', ' ') ?> <span class="credits-balance-unit"><?= e(t('my.credits.unit')) ?></span></div>
             <?php if ($pendingTopups): ?>
                 <p class="hint">

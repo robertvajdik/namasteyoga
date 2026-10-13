@@ -91,6 +91,17 @@ $fields = [
             ],
         ],
     ],
+    'credits' => [
+        'title' => 'Kredit',
+        'items' => [
+            'credit_discount_kc' => [
+                'label' => 'Sleva při platbě kreditem (Kč za lekci)',
+                'type'  => 'number',
+                'min'   => 0,
+                'hint'  => 'O kolik Kč je lekce levnější při platbě kreditem. 0 = bez slevy. Výchozí 10 Kč.',
+            ],
+        ],
+    ],
     'cenik_open' => [
         'title' => 'Ceník – otevřené lekce',
         'items' => [

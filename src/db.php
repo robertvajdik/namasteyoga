@@ -58,6 +58,7 @@ function ny_settings_defaults(): array {
         'bank_iban'              => '',
         'bank_holder'            => '',
         'voucher_validity_months'=> '2',
+        'credit_discount_kc'     => '10',
         'cenik_open_1_amount'    => '',
         'cenik_open_2_amount'    => '',
         'cenik_open_2_attempts'  => '10',

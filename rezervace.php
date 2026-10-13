@@ -186,10 +186,17 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
                     $price       = $classPrice !== '' ? $classPrice : ny_class_price((string)$c['name']);
                     $priceAmount = $price !== null ? ny_price_amount($price) : null;
                     $showQr      = $iban !== '' && $priceAmount !== null && $priceAmount > 0;
+                    $creditPrice = $priceAmount !== null && $priceAmount > 0 ? ny_credit_price($priceAmount) : null;
+                    $showMember  = $creditPrice !== null && $creditPrice < $priceAmount;
                 ?>
                 <?php if ($price !== null): ?>
                     <div class="class-price">
                         <span><?= e($price) ?></span>
+                        <?php if ($showMember): ?>
+                            <span class="class-price-member" title="<?= e(t('rezervace.price.member.title')) ?>">
+                                <?= sprintf(e(t('rezervace.price.member')), $creditPrice) ?>
+                            </span>
+                        <?php endif; ?>
                         <?php if ($showQr): ?>
                             <button type="button" class="class-qr-btn"
                                     data-qr-amount="<?= (int)$priceAmount ?>"
@@ -234,15 +241,15 @@ ny_render_header(t('rezervace.title'), 'schedule', ['description' => t('rezervac
                             <input type="hidden" name="class_date" value="<?= e($dateStr) ?>">
                             <button class="btn btn-primary btn-sm" type="submit"><?= e(t('rezervace.btn.reserve')) ?></button>
                         </form>
-                        <?php if ($priceAmount !== null && $priceAmount > 0 && $userBalance >= $priceAmount): ?>
+                        <?php if ($creditPrice !== null && $userBalance >= $creditPrice): ?>
                         <form method="post" action="reserve.php" class="inline"
-                              onsubmit="return confirm(<?= e(json_encode(sprintf(t('rezervace.credits.confirm'), $priceAmount, $c['name']), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP)) ?>);">
+                              onsubmit="return confirm(<?= e(json_encode(sprintf(t('rezervace.credits.confirm'), $creditPrice, $c['name']), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP)) ?>);">
                             <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
                             <input type="hidden" name="class_id" value="<?= (int)$c['id'] ?>">
                             <input type="hidden" name="class_date" value="<?= e($dateStr) ?>">
                             <input type="hidden" name="pay" value="credits">
                             <button class="btn btn-sand btn-sm" type="submit" title="<?= e(sprintf(t('rezervace.credits.title'), $userBalance)) ?>">
-                                <?= sprintf(e(t('rezervace.credits.btn')), (int)$priceAmount) ?>
+                                <?= sprintf(e(t('rezervace.credits.btn')), (int)$creditPrice) ?>
                             </button>
                         </form>
                         <?php endif; ?>

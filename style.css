@@ -370,9 +370,14 @@ form input:focus { outline: none; border-color: var(--sage-400); box-shadow: var
 .class-card .meta  { font-size: 10px; color: var(--text-muted); overflow-wrap: anywhere; }
 .class-card .class-price {
     font-size: 11px; font-weight: 600; color: var(--sage-700); letter-spacing: .01em; margin-top: 2px;
-    display: flex; align-items: center; gap: 6px; flex-wrap: nowrap;
+    display: flex; align-items: center; gap: 4px 6px; flex-wrap: wrap;
 }
 .class-card .class-price > span:first-child { flex: 0 0 auto; white-space: nowrap; }
+.class-card .class-price-member {
+    white-space: nowrap; font-weight: 600; font-size: 10px;
+    color: var(--accent-ink); background: var(--sand-100);
+    padding: 2px 6px; border-radius: var(--radius-pill);
+}
 .class-card.is-full .class-price { color: var(--text-muted); }
 .class-card .class-qr-btn {
     display: inline-flex; align-items: center; gap: 3px;
@@ -1962,6 +1967,15 @@ img.teacher-thumb { display: inline-block; }
     line-height: 1.1; margin: 10px 0 2px;
 }
 .credits-balance-unit { font-size: 18px; color: var(--text-muted); font-weight: 400; margin-left: 4px; }
+.credits-discount {
+    display: flex; align-items: flex-start; gap: 10px;
+    margin: 12px 0 8px; padding: 12px 14px;
+    background: var(--sand-100); border: 1px solid var(--sand-400);
+    border-left: 4px solid var(--sage-700); border-radius: var(--radius-md);
+    color: var(--text-strong, #3a2718); font-size: 14px; line-height: 1.45;
+}
+.credits-discount svg { flex: 0 0 auto; margin-top: 2px; color: var(--sage-700); }
+.credits-discount strong { color: var(--sage-700); font-weight: 800; }
 /* Bank-transfer top-up: price picks, amount form and payment details in one box. */
 .credits-topup {
     flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 12px;
@@ -4307,7 +4321,7 @@ img, iframe, video { max-width: 100%; }
     display: flex;
     align-items: center;
     grid-template-columns: none;
-    background-color: #f5ead5;
+    background-color: #dcc19e;
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -4323,9 +4337,14 @@ img, iframe, video { max-width: 100%; }
     text-align: left;
     gap: 0;
 }
-.page-hero-media--bg::before { content: none; }
+/* Dark warm-brown filter over the photo so white text stays legible.
+   Landing page (.landing-hero) is a separate component and is unaffected. */
+.page-hero-media--bg::before {
+    content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+    background: linear-gradient(180deg, rgba(58,39,24,.45) 0%, rgba(58,39,24,.6) 100%);
+}
 .page-hero-media--bg .page-hero-media-body {
-    position: relative;
+    position: relative; z-index: 1;
     width: 100%;
     max-width: var(--landing-max, 1200px);
     margin: 0 auto;

@@ -204,6 +204,18 @@ function ny_class_price(string $name): ?string {
     return $o !== '' ? $o : t('cenik.open.' . $i . '.amount');
 }
 
+/**
+ * Discount for members paying a class with credits (Kč off the drop-in price),
+ * editable in admin → Nastavení → Kredit.
+ */
+function ny_credit_discount(): int {
+    return max(0, (int)ny_setting('credit_discount_kc', '10'));
+}
+
+function ny_credit_price(int $priceKc): int {
+    return max(0, $priceKc - ny_credit_discount());
+}
+
 function ny_reserve_class(int $userId, int $classId, string $classDate, string $paymentMethod = 'none'): array {
     $dateObj = DateTimeImmutable::createFromFormat('Y-m-d', $classDate);
     if (!$classId || !$dateObj || $dateObj->format('Y-m-d') !== $classDate) {
@@ -262,6 +274,7 @@ function ny_reserve_class(int $userId, int $classId, string $classDate, string $
             if ($priceKc <= 0) {
                 throw new RuntimeException(t('reserve.err.no_price'));
             }
+            $priceKc = ny_credit_price($priceKc);
             ny_credit_apply(
                 $userId,
                 -$priceKc,

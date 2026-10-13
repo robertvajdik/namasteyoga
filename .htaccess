@@ -4,10 +4,13 @@
     # Canonical host: 301-redirect www.* → non-www, preserving scheme and path.
     # Keeps all link equity on a single hostname and avoids duplicate-content
     # SEO issues. Skips localhost / raw IP for dev convenience.
-    RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+    # Path comes from THE_REQUEST, not REQUEST_URI: the hosting maps the
+    # domain into /domains/namasteyoga.cz/ internally, and REQUEST_URI
+    # leaks that prefix into the redirect target.
     RewriteCond %{HTTP_HOST} !^localhost(:\d+)?$ [NC]
     RewriteCond %{HTTP_HOST} !^\d+\.\d+\.\d+\.\d+(:\d+)?$
-    RewriteRule ^ %{REQUEST_SCHEME}://%1%{REQUEST_URI} [R=301,L,NE]
+    RewriteCond %{HTTP_HOST}#%{THE_REQUEST} ^www\.([^#]+)#\S+\s+(/\S*) [NC]
+    RewriteRule ^ https://%1%2 [R=301,L,NE]
 
     # Sitemap alias.
     RewriteRule ^sitemap\.xml$ sitemap.php [L]
@@ -25,6 +28,15 @@
     RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
     RewriteCond %{THE_REQUEST} \s/+([^\s?]*?)\.php[\s?] [NC]
     RewriteRule ^ /%1 [R=301,L,NE]
+
+    # Strip a trailing slash from page URLs (old WordPress links like
+    # /rezervace/ still indexed by Google). Serving the page at /rezervace/
+    # would make relative URLs (style.css, assets/…) resolve under
+    # /rezervace/ and 404, so the page renders without CSS.
+    RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME}\.php -f
+    RewriteRule ^(.+?)/+$ /$1 [R=301,L,NE]
 
     # Internally map extensionless URL to .php file when it exists.
     RewriteCond %{REQUEST_FILENAME} !-d
