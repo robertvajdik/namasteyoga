@@ -261,7 +261,7 @@ foreach ($calendars as $calKey => $calClasses):
                         </form>
                         <?php if ($creditPrice !== null && $userBalance >= $creditPrice): ?>
                         <form method="post" action="reserve.php" class="inline"
-                              onsubmit="return confirm(<?= e(json_encode(sprintf(t('rezervace.credits.confirm'), $creditPrice, $c['name']), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP)) ?>);">
+                              data-confirm-label="<?= e(sprintf(t('rezervace.credits.confirm_btn'), $creditPrice)) ?>">
                             <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
                             <input type="hidden" name="class_id" value="<?= (int)$c['id'] ?>">
                             <input type="hidden" name="class_date" value="<?= e($dateStr) ?>">
