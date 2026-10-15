@@ -189,8 +189,7 @@ ny_render_header(t('masaze.title'), 'masaze', ['description' => t('masaze.meta.d
                                 <button class="btn btn-primary btn-sm" type="submit"><?= e(t('rezervace.btn.reserve')) ?></button>
                             </form>
                             <?php if ($creditPrice !== null && $userBalance >= $creditPrice): ?>
-                            <form method="post" action="reserve.php" class="inline"
-                                  data-confirm-label="<?= e(sprintf(t('rezervace.credits.confirm_btn'), $creditPrice)) ?>">
+                            <form method="post" action="reserve.php" class="inline">
                                 <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
                                 <input type="hidden" name="class_id" value="<?= (int)$c['id'] ?>">
                                 <input type="hidden" name="class_date" value="<?= e($dateStr) ?>">

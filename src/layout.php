@@ -842,27 +842,6 @@ function ny_render_footer(bool $bare = false): void {
     window.addEventListener('scroll', scrollHandler, { passive: true });
     scrollHandler();
 
-    // Two-tap confirm for forms with data-confirm-label (credit payments).
-    // Replaces window.confirm(), which iOS Safari / in-app browsers may
-    // silently suppress – the button then looked dead on iPad.
-    document.addEventListener('submit', function (e) {
-        var form = e.target;
-        if (!form.matches || !form.matches('form[data-confirm-label]')) return;
-        if (form.dataset.confirmArmed === '1') return;
-        e.preventDefault();
-        var btn = form.querySelector('[type="submit"]');
-        if (!btn) return;
-        var original = btn.innerHTML;
-        form.dataset.confirmArmed = '1';
-        btn.textContent = form.getAttribute('data-confirm-label');
-        btn.classList.add('is-confirming');
-        setTimeout(function () {
-            form.dataset.confirmArmed = '';
-            btn.innerHTML = original;
-            btn.classList.remove('is-confirming');
-        }, 6000);
-    });
-
     // Scroll reveal (opt-in via .reveal); skipped if user prefers reduced motion.
     var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!reduce && 'IntersectionObserver' in window) {
