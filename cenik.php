@@ -355,9 +355,7 @@ $massageField = function(int $i, string $field) use ($s) {
                 <input type="text" name="website" tabindex="-1" autocomplete="off">
             </label>
         </div>
-        <label class="captcha-field poukaz-form-full"><?= e(t('poukaz.form.captcha')) ?> <?= (int)$captcha['a'] ?> + <?= (int)$captcha['b'] ?>?
-            <input type="text" name="captcha" inputmode="numeric" pattern="[0-9]+" autocomplete="off" required>
-        </label>
+        <?php ny_captcha_field(t('poukaz.form.captcha'), $captcha, 'poukaz-form-full'); ?>
         <button class="btn btn-primary btn-form" type="submit"><?= e(t('poukaz.form.submit')) ?></button>
     </form>
     <p class="poukaz-order-contact">

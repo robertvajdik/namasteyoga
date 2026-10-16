@@ -163,6 +163,25 @@ function ny_captcha_verify(string $scope, string $answer): bool {
     return (int)$answer === (int)$expected;
 }
 
+/**
+ * Renders the math "human check" from ny_captcha_generate() as a styled box.
+ */
+function ny_captcha_field(string $label, array $captcha, string $extraClass = ''): void {
+    $id = 'captcha-' . bin2hex(random_bytes(3));
+    ?>
+    <div class="captcha-field<?= $extraClass !== '' ? ' ' . e($extraClass) : '' ?>">
+        <label for="<?= $id ?>" class="captcha-label">
+            <svg class="captcha-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m8.5 12 2.5 2.5 4.5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <?= e($label) ?>
+        </label>
+        <div class="captcha-row">
+            <span class="captcha-eq"><?= (int)$captcha['a'] ?> + <?= (int)$captcha['b'] ?> =</span>
+            <input id="<?= $id ?>" type="text" name="captcha" inputmode="numeric" pattern="[0-9]+" maxlength="3" autocomplete="off" required placeholder="?">
+        </div>
+    </div>
+    <?php
+}
+
 function ny_week_start(?string $iso): DateTimeImmutable {
     $ref = $iso ? new DateTimeImmutable($iso) : new DateTimeImmutable('today');
     $dow = (int)$ref->format('N');

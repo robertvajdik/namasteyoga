@@ -150,9 +150,7 @@ ny_render_header(t('kontakt.title'), 'kontakt', ['description' => t('kontakt.met
                     <input type="text" name="website" tabindex="-1" autocomplete="off">
                 </label>
             </div>
-            <label class="captcha-field"><?= e(t('kontakt.form.captcha')) ?> <?= (int)$captcha['a'] ?> + <?= (int)$captcha['b'] ?>?
-                <input type="text" name="captcha" inputmode="numeric" pattern="[0-9]+" autocomplete="off" required>
-            </label>
+            <?php ny_captcha_field(t('kontakt.form.captcha'), $captcha); ?>
             <button class="btn btn-primary btn-form" type="submit"><?= e(t('kontakt.form.submit')) ?></button>
         </form>
     </section>

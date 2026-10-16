@@ -13,8 +13,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $phone = trim((string)($_POST['phone'] ?? ''));
     $pass  = (string)($_POST['password'] ?? '');
     $pass2 = (string)($_POST['password2'] ?? '');
+    $captchaIn = trim((string)($_POST['captcha'] ?? ''));
 
-    if (!ny_recaptcha_verify($_POST['g-recaptcha-response'] ?? null, 'register')) {
+    if (trim((string)($_POST['website'] ?? '')) !== '') {
+        // Honeypot filled — bot. Drop silently without revealing why.
+        ny_redirect('register.php');
+    }
+
+    if (!ny_captcha_verify('register', $captchaIn)) {
+        $error = t('register.err.captcha');
+    } elseif (!ny_recaptcha_verify($_POST['g-recaptcha-response'] ?? null, 'register')) {
         $error = t('register.err.recaptcha');
     } elseif ($name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = t('register.err.name_email');
@@ -65,6 +73,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+$captcha = ny_captcha_generate('register');
+
 ny_render_header(t('register.title'), 'register', ['description' => t('register.meta.description'), 'noindex' => true]);
 ?>
 <section class="section-title-block">
@@ -94,6 +104,12 @@ ny_render_header(t('register.title'), 'register', ['description' => t('register.
         <label><?= e(t('register.field.password2')) ?>
             <input type="password" name="password2" required autocomplete="new-password">
         </label>
+        <div class="hp-field" aria-hidden="true">
+            <label><?= e(t('register.field.hp')) ?>
+                <input type="text" name="website" tabindex="-1" autocomplete="off">
+            </label>
+        </div>
+        <?php ny_captcha_field(t('register.field.captcha'), $captcha); ?>
         <button class="btn btn-primary btn-form" type="submit"><?= e(t('register.btn.submit')) ?></button>
     </form>
     <p class="hint hint-form"><?= e(t('register.have_account')) ?> <a href="login.php"><?= e(t('register.login_link')) ?></a>.</p>
