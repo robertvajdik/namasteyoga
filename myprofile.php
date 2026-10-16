@@ -87,7 +87,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ny_redirect('myprofile.php');
         }
         if ($act === 'request_topup') {
-            $amount = (int)($_POST['amount'] ?? 0);
+            // Strip spaces/currency so "1 000" or "500 Kč" still parse.
+            $amount = (int)preg_replace('/\D/', '', (string)($_POST['amount'] ?? ''));
             $note   = trim((string)($_POST['note'] ?? ''));
             if ($amount < 100 || $amount > 20000) {
                 throw new RuntimeException(t('my.credits.err.amount_range'));
@@ -633,7 +634,7 @@ $renderBookingRow = function (array $r) use ($daysShort, $studioAddr): void {
             <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
             <input type="hidden" name="action" value="request_topup">
             <label class="profile-field"><span><?= e(t('my.credits.amount')) ?></span>
-                <input type="number" id="credits-topup-amount" name="amount" min="100" max="20000" step="50" required inputmode="numeric" placeholder="500">
+                <input type="number" id="credits-topup-amount" name="amount" min="100" max="20000" step="1" required inputmode="numeric" pattern="[0-9]*" placeholder="500">
             </label>
             <label class="profile-field"><span><?= e(t('my.credits.note')) ?></span>
                 <input type="text" name="note" maxlength="200" placeholder="<?= e(t('my.credits.note.ph')) ?>">

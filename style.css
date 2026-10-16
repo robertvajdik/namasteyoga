@@ -2081,9 +2081,212 @@ img.teacher-thumb { display: inline-block; }
     .credits-history-date { grid-column: 1 / -1; }
 }
 
-/* Admin credits – inline decide form keeps approve/reject + note on one row. */
-.credit-decide-form { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; justify-content: flex-end; }
-.credit-decide-form input[type=text] { max-width: 220px; flex: 1 1 160px; }
+/* -- Admin credits ----------------------------------------------- */
+.credit-stats { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin-bottom: 20px; }
+.credit-stats .num { font-size: 24px; white-space: nowrap; }
+a.admin-stat { color: inherit; text-decoration: none; }
+.admin-stat--alert { border-color: var(--warning); background: linear-gradient(180deg, var(--warning-bg), var(--surface-card)); }
+.admin-stat--alert .num { color: #8A5A1E; }
+
+/* Pending top-up requests: one card per request. */
+.credit-requests { display: grid; gap: 10px; }
+.credit-request {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(260px, 340px);
+    align-items: center; gap: 12px 20px;
+    padding: 14px 16px;
+    border: 1px solid var(--border-subtle); border-left: 4px solid var(--warning);
+    border-radius: var(--radius-md); background: var(--surface-card);
+}
+.credit-request-info { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.credit-request-name { color: var(--text-strong); font-size: 15px; }
+.credit-request-email { font-size: 13px; color: var(--text-muted); overflow-wrap: anywhere; }
+.credit-request-meta { font-size: 12px; color: var(--text-muted); display: inline-flex; align-items: center; gap: 4px; margin-top: 2px; }
+.credit-request-note { font-size: 13px; color: var(--text-body); font-style: italic; margin-top: 4px; overflow-wrap: anywhere; }
+.credit-request-amount {
+    font-family: var(--font-display); font-weight: 800; font-size: 24px;
+    color: var(--sage-700); white-space: nowrap;
+}
+.credit-decide-form { display: flex; flex-direction: column; gap: 8px; margin: 0; }
+.credit-decide-form input[type=text] { margin: 0; padding: 9px 12px; font-size: 14px; }
+.credit-decide-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.credit-decide-buttons .btn { width: 100%; }
+
+/* Manual adjustment form. */
+.credit-adjust-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 20px 28px; align-items: start; }
+.credit-picker { border: 0; padding: 0; margin: 0; min-width: 0; }
+.credit-picker legend,
+.credit-field-lbl,
+.credit-adjust .credit-field { font: 600 var(--fs-sm)/1.3 var(--font-body); color: var(--text-strong); }
+.credit-picker legend { padding: 0; margin-bottom: 6px; }
+.credit-adjust .credit-field { display: block; margin: 0 0 14px; }
+.credit-field-lbl { display: block; margin-bottom: 6px; }
+.credit-adjust input.credit-picker-search { margin: 0 0 8px; }
+.credit-picker-list {
+    max-height: 300px; overflow-y: auto; overscroll-behavior: contain;
+    border: 1px solid var(--border-default); border-radius: var(--radius-sm);
+    background: #fff;
+}
+.credit-picker-opt {
+    display: flex; align-items: center; gap: 10px;
+    margin: 0; padding: 10px 12px; cursor: pointer;
+    font-weight: 400;
+    border-bottom: 1px solid var(--border-subtle);
+    transition: background var(--dur-fast) var(--ease-calm);
+}
+.credit-picker-opt:last-of-type { border-bottom: 0; }
+.credit-picker-opt[hidden] { display: none; }
+.credit-picker-opt:hover { background: var(--sand-50); }
+.credit-picker-opt.is-selected { background: var(--sage-100); box-shadow: inset 3px 0 0 var(--sage-500); }
+.credit-adjust .credit-picker-opt input[type=radio] {
+    display: inline-block; width: 16px; height: 16px; margin: 0; padding: 0;
+    flex: 0 0 auto; accent-color: var(--sage-500); box-shadow: none;
+}
+.credit-picker-who { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.credit-picker-who strong { font-size: 14px; color: var(--text-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.credit-picker-who small { font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.credit-picker-bal { flex: 0 0 auto; font-size: 13px; color: var(--text-muted); white-space: nowrap; }
+.credit-picker-bal.has-credit { color: var(--sage-700); font-weight: 700; }
+.credit-picker-empty { margin: 0; padding: 14px 12px; }
+
+.credit-seg {
+    display: grid; grid-template-columns: 1fr 1fr;
+    padding: 4px; gap: 4px;
+    background: var(--sand-100); border-radius: var(--radius-pill);
+}
+.credit-seg-opt { margin: 0; position: relative; cursor: pointer; }
+.credit-adjust .credit-seg-opt input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; pointer-events: none; }
+.credit-seg-opt span {
+    display: block; text-align: center; padding: 9px 10px;
+    border-radius: var(--radius-pill); font-weight: 600; font-size: 14px;
+    color: var(--text-muted);
+    transition: background var(--dur-fast) var(--ease-calm), color var(--dur-fast) var(--ease-calm);
+}
+.credit-seg-opt input:focus-visible + span { box-shadow: var(--focus-ring); }
+.credit-seg-opt--plus  input:checked + span { background: #fff; color: var(--sage-700); box-shadow: var(--shadow-soft); }
+.credit-seg-opt--minus input:checked + span { background: #fff; color: var(--danger); box-shadow: var(--shadow-soft); }
+
+.credit-adjust .credit-field input { margin-top: 6px; }
+.credit-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: -6px 0 14px; }
+.credit-chip {
+    border: 1px solid var(--border-default); background: #fff; color: var(--text-body);
+    border-radius: var(--radius-pill); padding: 6px 12px;
+    font: 600 13px/1 var(--font-body); cursor: pointer;
+}
+.credit-chip:hover { background: var(--sand-100); }
+.credit-chip::after { content: " Kč"; font-weight: 400; color: var(--text-muted); }
+
+.credit-preview {
+    display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px;
+    padding: 10px 14px; border-radius: var(--radius-sm);
+    background: var(--sand-50); border: 1px dashed var(--border-default);
+    font-size: 14px; color: var(--text-body);
+}
+.credit-preview[hidden] { display: none; }
+.credit-preview-calc { white-space: nowrap; }
+.credit-preview-calc strong { color: var(--text-strong); }
+.credit-adjust .form-actions { margin-top: 14px; }
+
+/* Export links. */
+.credit-export { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.credit-export-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 10px 12px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);
+    font-size: 14px; color: var(--text-strong);
+}
+.credit-export-item > span:first-child { display: inline-flex; align-items: center; gap: 6px; }
+.credit-export-btns { display: inline-flex; gap: 6px; flex: 0 0 auto; }
+.credit-export-btns .btn { padding: 6px 12px; font-size: 12px; }
+
+/* History tables. */
+.admin-tbl--credits .c-user strong { display: block; color: var(--text-strong); }
+.admin-tbl--credits .c-user small { display: block; overflow-wrap: anywhere; }
+.admin-tbl--credits .c-amt,
+.admin-tbl--credits .c-bal,
+.admin-tbl--credits .c-date,
+.admin-tbl--credits .c-decided { white-space: nowrap; }
+
+@media (max-width: 1100px) {
+    .credit-request { grid-template-columns: minmax(0, 1fr) auto; }
+    .credit-decide-form { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; }
+    .credit-decide-form input[type=text] { flex: 1 1 200px; width: auto; }
+    .credit-decide-buttons { flex: 0 0 auto; }
+}
+@media (max-width: 960px) {
+    .credit-adjust-grid { grid-template-columns: 1fr; }
+    .credit-export { grid-template-columns: 1fr; }
+}
+@media (max-width: 780px) {
+    .credit-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .credit-stats .admin-stat { padding: 12px 14px; }
+    .credit-stats .num { font-size: 20px; }
+    .credit-stats .admin-stat:first-child { grid-column: 1 / -1; }
+
+    .credit-request { padding: 12px; gap: 10px 12px; align-items: start; }
+    .credit-request-amount { font-size: 22px; }
+    .credit-decide-form { flex-direction: column; }
+    .credit-decide-form input[type=text] { flex: none; width: 100%; font-size: 16px; }
+    .credit-decide-buttons .btn { padding: 11px 12px; font-size: 14px; }
+
+    /* iOS zooms on inputs < 16px. */
+    .credit-adjust input { font-size: 16px; }
+    .credit-picker-list { max-height: 50vh; }
+    .credit-picker-opt { padding: 12px; }
+    .credit-chip { padding: 9px 14px; font-size: 14px; }
+    .credit-adjust .form-actions .btn { width: 100%; }
+
+    .credit-export-btns .btn { padding: 9px 16px; font-size: 13px; }
+
+    /* Compact 2-column cards instead of the generic labelled rows. */
+    .admin-tbl--credits tbody tr {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas:
+            "user   amt"
+            "status bal"
+            "date   decided"
+            "note   note";
+        gap: 4px 12px; padding: 12px 14px;
+    }
+    .admin-tbl.admin-tbl--credits td { padding: 0; display: block; min-width: 0; }
+    .admin-tbl--credits td::before { display: none !important; }
+    .admin-tbl--credits .c-user    { grid-area: user; }
+    .admin-tbl--credits .c-amt     { grid-area: amt; text-align: right; font-size: 15px; }
+    .admin-tbl.admin-tbl--credits .c-status { grid-area: status; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+    .admin-tbl--credits .c-bal     { grid-area: bal; text-align: right; font-size: 12px; color: var(--text-muted); }
+    .admin-tbl--credits td.c-bal[data-label]::before { content: "zůst. "; }
+    .admin-tbl--credits .c-date    { grid-area: date; font-size: 12px; color: var(--text-muted); }
+    .admin-tbl--credits .c-decided { grid-area: decided; text-align: right; font-size: 12px; color: var(--text-muted); }
+    .admin-tbl--credits td.c-decided[data-label]::before { content: "vyřízeno "; }
+    .admin-tbl--credits td.c-bal[data-label]::before,
+    .admin-tbl--credits td.c-decided[data-label]::before {
+        display: inline !important; margin: 0; font: inherit; color: inherit;
+        letter-spacing: 0; text-transform: none;
+    }
+    .admin-tbl--credits .c-note    { grid-area: note; font-size: 13px; margin-top: 4px; padding-top: 6px; border-top: 1px dashed var(--border-subtle); overflow-wrap: anywhere; }
+    .admin-tbl.admin-tbl--credits td.is-empty { display: none; }
+    /* Topups: status sits where the ledger shows balance. */
+    .admin-tbl--topups tbody tr {
+        grid-template-areas:
+            "user   amt"
+            "date   status"
+            "decided decided"
+            "note   note";
+    }
+    .admin-tbl--credits .c-status small { font-size: 11px; }
+    .admin-tbl--topups .c-status  { justify-content: flex-end; }
+    .admin-tbl--topups .c-decided { text-align: left; }
+    .admin-tbl--ledger tbody tr {
+        grid-template-areas:
+            "user   amt"
+            "status bal"
+            "date   date"
+            "note   note";
+    }
+}
+@media (max-width: 400px) {
+    .credit-stats .num { font-size: 18px; }
+    .credit-export-item { flex-wrap: wrap; }
+}
 
 .switch {
     position: relative;
