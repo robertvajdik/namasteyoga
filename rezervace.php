@@ -221,6 +221,11 @@ foreach ($calendars as $calKey => $calClasses):
                                     data-qr-msg="<?= e(ny_ascii_msg('Lekce ' . $c['name'] . ($userSurname !== '' ? ' ' . $userSurname : ''))) ?>"
                                     data-qr-title="<?= e($c['name']) ?>"
                                     data-qr-date="<?= e($date->format('j. n.') . ' ' . substr($c['start_time'], 0, 5)) ?>"
+                                    <?php if ($user && !$isPast): ?>
+                                    data-qr-class="<?= (int)$c['id'] ?>"
+                                    data-qr-day="<?= e($dateStr) ?>"
+                                    <?php if ($booked): ?>data-qr-booked="1"<?php endif; ?>
+                                    <?php endif; ?>
                                     aria-label="<?= e(t('rezervace.qr.open')) ?>">
                                 <?= ny_icon('qr-code', 14) ?>
                                 <span><?= e(t('rezervace.qr.btn')) ?></span>
@@ -505,7 +510,36 @@ foreach ($calendars as $calKey => $calClasses):
         }, 150);
     });
 
+    // Remember that the member chose QR so admin sees it on the reservation:
+    // an existing booking is tagged right away, otherwise the card's plain
+    // "Rezervovat" form books with pay=qr.
+    var csrf = <?= json_encode($user ? ny_csrf_token() : '') ?>;
+    function markQr(btn) {
+        var classId = btn.getAttribute('data-qr-class');
+        var day     = btn.getAttribute('data-qr-day');
+        if (!classId || !day) return;
+        if (btn.getAttribute('data-qr-booked') === '1') {
+            var fd = new FormData();
+            fd.append('csrf', csrf);
+            fd.append('class_id', classId);
+            fd.append('class_date', day);
+            fetch('pay_qr.php', { method: 'POST', body: fd, credentials: 'same-origin' }).catch(function () {});
+            return;
+        }
+        var card = btn.closest('.class-card');
+        if (!card) return;
+        card.querySelectorAll('form[action="reserve.php"]').forEach(function (f) {
+            if (f.querySelector('input[name="pay"]')) return;
+            var inp = document.createElement('input');
+            inp.type = 'hidden';
+            inp.name = 'pay';
+            inp.value = 'qr';
+            f.appendChild(inp);
+        });
+    }
+
     function openModal(btn) {
+        markQr(btn);
         var amount = parseInt(btn.getAttribute('data-qr-amount') || '0', 10) || 0;
         var msg    = btn.getAttribute('data-qr-msg')  || '';
         var title  = btn.getAttribute('data-qr-title') || '';

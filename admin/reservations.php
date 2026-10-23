@@ -18,6 +18,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ny_redirect('reservations.php?f=' . rawurlencode($filter) . ($search !== '' ? '&q=' . rawurlencode($search) : ''));
 }
 
+$payLabels = ['credits' => 'kredit', 'qr' => 'QR převod', 'other' => 'jiná', 'none' => 'na místě'];
+$payBadge  = function (array $r) use ($payLabels): string {
+    $m   = (string)($r['payment_method'] ?? 'none');
+    $cls = $m === 'credits' ? 'badge-success' : ($m === 'qr' ? 'badge-info' : '');
+    $lbl = $payLabels[$m] ?? $m;
+    if ($m !== 'none' && (int)($r['price_kc'] ?? 0) > 0) $lbl .= ' ' . (int)$r['price_kc'] . ' Kč';
+    return '<span class="badge ' . $cls . '">' . e($lbl) . '</span>';
+};
+
 $today = (new DateTimeImmutable('today'))->format('Y-m-d');
 $where  = [];
 $params = [];
@@ -52,9 +61,9 @@ if ($export === 'csv' || $export === 'xls') {
     $stmt->execute($params);
 
     $baseName = 'rezervace-' . $filter . ($search !== '' ? '-' . preg_replace('/[^A-Za-z0-9_-]+/', '_', $search) : '') . '-' . date('Y-m-d');
-    $headers  = ['Datum', 'Čas od', 'Čas do', 'Lekce', 'Lektor', 'Klient', 'E-mail', 'Telefon', 'Stav', 'Vytvořeno'];
+    $headers  = ['Datum', 'Čas od', 'Čas do', 'Lekce', 'Lektor', 'Klient', 'E-mail', 'Telefon', 'Stav', 'Platba', 'Částka', 'Vytvořeno'];
 
-    $rowFor = function (array $r) {
+    $rowFor = function (array $r) use ($payLabels) {
         return [
             $r['class_date'] ? (new DateTimeImmutable((string)$r['class_date']))->format('Y-m-d') : '',
             substr((string)$r['start_time'], 0, 5),
@@ -65,6 +74,8 @@ if ($export === 'csv' || $export === 'xls') {
             (string)$r['email'],
             (string)($r['phone'] ?? ''),
             $r['status'] === 'booked' ? 'rezervováno' : ($r['status'] === 'cancelled' ? 'zrušeno' : (string)$r['status']),
+            $payLabels[(string)$r['payment_method']] ?? (string)$r['payment_method'],
+            (int)$r['price_kc'],
             !empty($r['created_at']) ? (new DateTimeImmutable((string)$r['created_at']))->format('Y-m-d H:i') : '',
         ];
     };
@@ -143,6 +154,7 @@ foreach ($rows as $r) {
         'name'  => (string)$r['display_name'],
         'email' => (string)$r['email'],
         'phone' => (string)$r['phone'],
+        'pay'   => $payBadge($r),
     ];
 }
 // Sort by date + start_time ASC so the next lekce is on top.
@@ -199,6 +211,7 @@ ny_admin_render_header('Rezervace', 'reservations');
                 <?php foreach ($g['attendees'] as $a): ?>
                     <li>
                         <span class="roster-attendee-name"><?= e($a['name']) ?></span>
+                        <?= $a['pay'] ?>
                         <?php if ($a['email'] !== '' || $a['phone'] !== ''): ?>
                             <span class="roster-attendee-contact">
                                 <?php if ($a['email'] !== ''): ?><?= e($a['email']) ?><?php endif; ?>
@@ -222,7 +235,7 @@ ny_admin_render_header('Rezervace', 'reservations');
     <?php else: ?>
         <div class="tbl-wrap">
         <table class="admin-tbl">
-            <thead><tr><th>Datum</th><th>Čas</th><th>Lekce</th><th>Lektor</th><th>Klient</th><th>Stav</th><th></th></tr></thead>
+            <thead><tr><th>Datum</th><th>Čas</th><th>Lekce</th><th>Lektor</th><th>Klient</th><th>Platba</th><th>Stav</th><th></th></tr></thead>
             <tbody>
             <?php foreach ($rows as $r):
                 $d = new DateTimeImmutable($r['class_date']); ?>
@@ -235,6 +248,7 @@ ny_admin_render_header('Rezervace', 'reservations');
                         <?= e($r['display_name']) ?><br>
                         <small class="hint"><?= e($r['email']) ?><?php if ($r['phone']): ?> · <?= e($r['phone']) ?><?php endif; ?></small>
                     </td>
+                    <td><?= $payBadge($r) ?></td>
                     <td>
                         <?php if ($r['status'] === 'booked'): ?>
                             <span class="badge badge-success">rezervováno</span>

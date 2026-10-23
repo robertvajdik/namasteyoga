@@ -19,6 +19,7 @@ ny_render_header(t('podminky.title'), 'podminky', [
     <ol class="legal-list">
         <li><?= e(t('podminky.item.1')) ?></li>
         <li><?= t('podminky.item.2') ?></li>
+        <li><?= e(t('podminky.item.credits', number_format(NY_CREDIT_TOPUP_MIN, 0, ',', ' '))) ?></li>
         <li><?= t('podminky.item.3') ?></li>
         <li><?= t('podminky.item.4') ?></li>
         <li><?= e(t('podminky.item.5')) ?></li>

@@ -533,6 +533,7 @@ body.has-qr-open { overflow: hidden; }
 .badge.badge-success { background: var(--success-bg); color: var(--sage-700); }
 .badge.badge-danger  { background: var(--danger-bg);  color: var(--danger); }
 .badge.badge-warn    { background: var(--warning-bg); color: #8A5A1E; }
+.badge.badge-info    { background: var(--info-bg);    color: #3F5F75; }
 .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
 /* -- Table (my bookings history) -------------------------------- */

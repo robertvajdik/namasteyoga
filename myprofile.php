@@ -90,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Strip spaces/currency so "1 000" or "500 Kč" still parse.
             $amount = (int)preg_replace('/\D/', '', (string)($_POST['amount'] ?? ''));
             $note   = trim((string)($_POST['note'] ?? ''));
-            if ($amount < 100 || $amount > 20000) {
+            if ($amount < NY_CREDIT_TOPUP_MIN || $amount > NY_CREDIT_TOPUP_MAX) {
                 throw new RuntimeException(t('my.credits.err.amount_range'));
             }
             ny_credit_topup_request((int)$user['id'], $amount, $note);
@@ -318,7 +318,7 @@ for ($i = 1; $i <= 6; $i++) {
     $title  = trim(ny_setting('cenik_open_' . $i . '_title', '')) ?: t('cenik.open.' . $i . '.title');
     $amount = trim(ny_setting('cenik_open_' . $i . '_amount', '')) ?: t('cenik.open.' . $i . '.amount');
     $kc     = (int)preg_replace('/[^0-9]/', '', $amount);
-    if ($kc >= 100 && $kc <= 20000 && !isset($topupPresets[$kc])) {
+    if ($kc >= NY_CREDIT_TOPUP_MIN && $kc <= NY_CREDIT_TOPUP_MAX && !isset($topupPresets[$kc])) {
         $topupPresets[$kc] = $title;
     }
 }
@@ -634,7 +634,7 @@ $renderBookingRow = function (array $r) use ($daysShort, $studioAddr): void {
             <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
             <input type="hidden" name="action" value="request_topup">
             <label class="profile-field"><span><?= e(t('my.credits.amount')) ?></span>
-                <input type="number" id="credits-topup-amount" name="amount" min="100" max="20000" step="1" required inputmode="numeric" pattern="[0-9]*" placeholder="500">
+                <input type="number" id="credits-topup-amount" name="amount" min="<?= NY_CREDIT_TOPUP_MIN ?>" max="<?= NY_CREDIT_TOPUP_MAX ?>" step="1" required inputmode="numeric" pattern="[0-9]*" placeholder="<?= NY_CREDIT_TOPUP_MIN ?>">
             </label>
             <label class="profile-field"><span><?= e(t('my.credits.note')) ?></span>
                 <input type="text" name="note" maxlength="200" placeholder="<?= e(t('my.credits.note.ph')) ?>">
@@ -643,7 +643,7 @@ $renderBookingRow = function (array $r) use ($daysShort, $studioAddr): void {
         </form>
         <?php if ($iban !== '' || $bankAccount !== ''): ?>
         <?php
-            $qrDefaultAmount = 500;
+            $qrDefaultAmount = NY_CREDIT_TOPUP_MIN;
             $qrMsg           = 'Kredit ' . (string)$user['display_name'];
             $qrSpayd         = $iban !== '' ? ny_spayd($iban, (float)$qrDefaultAmount, $qrMsg) : '';
         ?>

@@ -17,7 +17,7 @@ if (!$user) {
 $classId   = (int)($_POST['class_id'] ?? 0);
 $classDate = (string)($_POST['class_date'] ?? '');
 $pay       = (string)($_POST['pay'] ?? 'none');
-if (!in_array($pay, ['none', 'credits'], true)) {
+if (!in_array($pay, ['none', 'credits', 'qr'], true)) {
     $pay = 'none';
 }
 

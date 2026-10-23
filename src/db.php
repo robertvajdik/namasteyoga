@@ -724,10 +724,14 @@ function ny_credit_apply(int $userId, int $delta, string $kind, string $refType 
     return $next;
 }
 
+// Allowed range for a member's credit top-up request (Kč).
+const NY_CREDIT_TOPUP_MIN = 1900;
+const NY_CREDIT_TOPUP_MAX = 20000;
+
 function ny_credit_topup_request(int $userId, int $amountKc, string $note = ''): int {
     ny_ensure_content_tables();
-    if ($amountKc <= 0) {
-        throw new RuntimeException('Zadejte částku vyšší než 0 Kč.');
+    if ($amountKc < NY_CREDIT_TOPUP_MIN || $amountKc > NY_CREDIT_TOPUP_MAX) {
+        throw new RuntimeException(t('my.credits.err.amount_range'));
     }
     $pdo = ny_db();
     $pdo->prepare(

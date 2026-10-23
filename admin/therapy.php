@@ -318,7 +318,7 @@ ny_admin_render_header('Masáže – termíny', 'therapy');
                                 <strong><?= e((string)$b['display_name']) ?></strong>
                                 <?php if (!empty($b['phone'])): ?> · <a href="tel:<?= e(preg_replace('/\s+/', '', (string)$b['phone'])) ?>"><?= e((string)$b['phone']) ?></a><?php endif; ?>
                                 · <a href="mailto:<?= e((string)$b['email']) ?>"><?= e((string)$b['email']) ?></a>
-                                <?php if ($b['payment_method'] === 'credits'): ?> <span class="badge badge-success">kredit <?= (int)$b['price_kc'] ?> Kč</span><?php endif; ?>
+                                <?php if ($b['payment_method'] === 'credits'): ?> <span class="badge badge-success">kredit <?= (int)$b['price_kc'] ?> Kč</span><?php elseif ($b['payment_method'] === 'qr'): ?> <span class="badge badge-info">QR převod <?= (int)$b['price_kc'] ?> Kč</span><?php endif; ?>
                             </div>
                         <?php endforeach; endif; ?>
                     </td>
