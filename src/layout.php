@@ -84,6 +84,23 @@ function ny_phone_obf(?string $phone, string $iconHtml = '', array $attrs = []):
 }
 
 /**
+ * Strip diacritics and anything outside a safe ASCII set – some banking apps
+ * reject SPAYD payloads with non-ASCII characters in MSG.
+ */
+function ny_ascii(string $s): string {
+    $s = strtr($s, [
+        'á'=>'a','č'=>'c','ď'=>'d','é'=>'e','ě'=>'e','í'=>'i','ň'=>'n','ó'=>'o','ř'=>'r','š'=>'s','ť'=>'t','ú'=>'u','ů'=>'u','ý'=>'y','ž'=>'z',
+        'Á'=>'A','Č'=>'C','Ď'=>'D','É'=>'E','Ě'=>'E','Í'=>'I','Ň'=>'N','Ó'=>'O','Ř'=>'R','Š'=>'S','Ť'=>'T','Ú'=>'U','Ů'=>'U','Ý'=>'Y','Ž'=>'Z',
+        'ä'=>'a','ö'=>'o','ü'=>'u','ľ'=>'l','ĺ'=>'l','ŕ'=>'r','ô'=>'o','Ä'=>'A','Ö'=>'O','Ü'=>'U','Ľ'=>'L','Ĺ'=>'L','Ŕ'=>'R','Ô'=>'O','ß'=>'ss',
+    ]);
+    if (class_exists('Normalizer')) {
+        $n = Normalizer::normalize($s, Normalizer::FORM_D);
+        if ($n !== false) $s = preg_replace('/\p{Mn}+/u', '', $n);
+    }
+    return preg_replace('/[^A-Za-z0-9 .,\-]/', '', $s);
+}
+
+/**
  * SPAYD (Short Payment Descriptor) – the Czech QR platba payload.
  * Amount optional; when null the QR still works for a free-form transfer.
  */
@@ -94,9 +111,9 @@ function ny_spayd(string $iban, ?float $amount, string $msg): string {
         $parts[] = 'AM:' . number_format($amount, 2, '.', '');
     }
     $parts[] = 'CC:CZK';
-    $clean = preg_replace('/[^A-Za-z0-9 ěščřžýáíéúůťďňŮÁÉÍÓÚÝŽŠČŘĎŤŇ.,\-]/u', '', $msg);
+    $clean = trim(ny_ascii($msg));
     if ($clean !== '') {
-        $parts[] = 'MSG:' . mb_substr($clean, 0, 60);
+        $parts[] = 'MSG:' . substr($clean, 0, 60);
     }
     return implode('*', $parts);
 }
