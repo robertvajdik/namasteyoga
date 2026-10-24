@@ -45,22 +45,6 @@ if ($user) {
     $userSurname = preg_replace('/\s+/u', '', $userSurname);
 }
 
-// SPAYD MSG must be ASCII and stays under qrcodejs' type-10 byte capacity
-// (~108 bytes with correctLevel M). Czech diacritics transliterate to ASCII
-// so Czech banking apps display the payment reference correctly.
-function ny_ascii_msg(string $s): string {
-    static $map = [
-        'á'=>'a','č'=>'c','ď'=>'d','é'=>'e','ě'=>'e','í'=>'i','ň'=>'n',
-        'ó'=>'o','ř'=>'r','š'=>'s','ť'=>'t','ú'=>'u','ů'=>'u','ý'=>'y','ž'=>'z',
-        'Á'=>'A','Č'=>'C','Ď'=>'D','É'=>'E','Ě'=>'E','Í'=>'I','Ň'=>'N',
-        'Ó'=>'O','Ř'=>'R','Š'=>'S','Ť'=>'T','Ú'=>'U','Ů'=>'U','Ý'=>'Y','Ž'=>'Z',
-        '–'=>'-','—'=>'-','„'=>'"','"'=>'"','"'=>'"','‚'=>"'", '‘'=>"'", '’'=>"'",
-    ];
-    $s = strtr($s, $map);
-    $s = preg_replace('/[^\x20-\x7E]/', '', $s);
-    return (string)preg_replace('/\s+/', ' ', trim((string)$s));
-}
-
 // Rosters: first-name lists per class + date. Only exposed to signed-in
 // members so casual visitors / bots don't scrape attendee lists.
 $rosters = [];
@@ -218,7 +202,7 @@ foreach ($calendars as $calKey => $calClasses):
                         <?php if ($showQr): ?>
                             <button type="button" class="class-qr-btn"
                                     data-qr-amount="<?= (int)$priceAmount ?>"
-                                    data-qr-msg="<?= e(ny_ascii_msg('Lekce ' . $c['name'] . ($userSurname !== '' ? ' ' . $userSurname : ''))) ?>"
+                                    data-qr-msg="<?= e(ny_ascii('Lekce ' . $c['name'] . ($userSurname !== '' ? ' ' . $userSurname : ''))) ?>"
                                     data-qr-title="<?= e($c['name']) ?>"
                                     data-qr-date="<?= e($date->format('j. n.') . ' ' . substr($c['start_time'], 0, 5)) ?>"
                                     <?php if ($user && !$isPast): ?>

@@ -644,7 +644,7 @@ $renderBookingRow = function (array $r) use ($daysShort, $studioAddr): void {
         <?php if ($iban !== '' || $bankAccount !== ''): ?>
         <?php
             $qrDefaultAmount = NY_CREDIT_TOPUP_MIN;
-            $qrMsg           = trim(ny_ascii('Kredit ' . (string)$user['display_name']));
+            $qrMsg           = ny_ascii('Kredit ' . (string)$user['display_name']);
             $qrSpayd         = $iban !== '' ? ny_spayd($iban, (float)$qrDefaultAmount, $qrMsg) : '';
         ?>
         <details class="credits-bank" open>
