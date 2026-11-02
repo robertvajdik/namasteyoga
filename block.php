@@ -31,4 +31,5 @@ if (!$res['ok']) {
     ny_flash_set('err', $res['msg']);
 }
 
-ny_redirect(ny_booking_return_url('', $classDate));
+// Jump back to the same card – on phones the page is long.
+ny_redirect(ny_booking_return_url('', $classDate) . '#slot-' . $classId . '-' . $classDate);

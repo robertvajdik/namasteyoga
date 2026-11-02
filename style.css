@@ -2558,6 +2558,8 @@ a.admin-stat { color: inherit; text-decoration: none; }
 }
 .class-block-label { display: inline-flex; align-items: center; gap: 4px; margin-right: auto; }
 .class-block-label .icon { width: 12px; height: 12px; }
+/* Desktop: 7 narrow columns – icon + number only (full text in the tooltip). */
+@media (min-width: 781px) { .class-block-text { display: none; } }
 .class-block form.inline { margin: 0; }
 .class-block-btn {
     width: 24px; height: 24px; border-radius: 999px; cursor: pointer;
@@ -2566,6 +2568,42 @@ a.admin-stat { color: inherit; text-decoration: none; }
 }
 .class-block-btn:hover:not(:disabled) { background: var(--sand-200); }
 .class-block-btn:disabled { opacity: .35; cursor: default; }
+.class-card[id] { scroll-margin-top: 90px; }
+.roster-list { min-height: 0; }
+.class-block-btn { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+
+/* Phones: 2-col week grid makes cards narrow – stack the stepper label above
+   finger-sized buttons, and turn the roster into a bottom sheet. */
+@media (max-width: 780px) {
+    .class-block { flex-wrap: wrap; gap: 6px; }
+    .class-block-label { flex: 1 0 100%; margin-right: 0; }
+    .class-block form.inline { flex: 1 1 0; }
+    .class-block-btn {
+        width: 100%; height: 36px; border-radius: var(--radius-pill);
+        font-size: 18px;
+    }
+    .roster-link { padding: 8px 12px; min-height: 32px; align-self: flex-start; }
+}
+@media (max-width: 560px) {
+    .roster-modal { padding: 0; align-items: flex-end; }
+    .roster-modal-backdrop { backdrop-filter: none; }
+    .roster-modal-inner {
+        max-width: none;
+        max-height: 85vh;
+        padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        box-shadow: 0 -20px 50px -20px rgba(26,20,16,.4);
+        animation: qr-sheet-in .22s ease-out;
+    }
+    .roster-modal-title { font-size: 16px; }
+    .roster-modal-close { width: 44px; height: 44px; font-size: 30px; margin: -8px -8px 0 0; }
+    .roster-list { max-height: none; overflow-y: auto; gap: 8px; }
+    .roster-item { padding: 8px 14px; font-size: 14px; }
+    .roster-credit { font-size: 10px; padding: 3px 7px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .roster-modal-inner { animation: none; }
+}
 body.has-roster-open { overflow: hidden; }
 
 /* ============================================================

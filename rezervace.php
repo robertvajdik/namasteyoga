@@ -189,7 +189,7 @@ foreach ($calendars as $calKey => $calClasses):
                 // Massage / physio clients stay private – no roster for those slots.
                 $canShowRoster = $user && $taken > 0 && $cat !== 'massage';
             ?>
-            <article class="class-card <?= $left === 0 ? 'is-full' : '' ?> <?= $canShowRoster ? 'has-roster' : '' ?>"
+            <article id="slot-<?= (int)$c['id'] ?>-<?= e($dateStr) ?>" class="class-card <?= $left === 0 ? 'is-full' : '' ?> <?= $canShowRoster ? 'has-roster' : '' ?>"
                      data-cat="<?= e($cat) ?>"
                      <?php if ($canShowRoster): ?>
                      data-roster='<?= e(json_encode($roster, JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT)) ?>'
@@ -280,7 +280,7 @@ foreach ($calendars as $calKey => $calClasses):
                 </div>
                 <?php if ($viewerIsAdmin && !$isPast): ?>
                     <div class="class-block" title="<?= e(t('rezervace.block.title')) ?>">
-                        <span class="class-block-label"><?= ny_icon('lock', 12) ?> <?= e(t('rezervace.block.label')) ?>: <strong><?= (int)$blocked ?></strong></span>
+                        <span class="class-block-label"><?= ny_icon('lock', 12) ?><span class="class-block-text"><?= e(t('rezervace.block.label')) ?>:</span> <strong><?= (int)$blocked ?></strong></span>
                         <?php foreach ([-1 => '−', 1 => '+'] as $delta => $sign):
                             $disabled = $delta < 0 ? $blocked === 0 : $left === 0; ?>
                             <form method="post" action="block.php" class="inline">
