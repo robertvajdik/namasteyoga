@@ -315,7 +315,8 @@ function ny_reserve_class(int $userId, int $classId, string $classDate, string $
               WHERE class_id = ? AND class_date = ? AND status = 'booked' FOR UPDATE"
         );
         $countStmt->execute([$classId, $classDate]);
-        if ((int)$countStmt->fetchColumn() >= (int)$class['capacity']) {
+        $occupied = (int)$countStmt->fetchColumn() + ny_class_blocked_seats($classId, $classDate, true);
+        if ($occupied >= (int)$class['capacity']) {
             throw new RuntimeException(t('reserve.err.full'));
         }
         // Price snapshot – free-form "250 Kč" strings reduce to the integer koruna.
@@ -370,6 +371,57 @@ function ny_reserve_class(int $userId, int $classId, string $classDate, string $
     } catch (Throwable $ex) {
         $pdo->rollBack();
         return ['ok' => false, 'msg' => $ex->getMessage()];
+    }
+}
+
+/**
+ * Seats an admin has blocked for one class occurrence (see ny_class_blocks).
+ * Pass $lock inside a transaction to serialise against ny_class_block_change().
+ */
+function ny_class_blocked_seats(int $classId, string $classDate, bool $lock = false): int {
+    $stmt = ny_db()->prepare(
+        'SELECT seats FROM ny_class_blocks WHERE class_id = ? AND class_date = ?' . ($lock ? ' FOR UPDATE' : '')
+    );
+    $stmt->execute([$classId, $classDate]);
+    return (int)$stmt->fetchColumn();
+}
+
+/**
+ * Admin: block (+delta) or release (-delta) places in a class occurrence.
+ * Never blocks beyond the free capacity and never goes below zero.
+ * Returns ['ok' => bool, 'seats' => int, 'msg' => string].
+ */
+function ny_class_block_change(int $classId, string $classDate, int $delta, int $adminId): array {
+    $pdo = ny_db();
+    $pdo->beginTransaction();
+    try {
+        $c = $pdo->prepare('SELECT capacity FROM ny_classes WHERE id = ? FOR UPDATE');
+        $c->execute([$classId]);
+        $capacity = $c->fetchColumn();
+        if ($capacity === false) {
+            throw new RuntimeException(t('reserve.err.not_found'));
+        }
+        $seats = ny_class_blocked_seats($classId, $classDate, true);
+        $cnt = $pdo->prepare(
+            "SELECT COUNT(*) FROM ny_reservations
+              WHERE class_id = ? AND class_date = ? AND status = 'booked'"
+        );
+        $cnt->execute([$classId, $classDate]);
+        $booked = (int)$cnt->fetchColumn();
+
+        $new = max(0, $seats + $delta);
+        if ($delta > 0 && $booked + $new > (int)$capacity) {
+            throw new RuntimeException(t('rezervace.block.err.full'));
+        }
+        $pdo->prepare(
+            'INSERT INTO ny_class_blocks (class_id, class_date, seats, updated_by) VALUES (?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE seats = VALUES(seats), updated_by = VALUES(updated_by)'
+        )->execute([$classId, $classDate, $new, $adminId]);
+        $pdo->commit();
+        return ['ok' => true, 'seats' => $new, 'msg' => ''];
+    } catch (Throwable $ex) {
+        $pdo->rollBack();
+        return ['ok' => false, 'seats' => 0, 'msg' => $ex->getMessage()];
     }
 }
 
@@ -441,6 +493,7 @@ function ny_icon(string $name, int $size = 18): string {
         'clock'     => '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
         'map-pin'   => '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
         'tag'       => '<path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',
+        'lock'      => '<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
         'qr-code'   => '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><line x1="14" y1="14" x2="14" y2="17"/><line x1="17" y1="14" x2="17" y2="21"/><line x1="20" y1="17" x2="20" y2="21"/><line x1="14" y1="20" x2="17" y2="20"/>',
     ];
     $p = $paths[$name] ?? '';

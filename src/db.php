@@ -251,6 +251,18 @@ function ny_ensure_content_tables(): void {
             KEY user_id (user_id, created_at)
          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
+    // Places an admin holds back in one class occurrence (walk-ins, friends,
+    // a teacher's guest). They count against capacity like real bookings.
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS ny_class_blocks (
+            class_id    INT UNSIGNED NOT NULL,
+            class_date  DATE NOT NULL,
+            seats       INT UNSIGNED NOT NULL DEFAULT 0,
+            updated_by  INT UNSIGNED NULL,
+            updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (class_id, class_date)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
 
     // Period validity on classes – NULL = open-ended. Used by the schedule to
     // hide a recurring class outside of its valid date window.

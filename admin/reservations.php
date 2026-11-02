@@ -148,6 +148,7 @@ foreach ($rows as $r) {
             'class_name' => $r['class_name'],
             'teacher'    => $r['teacher'],
             'attendees'  => [],
+            'credits'    => 0,
         ];
     }
     $rosterGroups[$key]['attendees'][] = [
@@ -156,6 +157,7 @@ foreach ($rows as $r) {
         'phone' => (string)$r['phone'],
         'pay'   => $payBadge($r),
     ];
+    if (($r['payment_method'] ?? '') === 'credits') $rosterGroups[$key]['credits']++;
 }
 // Sort by date + start_time ASC so the next lekce is on top.
 uasort($rosterGroups, function ($a, $b) {
@@ -206,6 +208,9 @@ ny_admin_render_header('Rezervace', 'reservations');
                 <span class="roster-group-title"><?= e((string)$g['class_name']) ?></span>
                 <span class="roster-group-meta"><?= e((string)$g['teacher']) ?></span>
                 <span class="badge badge-success"><?= (int)$count ?> účastník<?= $count === 1 ? '' : ($count >= 5 ? 'ů' : 'ci') ?></span>
+                <?php if ($g['credits'] > 0): ?>
+                    <span class="badge badge-info" title="Zaplaceno kreditem"><?= (int)$g['credits'] ?>× kredit</span>
+                <?php endif; ?>
             </summary>
             <ol class="roster-attendees">
                 <?php foreach ($g['attendees'] as $a): ?>

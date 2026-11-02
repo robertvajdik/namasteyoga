@@ -32,6 +32,17 @@ foreach ($countsStmt as $r) {
     $counts[$r['class_id'] . '|' . $r['class_date']] = (int)$r['n'];
 }
 
+// Admin-blocked places per class + date – they reduce the free count.
+$blocksStmt = $pdo->prepare(
+    'SELECT class_id, class_date, seats FROM ny_class_blocks
+      WHERE seats > 0 AND class_date BETWEEN ? AND ?'
+);
+$blocksStmt->execute([$weekStart, $weekEnd]);
+$blocks = [];
+foreach ($blocksStmt as $r) {
+    $blocks[$r['class_id'] . '|' . $r['class_date']] = (int)$r['seats'];
+}
+
 $mine = [];
 $user = ny_current_user();
 $userBalance = $user ? ny_user_balance_kc((int)$user['id']) : 0;
@@ -48,9 +59,12 @@ if ($user) {
 // Rosters: first-name lists per class + date. Only exposed to signed-in
 // members so casual visitors / bots don't scrape attendee lists.
 $rosters = [];
+// Admins additionally see which attendees paid with credits; members only get
+// first names so payment info about others never leaves the server.
+$viewerIsAdmin = $user && ny_is_admin($user);
 if ($user) {
     $rosterStmt = $pdo->prepare(
-        "SELECT r.class_id, r.class_date, u.display_name
+        "SELECT r.class_id, r.class_date, r.payment_method, u.display_name
            FROM ny_reservations r
            JOIN ny_users u ON u.id = r.user_id
           WHERE r.status = 'booked' AND r.class_date BETWEEN ? AND ?
@@ -63,7 +77,9 @@ if ($user) {
         // Keep only the first token (first name).
         $first = preg_split('/\s+/u', $first, 2)[0] ?? '';
         if ($first === '') continue;
-        $rosters[$r['class_id'] . '|' . $r['class_date']][] = $first;
+        $rosters[$r['class_id'] . '|' . $r['class_date']][] = $viewerIsAdmin
+            ? ['n' => $first, 'c' => ($r['payment_method'] ?? '') === 'credits' ? 1 : 0]
+            : $first;
     }
 }
 if ($user) {
@@ -161,8 +177,9 @@ foreach ($calendars as $calKey => $calClasses):
         <?php else: foreach ($dayClasses as $c):
             $key      = $c['id'] . '|' . $dateStr;
             $taken    = $counts[$key] ?? 0;
+            $blocked  = $blocks[$key] ?? 0;
             $capacity = (int)$c['capacity'];
-            $left     = max(0, $capacity - $taken);
+            $left     = max(0, $capacity - $taken - $blocked);
             $booked   = isset($mine[$key]);
             $cat      = ny_is_therapy_class($c) ? 'massage' : ny_category((string)$c['name']);
         ?>
@@ -261,6 +278,22 @@ foreach ($calendars as $calKey => $calClasses):
                         <?php endif; ?>
                     <?php endif; ?>
                 </div>
+                <?php if ($viewerIsAdmin && !$isPast): ?>
+                    <div class="class-block" title="<?= e(t('rezervace.block.title')) ?>">
+                        <span class="class-block-label"><?= ny_icon('lock', 12) ?> <?= e(t('rezervace.block.label')) ?>: <strong><?= (int)$blocked ?></strong></span>
+                        <?php foreach ([-1 => '−', 1 => '+'] as $delta => $sign):
+                            $disabled = $delta < 0 ? $blocked === 0 : $left === 0; ?>
+                            <form method="post" action="block.php" class="inline">
+                                <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+                                <input type="hidden" name="class_id" value="<?= (int)$c['id'] ?>">
+                                <input type="hidden" name="class_date" value="<?= e($dateStr) ?>">
+                                <input type="hidden" name="delta" value="<?= $delta ?>">
+                                <button type="submit" class="class-block-btn" <?= $disabled ? 'disabled' : '' ?>
+                                        aria-label="<?= e(t($delta < 0 ? 'rezervace.block.less' : 'rezervace.block.more')) ?>"><?= $sign ?></button>
+                            </form>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
                 <?php if (!$user && !$isPast): ?>
                     <a class="btn btn-secondary btn-sm class-card-login" href="login.php?class_date=<?= e($dateStr) ?>&amp;class_id=<?= (int)$c['id'] ?>"><?= e(t('rezervace.btn.login')) ?></a>
                 <?php endif; ?>
@@ -301,6 +334,7 @@ foreach ($calendars as $calKey => $calClasses):
     var emptyEl = document.getElementById('roster-empty');
     if (!modal || !listEl) return;
     var defaultTitle = <?= json_encode(t('rezervace.roster.title')) ?>;
+    var creditLabel  = <?= json_encode(t('rezervace.roster.credit')) ?>;
 
     function openModal(title, names) {
         titleEl.textContent = title || defaultTitle;
@@ -312,7 +346,15 @@ foreach ($calendars as $calKey => $calClasses):
             names.forEach(function (n) {
                 var li = document.createElement('li');
                 li.className = 'roster-item';
-                li.textContent = n;
+                var name = typeof n === 'string' ? n : (n && n.n) || '';
+                li.textContent = name;
+                if (n && typeof n === 'object' && n.c) {
+                    li.classList.add('is-credit');
+                    var tag = document.createElement('span');
+                    tag.className = 'roster-credit';
+                    tag.textContent = creditLabel;
+                    li.appendChild(tag);
+                }
                 listEl.appendChild(li);
             });
         }
