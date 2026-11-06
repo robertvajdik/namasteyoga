@@ -55,8 +55,8 @@ ny_render_header(t('index.title'), 'home', ['description' => t('index.meta.descr
     <div class="landing-lekce-inner">
         <div class="landing-lekce-head">
             <div class="landing-lekce-copy">
-                <div class="landing-eyebrow landing-eyebrow-sage"><?= e(t('index.promo.eyebrow')) ?></div>
-                <h2 class="landing-h2"><?= e(t('index.promo.h')) ?></h2>
+                <div class="landing-eyebrow landing-eyebrow-red"><?= e(t('index.promo.eyebrow')) ?></div>
+                <h2 class="landing-h2 landing-h2-sm"><?= e(t('index.promo.h')) ?></h2>
                 <p class="landing-h2-lead"><?= e(t('index.promo.lead')) ?></p>
             </div>
             <a class="landing-lekce-all" href="rezervace.php"><?= e(t('index.lekce.all')) ?></a>

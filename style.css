@@ -5101,6 +5101,7 @@ body.has-promo-zoom-open { overflow: hidden; }
 }
 .landing-eyebrow-sage   { color: var(--landing-sage); }
 .landing-eyebrow-forest { color: var(--landing-forest); }
+.landing-eyebrow-red    { color: #c0392b; }
 
 .landing-h2 {
     margin: 0;
@@ -5111,6 +5112,7 @@ body.has-promo-zoom-open { overflow: hidden; }
     color: var(--landing-ink);
     text-wrap: balance;
 }
+.landing-h2-sm { font-size: clamp(30px, 3.4vw, 44px); }
 .landing-h2-lead {
     margin: 0;
     font-size: 18px;
@@ -5281,7 +5283,8 @@ body:has(.landing-cta-band) .site-footer { margin-top: 0; }
 .landing-hero-caption strong {
     font-family: var(--font-display);
     font-weight: 500;
-    font-size: clamp(20px, 1.7vw, 24px);
+    font-size: clamp(26px, 2.4vw, 34px);
+    line-height: 1.2;
     color: var(--landing-cream);
 }
 .landing-hero-caption span {
