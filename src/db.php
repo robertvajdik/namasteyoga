@@ -676,9 +676,39 @@ function ny_voucher_send_email(int $voucherId, ?string $overrideEmail = null): b
         $lines[] = '';
         $lines[] = 'Vzkaz: ' . $v['message'];
     }
+    $voucherUrl = $base . '/voucher.php?code=' . rawurlencode((string)$v['code']);
     $lines[] = '';
     $lines[] = 'Náhled poukazu k vytištění:';
-    $lines[] = $base . '/voucher.php?code=' . rawurlencode((string)$v['code']);
+    $lines[] = $voucherUrl;
+
+    // Payment details (bank account + QR platba) unless already settled.
+    $bankAccount = trim((string)($s['bank_account_number'] ?? ''));
+    $iban        = trim((string)($s['bank_iban'] ?? ''));
+    $holder      = trim((string)($s['bank_holder'] ?? '')) ?: $siteName;
+    $payMsg      = 'Darkovy poukaz ' . $v['code'];
+    $amountCzk   = (int)$v['amount_czk'];
+    $showPay     = in_array((string)$v['status'], ['pending', 'issued'], true)
+                && ($bankAccount !== '' || $iban !== '');
+    $qrPng       = '';
+    if ($showPay) {
+        $lines[] = '';
+        $lines[] = 'Platba převodem:';
+        $lines[] = 'Majitel účtu: ' . $holder;
+        if ($bankAccount !== '') $lines[] = 'Číslo účtu: ' . $bankAccount;
+        if ($iban !== '')        $lines[] = 'IBAN: ' . $iban;
+        if ($amountCzk > 0)      $lines[] = 'Částka: ' . number_format($amountCzk, 0, ',', ' ') . ' Kč';
+        $lines[] = 'Zpráva pro příjemce: ' . $payMsg;
+        if ($iban !== '') {
+            try {
+                require_once __DIR__ . '/qr.php';
+                $qrPng = ny_qr_png(ny_spayd($iban, $amountCzk > 0 ? (float)$amountCzk : null, $payMsg), 6);
+                $lines[] = '(QR kód pro platbu najdete v HTML verzi e-mailu.)';
+            } catch (Throwable $e) {
+                $qrPng = '';
+            }
+        }
+    }
+
     $lines[] = '';
     $lines[] = 'Poukaz uplatníte na recepci studia nebo při rezervaci lekce –';
     $lines[] = 'stačí uvést kód poukazu výše.';
@@ -692,7 +722,48 @@ function ny_voucher_send_email(int $voucherId, ?string $overrideEmail = null): b
     $subject = 'Dárkový poukaz ' . $siteName . ' – ' . $v['code'];
     $body    = implode("\r\n", $lines) . "\r\n";
 
-    $ok = ny_mail($to, $subject, $body);
+    // HTML version (same content) so the QR code can be shown inline.
+    $h   = static fn($x): string => htmlspecialchars((string)$x, ENT_QUOTES, 'UTF-8');
+    $row = static fn(string $k, string $val): string =>
+        '<tr><td style="padding:3px 16px 3px 0;color:#777;white-space:nowrap">' . $h($k) . '</td>'
+        . '<td style="padding:3px 0;font-weight:600">' . $val . '</td></tr>';
+    $info = $row('Kód poukazu', '<span style="font-family:monospace;font-size:16px">' . $h($v['code']) . '</span>');
+    if ($amount !== '')  $info .= $row('Hodnota', $h($amount));
+    if ($v['for_whom'])  $info .= $row('Pro', $h($v['for_whom']));
+    if ($valid !== '')   $info .= $row('Platnost do', $h($valid));
+    $html  = '<!doctype html><html><body style="margin:0;padding:24px;background:#f6f3ee;font-family:Arial,Helvetica,sans-serif;color:#333;font-size:14px;line-height:1.5">';
+    $html .= '<div style="max-width:560px;margin:0 auto;background:#fff;border-radius:8px;padding:28px">';
+    $html .= '<p>' . $h($greeting) . '</p>';
+    $html .= '<p>posíláme Vám dárkový poukaz do studia ' . $h($siteName) . '.</p>';
+    $html .= '<table style="border-collapse:collapse;margin:12px 0">' . $info . '</table>';
+    if (trim((string)($v['message'] ?? '')) !== '') {
+        $html .= '<p style="font-style:italic">„' . nl2br($h($v['message'])) . '“</p>';
+    }
+    $html .= '<p><a href="' . $h($voucherUrl) . '" style="display:inline-block;background:#8a6d4b;color:#fff;text-decoration:none;padding:10px 18px;border-radius:6px">Zobrazit poukaz k vytištění</a></p>';
+    if ($showPay) {
+        $pay = $row('Majitel účtu', $h($holder));
+        if ($bankAccount !== '') $pay .= $row('Číslo účtu', '<span style="font-family:monospace">' . $h($bankAccount) . '</span>');
+        if ($iban !== '')        $pay .= $row('IBAN', '<span style="font-family:monospace">' . $h($iban) . '</span>');
+        if ($amountCzk > 0)      $pay .= $row('Částka', $h(number_format($amountCzk, 0, ',', ' ') . ' Kč'));
+        $pay .= $row('Zpráva pro příjemce', $h($payMsg));
+        $html .= '<h3 style="margin:24px 0 8px;font-size:16px">Platba převodem</h3>';
+        $html .= '<table style="border-collapse:collapse">' . $pay . '</table>';
+        if ($qrPng !== '') {
+            $html .= '<p style="margin:16px 0 4px"><img src="cid:qr-platba" alt="QR platba" width="200" height="200" style="display:block;width:200px;height:200px"></p>';
+            $html .= '<p style="color:#777;font-size:12px;margin:0">Naskenujte QR kód v aplikaci své banky.</p>';
+        }
+    }
+    $html .= '<p style="margin-top:24px">Poukaz uplatníte na recepci studia nebo při rezervaci lekce – stačí uvést kód poukazu výše.</p>';
+    $html .= '<p>Děkujeme a budeme se těšit na Vaši návštěvu.</p>';
+    $html .= '<p style="color:#777">' . $h($siteName);
+    if (!empty($s['phone'])) $html .= '<br>' . $h($s['phone']);
+    if (!empty($s['email'])) $html .= '<br>' . $h($s['email']);
+    $html .= '</p></div></body></html>';
+
+    $ok = ny_mail($to, $subject, $body, [
+        'html'   => $html,
+        'inline' => $qrPng !== '' ? [['cid' => 'qr-platba', 'name' => 'qr-platba.png', 'type' => 'image/png', 'data' => $qrPng]] : [],
+    ]);
     if (!$ok) {
         throw new RuntimeException('E-mail se nepodařilo odeslat (zkontrolujte SMTP nastavení).');
     }
@@ -1091,8 +1162,44 @@ function ny_mail(string $to, string $subject, string $body, array $opts = []): b
     $headers[] = 'From: ' . $encodedName . ' <' . $from . '>';
     $headers[] = 'Reply-To: ' . ($opts['reply_to'] ?? $from);
     $headers[] = 'MIME-Version: 1.0';
-    $headers[] = 'Content-Type: text/plain; charset=UTF-8';
-    $headers[] = 'Content-Transfer-Encoding: 8bit';
+    $html = (string)($opts['html'] ?? '');
+    if ($html !== '') {
+        // multipart/related( multipart/alternative(text, html), inline images… )
+        $relB = 'rel_' . bin2hex(random_bytes(8));
+        $altB = 'alt_' . bin2hex(random_bytes(8));
+        $headers[] = 'Content-Type: multipart/related; boundary="' . $relB . '"';
+        $parts   = [];
+        $parts[] = '--' . $relB;
+        $parts[] = 'Content-Type: multipart/alternative; boundary="' . $altB . '"';
+        $parts[] = '';
+        $parts[] = '--' . $altB;
+        $parts[] = 'Content-Type: text/plain; charset=UTF-8';
+        $parts[] = 'Content-Transfer-Encoding: base64';
+        $parts[] = '';
+        $parts[] = rtrim(chunk_split(base64_encode($body), 76, "\r\n"));
+        $parts[] = '--' . $altB;
+        $parts[] = 'Content-Type: text/html; charset=UTF-8';
+        $parts[] = 'Content-Transfer-Encoding: base64';
+        $parts[] = '';
+        $parts[] = rtrim(chunk_split(base64_encode($html), 76, "\r\n"));
+        $parts[] = '--' . $altB . '--';
+        foreach ((array)($opts['inline'] ?? []) as $img) {
+            $cid  = (string)$img['cid'];
+            $name = (string)($img['name'] ?? $cid);
+            $parts[] = '--' . $relB;
+            $parts[] = 'Content-Type: ' . ($img['type'] ?? 'image/png') . '; name="' . $name . '"';
+            $parts[] = 'Content-Transfer-Encoding: base64';
+            $parts[] = 'Content-ID: <' . $cid . '>';
+            $parts[] = 'Content-Disposition: inline; filename="' . $name . '"';
+            $parts[] = '';
+            $parts[] = rtrim(chunk_split(base64_encode((string)$img['data']), 76, "\r\n"));
+        }
+        $parts[] = '--' . $relB . '--';
+        $body = implode("\r\n", $parts) . "\r\n";
+    } else {
+        $headers[] = 'Content-Type: text/plain; charset=UTF-8';
+        $headers[] = 'Content-Transfer-Encoding: 8bit';
+    }
     $headers[] = 'X-Mailer: PHP/' . phpversion();
 
     $encodedSubject = '=?UTF-8?B?' . base64_encode($subject) . '?=';
