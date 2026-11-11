@@ -320,7 +320,7 @@ $massageField = function(int $i, string $field) use ($s) {
 <section class="poukaz-order" id="objednavka">
     <div class="poukaz-order-head">
         <div class="eyebrow"><?= e(t('poukaz.order.eyebrow')) ?></div>
-        <h2><?= e(t('poukaz.order.title')) ?></h2>
+        <h2 id="voucher"><?= e(t('poukaz.order.title')) ?></h2>
         <p><?= e(t('poukaz.order.lead')) ?></p>
     </div>
     <form method="post" class="poukaz-form" data-recaptcha="poukaz" novalidate>

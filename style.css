@@ -4239,9 +4239,10 @@ img, iframe, video { max-width: 100%; }
 .poukaz-order-head .eyebrow { display: inline-block; color: var(--accent-ink); margin-bottom: 8px; }
 .poukaz-order-head h2 {
     font-family: var(--font-display);
-    font-size: clamp(24px, 2.6vw, 30px);
+    font-size: clamp(30px, 4vw, 44px);
     color: var(--text-strong);
     margin: 0 0 10px;
+    scroll-margin-top: 130px;
 }
 .poukaz-order-head p { margin: 0; color: var(--text-muted); }
 .poukaz-form {
