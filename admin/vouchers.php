@@ -6,6 +6,23 @@ require __DIR__ . '/_layout.php';
 ny_ensure_content_tables();
 $pdo = ny_db();
 
+// Read the current status, so a change to "paid" can trigger the
+// payment-received e-mail exactly once (on the transition).
+$prevStatus = static function (PDO $pdo, int $id): string {
+    $q = $pdo->prepare('SELECT status FROM ny_vouchers WHERE id = ?');
+    $q->execute([$id]);
+    return (string)($q->fetchColumn() ?: '');
+};
+// Returns a suffix for the flash message describing the e-mail outcome.
+$notifyPaid = static function (int $id): string {
+    try {
+        ny_voucher_send_email($id, null, true);
+        return ' Objednateli byl odeslán e-mail o přijetí platby.';
+    } catch (Throwable $e) {
+        return ' E-mail o přijetí platby se nepodařilo odeslat: ' . $e->getMessage();
+    }
+};
+
 $statuses = [
     'pending'   => ['label' => 'Nová objednávka', 'badge' => 'badge'],
     'paid'      => ['label' => 'Zaplaceno',        'badge' => 'badge-success'],
@@ -27,8 +44,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'status' && $id) {
         $status = (string)($_POST['status'] ?? 'pending');
         if (!isset($statuses[$status])) $status = 'pending';
+        $before = $prevStatus($pdo, $id);
         $pdo->prepare('UPDATE ny_vouchers SET status = ? WHERE id = ?')->execute([$status, $id]);
-        ny_flash_set('ok', 'Stav poukazu byl upraven.');
+        $msg = 'Stav poukazu byl upraven.';
+        if ($status === 'paid' && $before !== 'paid') $msg .= $notifyPaid($id);
+        ny_flash_set('ok', $msg);
         ny_redirect('vouchers.php' . ($_POST['back'] ?? ''));
     }
     if ($action === 'send_email' && $id) {
@@ -56,13 +76,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $d = DateTimeImmutable::createFromFormat('Y-m-d', $validUntil);
             if ($d) $validDate = $d->format('Y-m-d');
         }
+        $before = $prevStatus($pdo, $id);
         $pdo->prepare(
             'UPDATE ny_vouchers
                 SET buyer_name = ?, buyer_email = ?, for_whom = ?,
                     amount_raw = ?, amount_czk = ?, valid_until = ?, note = ?, status = ?
               WHERE id = ?'
         )->execute([$buyerName, $buyerEmail, $forWhom, $amountRaw, $amountCzk, $validDate, $note ?: null, $status, $id]);
-        ny_flash_set('ok', 'Poukaz byl uložen.');
+        $msg = 'Poukaz byl uložen.';
+        if ($status === 'paid' && $before !== 'paid') $msg .= $notifyPaid($id);
+        ny_flash_set('ok', $msg);
         ny_redirect('vouchers.php');
     }
     if ($action === 'new') {

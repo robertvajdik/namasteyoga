@@ -635,8 +635,11 @@ function ny_voucher_create_from_order(array $data): int {
  * Send a dárkový poukaz by e-mail. Returns true on success and stamps
  * ny_vouchers.issued_at. If the voucher is pending/paid it is promoted
  * to "issued" so the admin list reflects it.
+ *
+ * With $paidConfirmation the mail is a "payment received" confirmation:
+ * different subject/intro, no payment details, and the status stays "paid".
  */
-function ny_voucher_send_email(int $voucherId, ?string $overrideEmail = null): bool {
+function ny_voucher_send_email(int $voucherId, ?string $overrideEmail = null, bool $paidConfirmation = false): bool {
     ny_ensure_content_tables();
     $pdo  = ny_db();
     $stmt = $pdo->prepare('SELECT * FROM ny_vouchers WHERE id = ? LIMIT 1');
@@ -666,7 +669,10 @@ function ny_voucher_send_email(int $voucherId, ?string $overrideEmail = null): b
     $lines = [];
     $lines[] = $greeting;
     $lines[] = '';
-    $lines[] = 'posíláme Vám dárkový poukaz do studia ' . $siteName . '.';
+    $intro   = $paidConfirmation
+        ? 'děkujeme, Vaši platbu jsme přijali. Níže najdete Váš dárkový poukaz do studia ' . $siteName . '.'
+        : 'posíláme Vám dárkový poukaz do studia ' . $siteName . '.';
+    $lines[] = $intro;
     $lines[] = '';
     $lines[] = 'Kód poukazu: ' . $v['code'];
     if ($amount !== '')  $lines[] = 'Hodnota: ' . $amount;
@@ -687,7 +693,7 @@ function ny_voucher_send_email(int $voucherId, ?string $overrideEmail = null): b
     $holder      = trim((string)($s['bank_holder'] ?? '')) ?: $siteName;
     $payMsg      = 'Darkovy poukaz ' . $v['code'];
     $amountCzk   = (int)$v['amount_czk'];
-    $showPay     = in_array((string)$v['status'], ['pending', 'issued'], true)
+    $showPay     = !$paidConfirmation && in_array((string)$v['status'], ['pending', 'issued'], true)
                 && ($bankAccount !== '' || $iban !== '');
     $qrPng       = '';
     if ($showPay) {
@@ -719,7 +725,7 @@ function ny_voucher_send_email(int $voucherId, ?string $overrideEmail = null): b
     if (!empty($s['phone'])) $lines[] = $s['phone'];
     if (!empty($s['email'])) $lines[] = $s['email'];
 
-    $subject = 'Dárkový poukaz ' . $siteName . ' – ' . $v['code'];
+    $subject = ($paidConfirmation ? 'Platba přijata – dárkový poukaz ' : 'Dárkový poukaz ') . $siteName . ' – ' . $v['code'];
     $body    = implode("\r\n", $lines) . "\r\n";
 
     // HTML version (same content) so the QR code can be shown inline.
@@ -734,7 +740,7 @@ function ny_voucher_send_email(int $voucherId, ?string $overrideEmail = null): b
     $html  = '<!doctype html><html><body style="margin:0;padding:24px;background:#f6f3ee;font-family:Arial,Helvetica,sans-serif;color:#333;font-size:14px;line-height:1.5">';
     $html .= '<div style="max-width:560px;margin:0 auto;background:#fff;border-radius:8px;padding:28px">';
     $html .= '<p>' . $h($greeting) . '</p>';
-    $html .= '<p>posíláme Vám dárkový poukaz do studia ' . $h($siteName) . '.</p>';
+    $html .= '<p>' . $h($intro) . '</p>';
     $html .= '<table style="border-collapse:collapse;margin:12px 0">' . $info . '</table>';
     if (trim((string)($v['message'] ?? '')) !== '') {
         $html .= '<p style="font-style:italic">„' . nl2br($h($v['message'])) . '“</p>';
@@ -767,7 +773,9 @@ function ny_voucher_send_email(int $voucherId, ?string $overrideEmail = null): b
     if (!$ok) {
         throw new RuntimeException('E-mail se nepodařilo odeslat (zkontrolujte SMTP nastavení).');
     }
-    $newStatus = in_array((string)$v['status'], ['pending', 'paid'], true) ? 'issued' : (string)$v['status'];
+    $newStatus = $paidConfirmation
+        ? (string)$v['status']
+        : (in_array((string)$v['status'], ['pending', 'paid'], true) ? 'issued' : (string)$v['status']);
     $pdo->prepare('UPDATE ny_vouchers SET issued_at = NOW(), status = ? WHERE id = ?')
         ->execute([$newStatus, $voucherId]);
     return true;
