@@ -219,6 +219,7 @@ $isNew = ($_GET['action'] ?? '') === 'new';
 
 ny_admin_render_header('Dárkové poukazy', 'vouchers');
 ?>
+<div class="vouchers-admin">
 
 <?php if ($editing || $isNew):
     $v = $editing ?: [
@@ -352,26 +353,26 @@ ny_admin_render_header('Dárkové poukazy', 'vouchers');
                 $status  = $statuses[$r['status']] ?? ['label' => $r['status'], 'badge' => ''];
             ?>
                 <tr>
-                    <td data-label="Kód"><strong class="mono"><?= e((string)$r['code']) ?></strong></td>
+                    <td data-label="Kód" class="v-nowrap"><strong class="mono"><?= e((string)$r['code']) ?></strong></td>
                     <td data-label="Objednatel">
                         <?= e((string)$r['buyer_name']) ?>
-                        <?php if ($r['buyer_email']): ?><br><small><?= e((string)$r['buyer_email']) ?></small><?php endif; ?>
+                        <?php if ($r['buyer_email']): ?><small class="v-email"><?= e((string)$r['buyer_email']) ?></small><?php endif; ?>
                     </td>
                     <td data-label="Pro koho"><?= e((string)$r['for_whom']) ?: '—' ?></td>
-                    <td data-label="Částka">
+                    <td data-label="Částka" class="v-nowrap">
                         <?php if ((int)$r['amount_czk'] > 0): ?>
                             <strong><?= number_format((int)$r['amount_czk'], 0, ',', ' ') ?>&nbsp;Kč</strong>
                         <?php else: ?>
                             <?= e((string)$r['amount_raw']) ?: '—' ?>
                         <?php endif; ?>
                     </td>
-                    <td data-label="Vytvořeno"><?= $created ? e($created->format('j. n. Y')) : '—' ?></td>
-                    <td data-label="Platnost do"><?= $valid ? e($valid->format('j. n. Y')) : '—' ?></td>
+                    <td data-label="Vytvořeno" class="v-nowrap"><?= $created ? e($created->format('j. n. Y')) : '—' ?></td>
+                    <td data-label="Platnost do" class="v-nowrap"><?= $valid ? e($valid->format('j. n. Y')) : '—' ?></td>
                     <td data-label="Stav">
                         <span class="badge <?= e((string)$status['badge']) ?>"><?= e((string)$status['label']) ?></span>
                         <?php if (!empty($r['issued_at'])):
                             $sent = new DateTimeImmutable($r['issued_at']); ?>
-                            <br><small class="hint">Odesláno <?= e($sent->format('j. n. Y')) ?></small>
+                            <small class="hint v-sent">Odesláno <?= e($sent->format('j. n. Y')) ?></small>
                         <?php endif; ?>
                     </td>
                     <td class="actions">
@@ -415,6 +416,7 @@ ny_admin_render_header('Dárkové poukazy', 'vouchers');
         </table>
         </div>
     <?php endif; ?>
+</div>
 </div>
 
 <?php ny_admin_render_footer();

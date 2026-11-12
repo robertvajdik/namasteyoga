@@ -6,7 +6,10 @@ require __DIR__ . '/_layout.php';
 ny_ensure_content_tables();
 
 $pdo    = ny_db();
-$action = (string)($_GET['action'] ?? $_POST['action'] ?? '');
+// On POST the posted action wins: forms on the edit page post to ?action=edit&id=…
+$action = $_SERVER['REQUEST_METHOD'] === 'POST'
+    ? (string)($_POST['action'] ?? '')
+    : (string)($_GET['action'] ?? '');
 $editId = (int)($_GET['id'] ?? 0);
 
 $avatarDir = __DIR__ . '/../assets/avatars';
@@ -304,12 +307,8 @@ ny_admin_render_header('Uživatelé', 'users');
             <?php if (!empty($u['avatar'])): ?>
                 <div class="teacher-photo-preview">
                     <img src="../assets/avatars/<?= e(rawurlencode($u['avatar'])) ?>" alt="">
-                    <form method="post" class="inline" onsubmit="return confirm('Odstranit obrázek?');">
-                        <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
-                        <input type="hidden" name="id" value="<?= (int)$u['id'] ?>">
-                        <input type="hidden" name="action" value="remove_avatar">
-                        <button class="btn btn-ghost btn-sm" type="submit">Odstranit obrázek</button>
-                    </form>
+                    <?php /* Button belongs to #usr-remove-avatar below – forms can't be nested. */ ?>
+                    <button class="btn btn-ghost btn-sm" type="submit" form="usr-remove-avatar">Odstranit obrázek</button>
                 </div>
             <?php endif; ?>
         </div>
@@ -325,6 +324,13 @@ ny_admin_render_header('Uživatelé', 'users');
             <a class="btn btn-ghost" href="users.php<?= e($queryString()) ?>">Zrušit</a>
         </div>
     </form>
+    <?php if (!empty($u['avatar'])): ?>
+        <form method="post" id="usr-remove-avatar" class="inline" onsubmit="return confirm('Odstranit obrázek?');">
+            <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+            <input type="hidden" name="id" value="<?= (int)$u['id'] ?>">
+            <input type="hidden" name="action" value="remove_avatar">
+        </form>
+    <?php endif; ?>
 </div>
 <?php endif; ?>
 

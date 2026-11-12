@@ -281,6 +281,13 @@ form input:focus { outline: none; border-color: var(--sage-400); box-shadow: var
 }
 .flash-ok  { background: var(--success-bg); color: var(--sage-700);  border: 1px solid var(--sage-300); }
 .flash-err { background: var(--danger-bg);  color: var(--danger);     border: 1px solid var(--danger); }
+/* Voucher order result, shown inside #objednavka */
+.poukaz-flash { font-size: var(--fs-base, 16px); font-weight: 600; padding: 16px 20px; margin: 0 0 20px; }
+.poukaz-flash.flash-ok { background: #DFF3E4; color: #1E6B34; border: 1px solid #5DB075; border-left: 5px solid #2E9E4F; }
+.poukaz-flash-icon { flex: 0 0 auto; color: #2E9E4F; }
+.pref-card > .poukaz-flash { flex: 1 1 100%; margin: 0; }
+.voucher-order-form .profile-field:has(textarea) { flex-basis: 100%; }
+.voucher-order-form textarea { width: 100%; resize: vertical; }
 
 /* -- Schedule ---------------------------------------------------- */
 .schedule-toolbar {
@@ -5887,3 +5894,48 @@ body.voucher-page {
 
 .delta-plus  { color: var(--success, #2a7a2a); }
 .delta-minus { color: var(--danger, #a33); }
+
+/* -- Admin: Dárkové poukazy (compact) ------------------------------ */
+.vouchers-admin .admin-card { padding: 14px 16px; margin-bottom: 12px; }
+.vouchers-admin .admin-card h2 { font-size: 17px; margin-bottom: 10px; }
+.vouchers-admin .admin-card-head { margin: 0 0 8px; padding-bottom: 8px; gap: 8px 16px; }
+.vouchers-admin .btn { padding: 6px 12px; font-size: 12.5px; }
+.vouchers-admin .row-wrap { gap: 6px; }
+.vouchers-admin .week-nav { padding: 3px; box-shadow: none; }
+.vouchers-admin .week-nav a { padding: 5px 10px; font-size: 12.5px; }
+
+/* Edit form: 4 columns on wide screens, smaller fields */
+.vouchers-admin .admin-form-row { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px 12px; }
+.vouchers-admin .admin-form-row.full { grid-template-columns: 1fr; margin-top: 8px; }
+.vouchers-admin .admin-form label { font-size: 12px; color: var(--text-muted); }
+.vouchers-admin .admin-form input,
+.vouchers-admin .admin-form select,
+.vouchers-admin .admin-form textarea { margin-top: 3px; padding: 7px 10px; font-size: 13.5px; }
+.vouchers-admin .admin-form textarea { min-height: 48px; }
+.vouchers-admin .form-actions { margin-top: 10px; gap: 6px; }
+.vouchers-admin .voucher-send {
+    display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap;
+    margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border-subtle);
+}
+.vouchers-admin .voucher-send .admin-form-row { grid-template-columns: 1fr; flex: 1 1 320px; }
+.vouchers-admin .voucher-send .form-actions { margin-top: 0; }
+.vouchers-admin .voucher-send .hint-inline { display: block; margin-top: 3px; font-size: 11.5px; }
+@media (max-width: 1100px) { .vouchers-admin .admin-form-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px)  { .vouchers-admin .admin-form-row { grid-template-columns: 1fr; } }
+
+/* Table: denser rows, single-line dates/amounts, small action buttons */
+.vouchers-admin .admin-tbl { font-size: 13px; }
+.vouchers-admin .admin-tbl th,
+.vouchers-admin .admin-tbl td { padding: 6px 8px; line-height: 1.3; }
+.vouchers-admin .admin-tbl th { font-size: 11px; }
+.vouchers-admin .admin-tbl .v-nowrap { white-space: nowrap; }
+.vouchers-admin .admin-tbl .v-email,
+.vouchers-admin .admin-tbl .v-sent { display: block; font-size: 11.5px; color: var(--text-muted); overflow-wrap: anywhere; }
+.vouchers-admin .admin-tbl .badge { padding: 2px 8px; font-size: 11px; }
+.vouchers-admin .admin-tbl .actions { gap: 3px; flex-wrap: wrap; }
+.vouchers-admin .admin-tbl .actions .btn { padding: 3px 8px; font-size: 11.5px; line-height: 1.4; }
+@media (max-width: 780px) {
+    .vouchers-admin .admin-tbl td { padding: 4px 0; }
+    .vouchers-admin .admin-tbl .v-nowrap { white-space: normal; }
+    .vouchers-admin .admin-tbl .actions .btn { padding: 7px 10px; font-size: 12.5px; }
+}

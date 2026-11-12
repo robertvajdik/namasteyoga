@@ -6,7 +6,10 @@ require __DIR__ . '/_layout.php';
 ny_ensure_content_tables();
 
 $pdo    = ny_db();
-$action = (string)($_GET['action'] ?? $_POST['action'] ?? '');
+// On POST the posted action wins: forms on the edit page post to ?action=edit&id=…
+$action = $_SERVER['REQUEST_METHOD'] === 'POST'
+    ? (string)($_POST['action'] ?? '')
+    : (string)($_GET['action'] ?? '');
 $editId = (int)($_GET['id'] ?? 0);
 
 $uploadDir = __DIR__ . '/../assets/teachers';
@@ -154,12 +157,8 @@ ny_admin_render_header('Lektoři', 'teachers');
             <?php if (!empty($t['photo'])): ?>
                 <div class="teacher-photo-preview">
                     <img src="../assets/teachers/<?= e(rawurlencode($t['photo'])) ?>" alt="<?= e($t['name']) ?>">
-                    <form method="post" class="inline" onsubmit="return confirm('Odstranit fotku?');">
-                        <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
-                        <input type="hidden" name="id" value="<?= (int)$t['id'] ?>">
-                        <input type="hidden" name="action" value="remove_photo">
-                        <button class="btn btn-ghost btn-sm" type="submit">Odstranit fotku</button>
-                    </form>
+                    <?php /* Button belongs to #tch-remove-photo below – forms can't be nested. */ ?>
+                    <button class="btn btn-ghost btn-sm" type="submit" form="tch-remove-photo">Odstranit fotku</button>
                 </div>
             <?php endif; ?>
         </div>
@@ -168,6 +167,13 @@ ny_admin_render_header('Lektoři', 'teachers');
             <a class="btn btn-ghost" href="teachers.php">Zrušit</a>
         </div>
     </form>
+    <?php if (!empty($t['photo'])): ?>
+        <form method="post" id="tch-remove-photo" class="inline" onsubmit="return confirm('Odstranit fotku?');">
+            <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+            <input type="hidden" name="id" value="<?= (int)$t['id'] ?>">
+            <input type="hidden" name="action" value="remove_photo">
+        </form>
+    <?php endif; ?>
 </div>
 <?php endif; ?>
 

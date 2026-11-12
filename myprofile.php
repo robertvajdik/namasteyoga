@@ -117,6 +117,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ny_flash_set('ok', sprintf(t('my.credits.voucher.flash.ok'), number_format($credited, 0, ',', ' ')));
             ny_redirect('myprofile.php#credits');
         }
+        if ($act === 'order_voucher') {
+            // Result is shown inside the #voucher-order card (green on success).
+            $amount  = trim((string)($_POST['amount'] ?? ''));
+            $forWhom = trim((string)($_POST['for_whom'] ?? ''));
+            $msg     = trim((string)($_POST['message'] ?? ''));
+            // Anti-spam: at most 5 orders per hour per session.
+            $recent = array_filter(
+                (array)($_SESSION['voucher_orders'] ?? []),
+                fn($ts) => $ts > time() - 3600
+            );
+            if ($amount === '') {
+                $_SESSION['poukaz_flash'] = ['type' => 'err', 'msg' => t('my.voucher.err.amount')];
+            } elseif (count($recent) >= 5) {
+                $_SESSION['poukaz_flash'] = ['type' => 'err', 'msg' => t('my.voucher.err.throttle')];
+            } else {
+                ny_voucher_order_submit(
+                    (string)$user['display_name'],
+                    strtolower((string)$user['email']),
+                    $amount, $forWhom, $msg, 'Můj profil'
+                );
+                $recent[] = time();
+                $_SESSION['voucher_orders'] = array_values($recent);
+                $_SESSION['poukaz_flash'] = ['type' => 'ok', 'msg' => sprintf(t('my.voucher.flash.ok'), (string)$user['email'])];
+            }
+            ny_redirect('myprofile.php#voucher-order');
+        }
         if ($act === 'upload_avatar' && isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
             $f = $_FILES['avatar'];
             $mime = @mime_content_type($f['tmp_name']) ?: '';
@@ -758,6 +784,46 @@ $renderBookingRow = function (array $r) use ($daysShort, $studioAddr): void {
             </ul>
         </details>
         <?php endif; ?>
+    </section>
+
+    <?php
+        $poukazMsg = $_SESSION['poukaz_flash'] ?? null;
+        unset($_SESSION['poukaz_flash']);
+    ?>
+    <section class="pref-card my-card" id="voucher-order">
+        <div class="pref-card-info">
+            <h3><?= e(t('my.voucher.h')) ?></h3>
+            <p class="muted"><?= e(t('my.voucher.desc')) ?></p>
+            <p class="hint"><?= sprintf(e(t('my.voucher.ordered_as')), e((string)$user['display_name']), e((string)$user['email'])) ?></p>
+        </div>
+        <?php if ($poukazMsg): ?>
+            <div class="flash flash-<?= e($poukazMsg['type']) ?> poukaz-flash" role="<?= $poukazMsg['type'] === 'ok' ? 'status' : 'alert' ?>">
+                <?php if ($poukazMsg['type'] === 'ok'): ?>
+                    <svg class="poukaz-flash-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg>
+                <?php endif; ?>
+                <span><?= e($poukazMsg['msg']) ?></span>
+            </div>
+        <?php endif; ?>
+        <form method="post" class="pref-card-form profile-edit-form voucher-order-form">
+            <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+            <input type="hidden" name="action" value="order_voucher">
+            <label class="profile-field"><span><?= e(t('poukaz.form.amount')) ?></span>
+                <input type="text" name="amount" list="my-voucher-amounts" required maxlength="100"
+                       placeholder="<?= e(t('poukaz.form.amount.placeholder')) ?>">
+                <datalist id="my-voucher-amounts">
+                    <?php foreach (['1', '2', '3', '4', '5', 'custom'] as $pk): ?>
+                        <option value="<?= e(t('poukaz.preset.' . $pk)) ?>">
+                    <?php endforeach; ?>
+                </datalist>
+            </label>
+            <label class="profile-field"><span><?= e(t('poukaz.form.for_whom')) ?></span>
+                <input type="text" name="for_whom" maxlength="200" placeholder="<?= e(t('poukaz.form.for_whom.placeholder')) ?>">
+            </label>
+            <label class="profile-field"><span><?= e(t('poukaz.form.message')) ?></span>
+                <textarea name="message" rows="3" maxlength="2000" placeholder="<?= e(t('poukaz.form.message.placeholder')) ?>"></textarea>
+            </label>
+            <button class="btn btn-primary btn-sm" type="submit"><?= e(t('poukaz.form.submit')) ?></button>
+        </form>
     </section>
 
     <section class="my-card">

@@ -6,7 +6,10 @@ require __DIR__ . '/_layout.php';
 ny_ensure_content_tables();
 
 $pdo    = ny_db();
-$action = (string)($_GET['action'] ?? $_POST['action'] ?? '');
+// On POST the posted action wins: forms on the edit page post to ?action=edit&id=…
+$action = $_SERVER['REQUEST_METHOD'] === 'POST'
+    ? (string)($_POST['action'] ?? '')
+    : (string)($_GET['action'] ?? '');
 $editId = (int)($_GET['id'] ?? 0);
 
 $uploadDir = __DIR__ . '/../assets/events';
@@ -147,6 +150,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ny_redirect('events.php');
     } catch (Throwable $e) {
         ny_flash_set('err', $e->getMessage());
+        // Re-open the same form instead of dropping back to the list.
+        ny_redirect($id ? 'events.php?action=edit&id=' . $id : 'events.php?action=new');
     }
 }
 
@@ -244,12 +249,8 @@ ny_admin_render_header('Akce', 'events');
             <?php if (!empty($ev['image'])): ?>
                 <div class="teacher-photo-preview">
                     <img src="../assets/events/<?= e(rawurlencode((string)$ev['image'])) ?>" alt="<?= e((string)$ev['title']) ?>">
-                    <form method="post" class="inline" onsubmit="return confirm('Odstranit obrázek?');">
-                        <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
-                        <input type="hidden" name="id" value="<?= (int)$ev['id'] ?>">
-                        <input type="hidden" name="action" value="remove_image">
-                        <button class="btn btn-ghost btn-sm" type="submit">Odstranit obrázek</button>
-                    </form>
+                    <?php /* Button belongs to #ev-remove-image below – forms can't be nested. */ ?>
+                    <button class="btn btn-ghost btn-sm" type="submit" form="ev-remove-image">Odstranit obrázek</button>
                 </div>
             <?php endif; ?>
         </div>
@@ -261,6 +262,13 @@ ny_admin_render_header('Akce', 'events');
             <?php endif; ?>
         </div>
     </form>
+    <?php if (!empty($ev['image'])): ?>
+        <form method="post" id="ev-remove-image" class="inline" onsubmit="return confirm('Odstranit obrázek?');">
+            <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
+            <input type="hidden" name="id" value="<?= (int)$ev['id'] ?>">
+            <input type="hidden" name="action" value="remove_image">
+        </form>
+    <?php endif; ?>
 </div>
 <?php endif; ?>
 

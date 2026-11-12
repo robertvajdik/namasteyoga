@@ -632,6 +632,79 @@ function ny_voucher_create_from_order(array $data): int {
 }
 
 /**
+ * Handle a dárkový poukaz order (public price list or My profile): stores the
+ * pending voucher and e-mails the admin. Inputs must already be validated.
+ * $source is a short note for the admin mail (e.g. "Můj profil").
+ * Returns the new voucher id, or 0 when the DB insert failed.
+ */
+function ny_voucher_order_submit(string $name, string $from, string $amount, string $forWhom, string $msg, string $source = ''): int {
+    $amountCzk  = (int)preg_replace('/[^0-9]/', '', $amount);
+    $voucherId  = 0;
+    $voucherRow = null;
+    try {
+        $voucherId = ny_voucher_create_from_order([
+            'buyer_name'  => $name,
+            'buyer_email' => $from,
+            'for_whom'    => $forWhom,
+            'amount_czk'  => $amountCzk,
+            'amount_raw'  => $amount,
+            'message'     => $msg,
+        ]);
+        if ($voucherId) {
+            $vq = ny_db()->prepare('SELECT * FROM ny_vouchers WHERE id = ? LIMIT 1');
+            $vq->execute([$voucherId]);
+            $voucherRow = $vq->fetch() ?: null;
+        }
+    } catch (Throwable $e) {
+        $voucherId = 0;
+    }
+
+    $s        = ny_settings_all();
+    $adminTo  = ny_admin_notify_email() ?: (string)($s['email'] ?? '');
+    $siteName = $s['site_name'] ?: 'Studio Namasté';
+    $base     = ny_base_url();
+    $validTxt = $voucherRow && !empty($voucherRow['valid_until'])
+        ? (new DateTimeImmutable($voucherRow['valid_until']))->format('j. n. Y')
+        : '';
+    $vCode    = $voucherRow['code'] ?? '';
+
+    $subject = 'Dárkový poukaz – nová objednávka od ' . $name;
+    $lines = [
+        'V administraci přistála nová objednávka dárkového poukazu.',
+        '',
+        'Objednatel:   ' . $name,
+        'E-mail:       ' . $from,
+        'Hodnota:      ' . $amount . ($amountCzk > 0 ? ' (' . $amountCzk . ' Kč)' : ''),
+    ];
+    if ($forWhom !== '') $lines[] = 'Poukaz pro:   ' . $forWhom;
+    if ($vCode !== '')   $lines[] = 'Kód poukazu:  ' . $vCode;
+    if ($validTxt !== '')$lines[] = 'Platnost do:  ' . $validTxt;
+    if ($source !== '')  $lines[] = 'Odkud:        ' . $source;
+    $lines[] = 'Čas:          ' . date('j. n. Y H:i');
+    $lines[] = '';
+    $lines[] = 'Zpráva od objednatele:';
+    $lines[] = $msg !== '' ? $msg : '(bez zprávy)';
+    if ($voucherId) {
+        $lines[] = '';
+        $lines[] = 'Správa v adminu:';
+        $lines[] = $base . '/admin/vouchers.php?action=edit&id=' . $voucherId;
+        if ($vCode !== '') {
+            $lines[] = 'Náhled poukazu k tisku:';
+            $lines[] = $base . '/voucher.php?code=' . rawurlencode((string)$vCode);
+        }
+    }
+    $lines[] = '';
+    $lines[] = '-- ';
+    $lines[] = $siteName;
+    $body = implode("\r\n", $lines) . "\r\n";
+
+    if ($adminTo !== '') {
+        ny_mail($adminTo, $subject, $body, ['reply_to' => $from]);
+    }
+    return $voucherId;
+}
+
+/**
  * Send a dárkový poukaz by e-mail. Returns true on success and stamps
  * ny_vouchers.issued_at. If the voucher is pending/paid it is promoted
  * to "issued" so the admin list reflects it.

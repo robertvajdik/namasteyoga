@@ -11,6 +11,13 @@ $iban     = trim((string)($s['bank_iban'] ?? ''));
 $holder   = trim((string)($s['bank_holder'] ?? '')) ?: (string)($s['site_name'] ?? '');
 $validity = max(1, (int)($s['voucher_validity_months'] ?? 2));
 
+// Voucher form messages are shown inside the order section (#objednavka),
+// because the redirect jumps there and the page-top flash would be off-screen.
+$poukazFlash = static function (string $type, string $msg): void {
+    ny_session_start();
+    $_SESSION['poukaz_flash'] = ['type' => $type, 'msg' => $msg];
+};
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ny_csrf_check($_POST['csrf'] ?? null);
     $name     = trim((string)($_POST['name'] ?? ''));
@@ -22,82 +29,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $hp       = trim((string)($_POST['website'] ?? ''));
 
     if ($hp !== '') {
-        ny_flash_set('ok', t('poukaz.flash.hp'));
+        $poukazFlash('ok', t('poukaz.flash.hp'));
         ny_redirect('cenik.php#objednavka');
     }
 
     if (!ny_captcha_verify('poukaz', $captchaIn)) {
-        ny_flash_set('err', t('poukaz.flash.err.captcha'));
+        $poukazFlash('err', t('poukaz.flash.err.captcha'));
     } elseif (!ny_recaptcha_verify($_POST['g-recaptcha-response'] ?? null, 'poukaz')) {
-        ny_flash_set('err', t('poukaz.flash.err.recaptcha'));
+        $poukazFlash('err', t('poukaz.flash.err.recaptcha'));
     } elseif ($name === '' || !filter_var($from, FILTER_VALIDATE_EMAIL) || $amount === '') {
-        ny_flash_set('err', t('poukaz.flash.err.fields'));
+        $poukazFlash('err', t('poukaz.flash.err.fields'));
     } else {
-        $amountCzk = (int)preg_replace('/[^0-9]/', '', $amount);
-        $voucherId = 0;
-        $voucherRow = null;
-        try {
-            $voucherId = ny_voucher_create_from_order([
-                'buyer_name'  => $name,
-                'buyer_email' => $from,
-                'for_whom'    => $forWhom,
-                'amount_czk'  => $amountCzk,
-                'amount_raw'  => $amount,
-                'message'     => $msg,
-            ]);
-            if ($voucherId) {
-                $vq = ny_db()->prepare('SELECT * FROM ny_vouchers WHERE id = ? LIMIT 1');
-                $vq->execute([$voucherId]);
-                $voucherRow = $vq->fetch() ?: null;
-            }
-        } catch (Throwable $e) {
-            $voucherId = 0;
-        }
-
-        $adminTo  = ny_admin_notify_email() ?: $email;
-        $siteName = $s['site_name'] ?: 'Studio Namasté';
-        $base     = ny_base_url();
-        $validTxt = $voucherRow && !empty($voucherRow['valid_until'])
-            ? (new DateTimeImmutable($voucherRow['valid_until']))->format('j. n. Y')
-            : '';
-        $vCode    = $voucherRow['code'] ?? '';
-
-        $subject = 'Dárkový poukaz – nová objednávka od ' . $name;
-        $lines = [
-            'V administraci přistála nová objednávka dárkového poukazu.',
-            '',
-            'Objednatel:   ' . $name,
-            'E-mail:       ' . $from,
-            'Hodnota:      ' . $amount . ($amountCzk > 0 ? ' (' . $amountCzk . ' Kč)' : ''),
-        ];
-        if ($forWhom !== '') $lines[] = 'Poukaz pro:   ' . $forWhom;
-        if ($vCode !== '')   $lines[] = 'Kód poukazu:  ' . $vCode;
-        if ($validTxt !== '')$lines[] = 'Platnost do:  ' . $validTxt;
-        $lines[] = 'Čas:          ' . date('j. n. Y H:i');
-        $lines[] = '';
-        $lines[] = 'Zpráva od objednatele:';
-        $lines[] = $msg !== '' ? $msg : '(bez zprávy)';
-        if ($voucherId) {
-            $lines[] = '';
-            $lines[] = 'Správa v adminu:';
-            $lines[] = $base . '/admin/vouchers.php?action=edit&id=' . $voucherId;
-            if ($vCode !== '') {
-                $lines[] = 'Náhled poukazu k tisku:';
-                $lines[] = $base . '/voucher.php?code=' . rawurlencode((string)$vCode);
-            }
-        }
-        $lines[] = '';
-        $lines[] = '-- ';
-        $lines[] = $siteName;
-        $body = implode("\r\n", $lines) . "\r\n";
-
-        if ($adminTo !== '') {
-            ny_mail($adminTo, $subject, $body, ['reply_to' => $from]);
-        }
-        ny_flash_set('ok', t('poukaz.flash.ok'));
+        ny_voucher_order_submit($name, $from, $amount, $forWhom, $msg, 'Ceník');
+        $poukazFlash('ok', t('poukaz.flash.ok'));
     }
     ny_redirect('cenik.php#objednavka');
 }
+
+ny_session_start();
+$poukazMsg = $_SESSION['poukaz_flash'] ?? null;
+unset($_SESSION['poukaz_flash']);
 
 $captcha = ny_captcha_generate('poukaz');
 $user    = ny_current_user();
@@ -323,6 +274,14 @@ $massageField = function(int $i, string $field) use ($s) {
         <h2 id="voucher"><?= e(t('poukaz.order.title')) ?></h2>
         <p><?= e(t('poukaz.order.lead')) ?></p>
     </div>
+    <?php if ($poukazMsg): ?>
+        <div class="flash flash-<?= e($poukazMsg['type']) ?> poukaz-flash" role="<?= $poukazMsg['type'] === 'ok' ? 'status' : 'alert' ?>">
+            <?php if ($poukazMsg['type'] === 'ok'): ?>
+                <svg class="poukaz-flash-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg>
+            <?php endif; ?>
+            <span><?= e($poukazMsg['msg']) ?></span>
+        </div>
+    <?php endif; ?>
     <form method="post" class="poukaz-form" data-recaptcha="poukaz" novalidate>
         <input type="hidden" name="csrf" value="<?= e(ny_csrf_token()) ?>">
         <label><?= e(t('poukaz.form.name')) ?>
