@@ -637,8 +637,11 @@ function ny_render_header(string $title, string $active = '', array $opts = []):
 <meta name="twitter:image"           content="<?= e($ogImageAbs) ?>">
 <meta name="twitter:image:alt"       content="<?= e($ogImageAlt) ?>">
 
-<link rel="icon" href="assets/logo_namasteyoga.png" type="image/png" sizes="any">
-<link rel="apple-touch-icon" href="assets/logo_namasteyoga.png">
+<link rel="icon" href="<?= e($baseUrl) ?>/favicon.ico" sizes="48x48">
+<link rel="icon" href="<?= e($baseUrl) ?>/favicon-48.png" type="image/png" sizes="48x48">
+<link rel="icon" href="<?= e($baseUrl) ?>/favicon-96.png" type="image/png" sizes="96x96">
+<link rel="icon" href="<?= e($baseUrl) ?>/favicon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="<?= e($baseUrl) ?>/apple-touch-icon.png" sizes="180x180">
 <?php if ($preloadImg !== ''):
     $preloadAbs = preg_match('#^https?://#i', $preloadImg) ? $preloadImg : ($baseUrl . '/' . ltrim($preloadImg, '/'));
 ?>
